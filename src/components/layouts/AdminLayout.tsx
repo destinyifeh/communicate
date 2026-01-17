@@ -156,12 +156,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
-                3
-              </span>
-            </Button>
+            <Link to="/admin/notifications">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
+                  3
+                </span>
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" className="hidden sm:flex">
               <MessageSquare className="h-5 w-5" />
             </Button>

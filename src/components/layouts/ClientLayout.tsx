@@ -166,12 +166,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-[10px] font-medium text-accent-foreground flex items-center justify-center">
-                2
-              </span>
-            </Button>
+            <Link to="/portal/notifications">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-[10px] font-medium text-accent-foreground flex items-center justify-center">
+                  2
+                </span>
+              </Button>
+            </Link>
             <ThemeToggle />
           </div>
         </header>
