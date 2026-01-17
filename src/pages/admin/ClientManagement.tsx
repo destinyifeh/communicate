@@ -348,6 +348,76 @@ export default function ClientManagement() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Lead Limit Dialog */}
+        <Dialog open={!!leadLimitDialog} onOpenChange={() => setLeadLimitDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Set Lead Limit</DialogTitle>
+              <DialogDescription>
+                Update the monthly lead limit for {leadLimitDialog?.company}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Current Limit: {leadLimitDialog?.leadLimit.toLocaleString()} leads/month</Label>
+                <Input
+                  type="number"
+                  value={newLeadLimit}
+                  onChange={(e) => setNewLeadLimit(e.target.value)}
+                  placeholder="Enter new limit"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('500')}>500</Button>
+                <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('1000')}>1,000</Button>
+                <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('5000')}>5,000</Button>
+                <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('10000')}>10,000</Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setLeadLimitDialog(null)}>Cancel</Button>
+              <Button onClick={handleUpdateLeadLimit} className="gradient-primary text-primary-foreground">
+                Update Limit
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Client Dialog */}
+        <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Client</DialogTitle>
+              <DialogDescription>
+                Update client information for {editClient?.company}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input defaultValue={editClient?.name} />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input defaultValue={editClient?.email} />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input defaultValue={editClient?.phone} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
+              <Button onClick={() => {
+                toast.success('Client updated');
+                setEditClient(null);
+              }} className="gradient-primary text-primary-foreground">
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
