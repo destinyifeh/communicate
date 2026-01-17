@@ -21,6 +21,7 @@ import WebhookLogs from "./pages/admin/WebhookLogs";
 import ClientDashboard from "./pages/portal/Dashboard";
 import AutomationSettings from "./pages/portal/AutomationSettings";
 import LeadCRM from "./pages/portal/LeadCRM";
+import Notifications from "./pages/portal/Notifications";
 
 import NotFound from "./pages/NotFound";
 
@@ -96,6 +97,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['client']}>
                     <LeadCRM />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/portal/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['client']}>
+                    <Notifications />
                   </ProtectedRoute>
                 }
               />

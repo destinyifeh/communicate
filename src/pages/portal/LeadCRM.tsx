@@ -233,15 +233,25 @@ export default function LeadCRM() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setSelectedLead(lead)}
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          View Chat
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => window.open(`tel:${lead.phone}`, '_self')}
+                          >
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => setSelectedLead(lead)}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            View Chat
+                          </Button>
+                        </div>
                       </TableCell>
                     </motion.tr>
                   ))}
