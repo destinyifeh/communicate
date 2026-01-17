@@ -11,6 +11,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import Demo from "./pages/Demo";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -41,6 +43,8 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/demo" element={<Demo />} />
               
               {/* Admin routes */}
               <Route

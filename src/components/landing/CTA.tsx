@@ -38,13 +38,15 @@ export function CTA() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="h-12 px-8 text-base border-white/20 text-primary-foreground hover:bg-white/10"
-              >
-                Schedule a Demo
-              </Button>
+              <Link to="/demo">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="h-12 px-8 text-base border-white/20 text-primary-foreground hover:bg-white/10"
+                >
+                  Schedule a Demo
+                </Button>
+              </Link>
             </div>
           </div>
         </motion.div>
