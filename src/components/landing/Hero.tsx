@@ -58,7 +58,7 @@ export function Hero() {
           >
             <Link to="/signup">
               <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90 gap-2 px-8 h-12 text-base">
-                Start Free Trial
+                Get Started
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
