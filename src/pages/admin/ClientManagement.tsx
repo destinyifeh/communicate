@@ -52,6 +52,8 @@ export default function ClientManagement() {
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [leadLimitDialog, setLeadLimitDialog] = useState<Client | null>(null);
   const [newLeadLimit, setNewLeadLimit] = useState('');
+  const [addClientDialog, setAddClientDialog] = useState(false);
+  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '' });
 
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,6 +95,36 @@ export default function ClientManagement() {
     });
   };
 
+  const handleAddClient = () => {
+    if (newClient.name && newClient.email && newClient.company) {
+      const client: Client = {
+        id: `client_${Date.now()}`,
+        name: newClient.name,
+        email: newClient.email,
+        company: newClient.company,
+        phone: newClient.phone || '+234 000 000 0000',
+        plan: 'Starter',
+        status: 'active',
+        leadsUsed: 0,
+        leadLimit: 500,
+        revenue: 0,
+        apiKey: 'ak_live_' + Math.random().toString(36).substring(2, 30),
+        joinedDate: new Date().toISOString().split('T')[0],
+        platforms: {
+          whatsapp: true,
+          instagram: false,
+          facebook: false,
+          tiktok: false,
+        },
+        notificationNumber: newClient.phone || '+234 000 000 0000',
+      };
+      setClients(prev => [client, ...prev]);
+      toast.success('Client added successfully');
+      setAddClientDialog(false);
+      setNewClient({ name: '', email: '', company: '', phone: '' });
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-4 md:space-y-6">
@@ -102,7 +134,10 @@ export default function ClientManagement() {
             <h2 className="text-xl md:text-2xl font-bold">Client Management</h2>
             <p className="text-sm text-muted-foreground">Manage all registered clients and their subscriptions</p>
           </div>
-          <Button className="gradient-primary text-primary-foreground gap-2 w-fit">
+          <Button 
+            className="gradient-primary text-primary-foreground gap-2 w-fit"
+            onClick={() => setAddClientDialog(true)}
+          >
             <Plus className="h-4 w-4" />
             Add Client
           </Button>
@@ -414,6 +449,63 @@ export default function ClientManagement() {
                 setEditClient(null);
               }} className="gradient-primary text-primary-foreground">
                 Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Client Dialog */}
+        <Dialog open={addClientDialog} onOpenChange={setAddClientDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Client</DialogTitle>
+              <DialogDescription>
+                Create a new client account with basic information
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Name *</Label>
+                <Input 
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company *</Label>
+                <Input 
+                  value={newClient.company}
+                  onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
+                  placeholder="Company name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input 
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input 
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  placeholder="+234 000 000 0000"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddClientDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleAddClient} 
+                className="gradient-primary text-primary-foreground"
+                disabled={!newClient.name || !newClient.email || !newClient.company}
+              >
+                Add Client
               </Button>
             </DialogFooter>
           </DialogContent>
