@@ -15,14 +15,13 @@ import {
 import {
   Zap,
   LayoutDashboard,
-  FolderKanban,
-  FileText,
-  HelpCircle,
   Settings,
   LogOut,
   ChevronDown,
   Bell,
-  CreditCard,
+  Users,
+  Activity,
+  Sliders,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -31,11 +30,9 @@ interface ClientLayoutProps {
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Overview', href: '/portal' },
-  { icon: FolderKanban, label: 'Projects', href: '/portal/projects' },
-  { icon: FileText, label: 'Documents', href: '/portal/documents' },
-  { icon: CreditCard, label: 'Billing', href: '/portal/billing' },
-  { icon: HelpCircle, label: 'Support', href: '/portal/support' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/portal' },
+  { icon: Users, label: 'Lead CRM', href: '/portal/leads' },
+  { icon: Sliders, label: 'Automation Settings', href: '/portal/settings' },
 ];
 
 export function ClientLayout({ children }: ClientLayoutProps) {
@@ -138,7 +135,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold">
-              {navItems.find(item => item.href === location.pathname)?.label || 'Overview'}
+              {navItems.find(item => item.href === location.pathname)?.label || 'Dashboard'}
             </h1>
           </div>
           <div className="flex items-center gap-3">

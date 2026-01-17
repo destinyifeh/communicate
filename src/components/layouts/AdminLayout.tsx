@@ -16,9 +16,7 @@ import {
   Zap,
   LayoutDashboard,
   Users,
-  FolderKanban,
-  Workflow,
-  BarChart3,
+  Webhook,
   Settings,
   LogOut,
   ChevronDown,
@@ -32,11 +30,9 @@ interface AdminLayoutProps {
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  { icon: Users, label: 'Clients', href: '/admin/clients' },
-  { icon: FolderKanban, label: 'Projects', href: '/admin/projects' },
-  { icon: Workflow, label: 'Automations', href: '/admin/automations' },
-  { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
+  { icon: LayoutDashboard, label: 'Command Center', href: '/admin' },
+  { icon: Users, label: 'Client Management', href: '/admin/clients' },
+  { icon: Webhook, label: 'Webhook Logs', href: '/admin/webhooks' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
@@ -127,7 +123,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold">
-              {navItems.find(item => item.href === location.pathname)?.label || 'Dashboard'}
+              {navItems.find(item => item.href === location.pathname)?.label || 'Command Center'}
             </h1>
           </div>
           <div className="flex items-center gap-3">

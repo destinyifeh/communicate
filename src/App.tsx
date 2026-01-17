@@ -11,8 +11,17 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+
+// Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
-import ClientPortal from "./pages/portal/Dashboard";
+import ClientManagement from "./pages/admin/ClientManagement";
+import WebhookLogs from "./pages/admin/WebhookLogs";
+
+// Client Portal Pages
+import ClientDashboard from "./pages/portal/Dashboard";
+import AutomationSettings from "./pages/portal/AutomationSettings";
+import LeadCRM from "./pages/portal/LeadCRM";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +50,22 @@ const App = () => (
                 }
               />
               <Route
+                path="/admin/clients"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ClientManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/webhooks"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <WebhookLogs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/*"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
@@ -54,7 +79,23 @@ const App = () => (
                 path="/portal"
                 element={
                   <ProtectedRoute allowedRoles={['client']}>
-                    <ClientPortal />
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/portal/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['client']}>
+                    <AutomationSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/portal/leads"
+                element={
+                  <ProtectedRoute allowedRoles={['client']}>
+                    <LeadCRM />
                   </ProtectedRoute>
                 }
               />
@@ -62,7 +103,7 @@ const App = () => (
                 path="/portal/*"
                 element={
                   <ProtectedRoute allowedRoles={['client']}>
-                    <ClientPortal />
+                    <ClientDashboard />
                   </ProtectedRoute>
                 }
               />
