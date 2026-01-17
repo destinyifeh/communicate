@@ -3,98 +3,73 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
+  DollarSign, 
   Users, 
-  FolderKanban, 
-  TrendingUp, 
-  Clock,
+  TrendingUp,
+  Activity,
   ArrowUpRight,
-  ArrowDownRight,
-  MoreHorizontal,
   Plus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { mockClients, clientTrafficData } from '@/lib/mockData';
+
+const totalRevenue = mockClients.reduce((sum, c) => sum + c.revenue, 0);
+const activeClients = mockClients.filter(c => c.status === 'active').length;
+const totalLeads = mockClients.reduce((sum, c) => sum + c.leadsUsed, 0);
 
 const stats = [
   { 
-    label: 'Total Clients', 
-    value: '24', 
-    change: '+3', 
-    trend: 'up',
-    icon: Users 
+    label: 'Total Revenue', 
+    value: `₦${(totalRevenue / 1000000).toFixed(1)}M`, 
+    change: '+24%',
+    icon: DollarSign,
+    color: 'text-accent',
+    bgColor: 'bg-accent/10',
   },
   { 
-    label: 'Active Projects', 
-    value: '12', 
-    change: '+2', 
-    trend: 'up',
-    icon: FolderKanban 
+    label: 'Active Subscriptions', 
+    value: activeClients.toString(), 
+    change: '+2',
+    icon: Users,
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   { 
-    label: 'Revenue (MTD)', 
-    value: '$48,250', 
-    change: '+18%', 
-    trend: 'up',
-    icon: TrendingUp 
+    label: 'Total Leads (All Clients)', 
+    value: totalLeads.toLocaleString(), 
+    change: '+18%',
+    icon: TrendingUp,
+    color: 'text-yellow-600 dark:text-yellow-400',
+    bgColor: 'bg-yellow-500/10',
   },
   { 
-    label: 'Avg. Response Time', 
-    value: '2.4h', 
-    change: '-15%', 
-    trend: 'down',
-    icon: Clock 
+    label: 'Avg. Conversion', 
+    value: '14.2%', 
+    change: '+3.1%',
+    icon: Activity,
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-500/10',
   },
 ];
-
-const recentProjects = [
-  { 
-    name: 'E-commerce Automation', 
-    client: 'Acme Corp', 
-    status: 'in-progress',
-    progress: 65,
-  },
-  { 
-    name: 'CRM Integration', 
-    client: 'TechStart Inc', 
-    status: 'review',
-    progress: 90,
-  },
-  { 
-    name: 'Email Marketing Flow', 
-    client: 'Growth Co', 
-    status: 'in-progress',
-    progress: 40,
-  },
-  { 
-    name: 'Inventory Sync', 
-    client: 'RetailMax', 
-    status: 'completed',
-    progress: 100,
-  },
-];
-
-const statusColors: Record<string, string> = {
-  'in-progress': 'bg-primary/10 text-primary',
-  'review': 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  'completed': 'bg-accent/10 text-accent',
-};
 
 export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Welcome section */}
+        {/* Welcome */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Welcome back, Alex</h2>
-            <p className="text-muted-foreground">Here's what's happening with your agency today.</p>
+            <h2 className="text-2xl font-bold">Agency Command Center</h2>
+            <p className="text-muted-foreground">Overview of all client performance and revenue</p>
           </div>
           <Button className="gradient-primary text-primary-foreground gap-2">
             <Plus className="h-4 w-4" />
-            New Project
+            Add Client
           </Button>
         </div>
 
-        {/* Stats grid */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
             <motion.div
@@ -103,104 +78,131 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="border-border/50">
+              <Card className="border-border/50 hover:shadow-medium transition-shadow">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <stat.icon className="h-5 w-5 text-primary" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
                     </div>
-                    <div className={`flex items-center gap-1 text-sm ${
-                      stat.trend === 'up' ? 'text-accent' : 'text-destructive'
-                    }`}>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent flex items-center gap-1">
                       {stat.change}
-                      {stat.trend === 'up' ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
-                      )}
-                    </div>
+                      <ArrowUpRight className="h-3 w-3" />
+                    </Badge>
                   </div>
-                  <div className="mt-4">
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                  </div>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-sm text-muted-foreground">{stat.label}</div>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        {/* Recent projects & Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Recent Projects</CardTitle>
-                <CardDescription>Your latest project activity</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm">View all</Button>
+        {/* Client Traffic Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle>Client Traffic Distribution</CardTitle>
+              <CardDescription>Leads generated by each active client</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentProjects.map((project, index) => (
-                  <motion.div
-                    key={project.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-medium">{project.name}</h4>
-                        <Badge variant="secondary" className={statusColors[project.status]}>
-                          {project.status.replace('-', ' ')}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{project.client}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-24">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{project.progress}%</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-secondary">
-                          <div 
-                            className="h-full rounded-full gradient-primary transition-all duration-500"
-                            style={{ width: `${project.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={clientTrafficData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis 
+                      type="number"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis 
+                      type="category"
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      width={100}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-medium)'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === 'leads' ? value.toLocaleString() + ' leads' : `₦${value}K`,
+                        name === 'leads' ? 'Leads' : 'Revenue'
+                      ]}
+                    />
+                    <Bar 
+                      dataKey="leads" 
+                      fill="hsl(var(--primary))" 
+                      radius={[0, 4, 4, 0]}
+                      name="leads"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base">Top Performing Client</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+                  FH
+                </div>
+                <div>
+                  <p className="font-semibold">Fashion Hub</p>
+                  <p className="text-sm text-muted-foreground">₦7.5M revenue • 2,890 leads</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick actions */}
           <Card className="border-border/50">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks and shortcuts</CardDescription>
+              <CardTitle className="text-base">Platform Distribution</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Plus className="h-4 w-4" />
-                Add New Client
-              </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <FolderKanban className="h-4 w-4" />
-                Create Project
-              </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <TrendingUp className="h-4 w-4" />
-                View Reports
-              </Button>
+            <CardContent>
+              <div className="flex gap-3">
+                <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400">💬 WhatsApp: 65%</Badge>
+                <Badge variant="secondary" className="bg-pink-500/10 text-pink-600 dark:text-pink-400">📸 IG: 25%</Badge>
+                <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">👤 FB: 10%</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base">This Month</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">New Clients</span>
+                  <span className="font-medium">+3</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Churned</span>
+                  <span className="font-medium text-destructive">1</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Upgrades</span>
+                  <span className="font-medium text-accent">2</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
