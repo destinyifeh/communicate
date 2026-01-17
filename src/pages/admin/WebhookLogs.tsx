@@ -60,16 +60,16 @@ export default function WebhookLogs() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold">Webhook Logs</h2>
-            <p className="text-muted-foreground">Monitor incoming data from ManyChat, WAmation, and other integrations</p>
+            <h2 className="text-xl md:text-2xl font-bold">Webhook Logs</h2>
+            <p className="text-sm text-muted-foreground">Monitor incoming data from integrations</p>
           </div>
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 w-fit"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
@@ -79,37 +79,37 @@ export default function WebhookLogs() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-4">
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2 md:gap-4">
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockWebhookLogs.filter(l => l.status === 'success').length}</p>
-                <p className="text-sm text-muted-foreground">Successful</p>
+                <p className="text-lg md:text-2xl font-bold">{mockWebhookLogs.filter(l => l.status === 'success').length}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Success</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2 md:gap-4">
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockWebhookLogs.filter(l => l.status === 'error').length}</p>
-                <p className="text-sm text-muted-foreground">Errors</p>
+                <p className="text-lg md:text-2xl font-bold">{mockWebhookLogs.filter(l => l.status === 'error').length}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Errors</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Activity className="h-5 w-5 text-primary" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2 md:gap-4">
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Activity className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockWebhookLogs.length}</p>
-                <p className="text-sm text-muted-foreground">Total Requests</p>
+                <p className="text-lg md:text-2xl font-bold">{mockWebhookLogs.length}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Total</p>
               </div>
             </CardContent>
           </Card>
@@ -117,11 +117,11 @@ export default function WebhookLogs() {
 
         {/* Search */}
         <Card className="border-border/50">
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by source, endpoint, or payload..."
+                placeholder="Search logs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 font-mono text-sm"
@@ -130,10 +130,64 @@ export default function WebhookLogs() {
           </CardContent>
         </Card>
 
-        {/* Logs Table */}
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3">
+          {filteredLogs.map((log, index) => (
+            <motion.div
+              key={log.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+            >
+              <Card className="border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge variant="outline" className="text-xs">{log.source}</Badge>
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs ${log.status === 'success' 
+                        ? 'bg-green-500/10 text-green-600 dark:text-green-400' 
+                        : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {log.status === 'success' ? (
+                        <><CheckCircle className="h-3 w-3 mr-1" /> 200</>
+                      ) : (
+                        <><XCircle className="h-3 w-3 mr-1" /> Error</>
+                      )}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-xs font-mono text-muted-foreground mb-2 truncate">
+                    {log.endpoint}
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {formatTimestamp(log.timestamp)}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 h-7 text-xs"
+                      onClick={() => setSelectedLog(log)}
+                    >
+                      <Code className="h-3 w-3" />
+                      View
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="hidden md:block"
         >
           <Card className="border-border/50">
             <CardContent className="p-0">
@@ -201,39 +255,6 @@ export default function WebhookLogs() {
             </CardContent>
           </Card>
         </motion.div>
-
-        {/* Log Details Dialog */}
-        <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Code className="h-5 w-5" />
-                Request Details
-              </DialogTitle>
-              <DialogDescription>
-                {selectedLog?.source} → {selectedLog?.endpoint}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium mb-2">Request Payload</p>
-                <pre className="p-4 rounded-lg bg-secondary/50 overflow-x-auto text-sm font-mono">
-                  {selectedLog && JSON.stringify(JSON.parse(selectedLog.payload), null, 2)}
-                </pre>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Response</p>
-                <pre className={`p-4 rounded-lg overflow-x-auto text-sm font-mono ${
-                  selectedLog?.status === 'success' 
-                    ? 'bg-green-500/10' 
-                    : 'bg-red-500/10'
-                }`}>
-                  {selectedLog && JSON.stringify(JSON.parse(selectedLog.response), null, 2)}
-                </pre>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );
