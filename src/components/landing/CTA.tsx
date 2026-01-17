@@ -34,7 +34,7 @@ export function CTA() {
                   variant="secondary" 
                   className="gap-2 h-12 px-8 text-base bg-white text-primary hover:bg-white/90"
                 >
-                  Start Your Free Trial
+                  Get Started Now
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
