@@ -57,14 +57,14 @@ export default function LeadCRM() {
 
   return (
     <ClientLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold">Lead CRM</h2>
-            <p className="text-muted-foreground">Manage and track all captured leads</p>
+            <h2 className="text-xl md:text-2xl font-bold">Lead CRM</h2>
+            <p className="text-sm text-muted-foreground">Manage and track all captured leads</p>
           </div>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
+          <Badge variant="secondary" className="text-sm md:text-lg px-3 md:px-4 py-1.5 md:py-2 w-fit">
             {mockLeads.length} Total Leads
           </Badge>
         </div>
@@ -75,9 +75,9 @@ export default function LeadCRM() {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="border-border/50">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-3 md:gap-4">
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by name or phone..."
@@ -86,11 +86,12 @@ export default function LeadCRM() {
                     className="pl-10"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant={statusFilter === null ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setStatusFilter(null)}
+                    className="text-xs md:text-sm"
                   >
                     All
                   </Button>
@@ -98,6 +99,7 @@ export default function LeadCRM() {
                     variant={statusFilter === 'new' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setStatusFilter('new')}
+                    className="text-xs md:text-sm"
                   >
                     New
                   </Button>
@@ -105,6 +107,7 @@ export default function LeadCRM() {
                     variant={statusFilter === 'interested' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setStatusFilter('interested')}
+                    className="text-xs md:text-sm"
                   >
                     Interested
                   </Button>
@@ -112,6 +115,7 @@ export default function LeadCRM() {
                     variant={statusFilter === 'paid' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setStatusFilter('paid')}
+                    className="text-xs md:text-sm"
                   >
                     Paid
                   </Button>
@@ -121,11 +125,67 @@ export default function LeadCRM() {
           </Card>
         </motion.div>
 
-        {/* Leads Table */}
+        {/* Leads - Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {filteredLeads.map((lead, index) => (
+            <motion.div
+              key={lead.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+            >
+              <Card className="border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold">{lead.name}</h3>
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+                        <Phone className="h-3 w-3" />
+                        {lead.phone}
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className={statusStyles[lead.status]}>
+                      {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className={`${platformIcons[lead.platform].color} text-xs`}>
+                        {platformIcons[lead.platform].icon} {lead.platform}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(lead.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 text-xs"
+                      onClick={() => setSelectedLead(lead)}
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                      Chat
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+          
+          {filteredLeads.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground">
+              <Filter className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No leads found matching your criteria</p>
+            </div>
+          )}
+        </div>
+
+        {/* Leads Table - Desktop */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="hidden md:block"
         >
           <Card className="border-border/50">
             <CardContent className="p-0">
@@ -200,7 +260,7 @@ export default function LeadCRM() {
 
         {/* Chat Dialog */}
         <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[95vw] sm:max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <span>{platformIcons[selectedLead?.platform || 'whatsapp'].icon}</span>
@@ -210,7 +270,7 @@ export default function LeadCRM() {
                 Conversation history from {selectedLead?.platform}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto p-4 bg-secondary/30 rounded-lg">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto p-3 md:p-4 bg-secondary/30 rounded-lg">
               {selectedLead?.messages.map((message, index) => (
                 <motion.div
                   key={index}
@@ -220,7 +280,7 @@ export default function LeadCRM() {
                   className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    className={`max-w-[85%] rounded-lg px-3 md:px-4 py-2 ${
                       message.sender === 'bot'
                         ? 'bg-secondary text-foreground'
                         : 'gradient-primary text-primary-foreground'
