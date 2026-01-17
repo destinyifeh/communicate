@@ -62,10 +62,12 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="gap-2 h-12 text-base">
-              <Play className="h-4 w-4" />
-              Watch Demo
-            </Button>
+            <Link to="/demo">
+              <Button size="lg" variant="outline" className="gap-2 h-12 text-base">
+                <Play className="h-4 w-4" />
+                Watch Demo
+              </Button>
+            </Link>
           </motion.div>
 
           {/* Stats */}
