@@ -12,7 +12,7 @@ const plans = [
     price: '₦49,000',
     period: '/month',
     description: 'Perfect for beginners getting started with social media automation.',
-    channels: '1 channel (Instagram or Facebook)',
+    channels: '1 channel (Instagram or Facebook or WhatsApp or TikTok)',
     automations: '1–3 automations',
     features: [
       'Comment → DM automation',
@@ -23,6 +23,7 @@ const plans = [
     ],
     cta: 'Get Started',
     popular: false,
+    channelCount: 1,
   },
   {
     name: 'Professional',
@@ -30,7 +31,7 @@ const plans = [
     price: '₦99,000',
     period: '/month',
     description: 'For growing businesses that need more power and flexibility.',
-    channels: '2 channels (IG + FB or WhatsApp)',
+    channels: '2 channels (WhatsApp + IG or FB or TikTok)',
     automations: '5–10 automations',
     features: [
       'Everything in Starter',
@@ -42,13 +43,14 @@ const plans = [
     ],
     cta: 'Get Started',
     popular: true,
+    channelCount: 2,
   },
   {
     name: 'Enterprise',
     icon: Building2,
     price: '₦199,000',
     period: '/month',
-    description: 'For large organizations with custom requirements.',
+    description: 'For established businesses ready to scale across all platforms.',
     channels: '4 channels (IG + FB + WhatsApp + TikTok)',
     automations: 'Unlimited automations',
     features: [
@@ -60,8 +62,9 @@ const plans = [
       'Priority support',
       'Dedicated account manager',
     ],
-    cta: 'Contact Sales',
+    cta: 'Get Started',
     popular: false,
+    channelCount: 4,
   },
 ];
 
@@ -190,7 +193,7 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
-                  <Link to={plan.cta === 'Contact Sales' ? '/demo' : '/signup'} className="w-full">
+                  <Link to={`/signup?plan=${plan.name.toLowerCase()}`} className="w-full">
                     <Button 
                       className={`w-full h-12 text-base font-semibold ${plan.popular ? 'gradient-primary text-primary-foreground hover:opacity-90 shadow-lg' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
