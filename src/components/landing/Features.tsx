@@ -1,45 +1,63 @@
 import { motion } from 'framer-motion';
 import { 
-  Workflow, 
+  MessageSquareText, 
   Bot, 
   BarChart3, 
-  Shield, 
-  Zap, 
   Users,
-  ArrowRight
+  Zap,
+  Send,
+  Target,
+  Clock
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const features = [
   {
-    icon: Workflow,
-    title: 'Custom Workflows',
-    description: 'Build powerful automations tailored to your unique business processes and needs.',
+    icon: MessageSquareText,
+    title: 'Comment → DM Automation',
+    description: 'Automatically send a DM when someone comments on your posts. Convert engagement into conversations instantly.',
+    gradient: 'from-purple-500 to-pink-500',
+  },
+  {
+    icon: Target,
+    title: 'Lead Capture',
+    description: 'Collect leads from every interaction. Store contact info, track conversations, and never lose a potential customer.',
+    gradient: 'from-blue-500 to-cyan-500',
+  },
+  {
+    icon: Send,
+    title: 'Broadcast Messages',
+    description: 'Send promotional messages to your entire audience at once. Perfect for launches, sales, and announcements.',
+    gradient: 'from-green-500 to-emerald-500',
   },
   {
     icon: Bot,
-    title: 'AI Integration',
-    description: 'Leverage GPT-4 and other AI models to make your automations intelligent.',
+    title: 'AI-Powered Replies',
+    description: 'Let AI handle common questions and qualify leads 24/7. Smart responses that sound just like you.',
+    gradient: 'from-orange-500 to-amber-500',
   },
   {
     icon: BarChart3,
-    title: 'Real-time Analytics',
-    description: 'Track performance metrics and ROI with comprehensive dashboards.',
-  },
-  {
-    icon: Shield,
-    title: 'Enterprise Security',
-    description: 'Bank-level encryption and compliance with SOC 2, GDPR, and more.',
-  },
-  {
-    icon: Zap,
-    title: 'Lightning Fast',
-    description: 'Sub-second execution times with our optimized automation engine.',
+    title: 'Advanced Analytics',
+    description: 'Track leads, responses, conversions, and flow performance. Downloadable reports for deeper insights.',
+    gradient: 'from-indigo-500 to-violet-500',
   },
   {
     icon: Users,
-    title: 'Team Collaboration',
-    description: 'Work together seamlessly with role-based access and shared workflows.',
+    title: 'Multi-Channel Support',
+    description: 'Manage Instagram, Facebook, WhatsApp, and TikTok from one dashboard. Unified inbox for all platforms.',
+    gradient: 'from-rose-500 to-red-500',
+  },
+  {
+    icon: Zap,
+    title: 'Template Library',
+    description: 'Pre-built message templates for common scenarios. Customize and deploy in seconds.',
+    gradient: 'from-teal-500 to-cyan-500',
+  },
+  {
+    icon: Clock,
+    title: 'Instant Responses',
+    description: 'Reply to inquiries within seconds, not hours. Never miss a sales opportunity again.',
+    gradient: 'from-fuchsia-500 to-pink-500',
   },
 ];
 
@@ -48,7 +66,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
@@ -64,8 +82,11 @@ const itemVariants = {
 
 export function Features() {
   return (
-    <section id="features" className="py-24 bg-secondary/30">
-      <div className="container mx-auto px-4">
+    <section id="features" className="py-24 bg-secondary/30 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
+      
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -73,11 +94,17 @@ export function Features() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Everything you need to automate
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            Features
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Everything you need to
+            <br />
+            <span className="text-gradient">automate & grow</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A complete platform for building, deploying, and monitoring business automations at scale.
+            From comment automation to AI-powered replies, we've got all the tools to transform 
+            your social media into a lead-generating machine.
           </p>
         </motion.div>
 
@@ -86,26 +113,23 @@ export function Features() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {features.map((feature, index) => (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="h-full border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-medium transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-lg gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <CardTitle className="flex items-center justify-between">
-                    {feature.title}
-                    <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+            <motion.div 
+              key={index} 
+              variants={itemVariants}
+              className="group"
+            >
+              <div className="h-full p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <feature.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
             </motion.div>
           ))}
         </motion.div>

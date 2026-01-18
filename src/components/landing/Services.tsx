@@ -3,78 +3,70 @@ import {
   MessageSquare, 
   Instagram, 
   Facebook,
-  Video,
-  Webhook,
-  Database,
   ArrowRight,
-  CheckCircle
+  CheckCircle2
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
-const services = [
-  {
-    icon: MessageSquare,
-    title: 'WhatsApp Automation',
-    description: 'Automate customer conversations, lead capture, and order management on WhatsApp Business.',
-    features: ['Auto-replies & FAQs', 'Lead qualification bots', 'Order notifications', 'Broadcast messaging'],
-  },
+const channels = [
   {
     icon: Instagram,
-    title: 'Instagram DM Automation',
-    description: 'Convert DM inquiries into sales with intelligent conversation flows and auto-responses.',
-    features: ['Story mention replies', 'Comment-to-DM flows', 'Product catalogs', 'Appointment booking'],
+    name: 'Instagram',
+    color: 'from-purple-500 via-pink-500 to-orange-400',
+    features: [
+      'Comment → DM automation',
+      'Story mention replies',
+      'Reel engagement capture',
+      'Bio link funnels',
+      'Auto-response to keywords'
+    ],
   },
   {
     icon: Facebook,
-    title: 'Facebook Messenger Bots',
-    description: 'Build powerful Messenger experiences that guide customers through your sales funnel.',
-    features: ['Lead generation', 'Customer support', 'E-commerce integration', 'Retargeting sequences'],
+    name: 'Facebook',
+    color: 'from-blue-600 to-blue-400',
+    features: [
+      'Messenger automation',
+      'Page comment replies',
+      'Lead form integration',
+      'Customer support bots',
+      'Retargeting sequences'
+    ],
   },
   {
-    icon: Video,
-    title: 'TikTok Integration',
-    description: 'Capture leads from TikTok comments and bio links with automated follow-ups.',
-    features: ['Comment automation', 'Bio link funnels', 'Lead magnets', 'Creator campaigns'],
+    icon: MessageSquare,
+    name: 'WhatsApp',
+    color: 'from-green-500 to-green-400',
+    features: [
+      'Business API integration',
+      'Broadcast messaging',
+      'Order notifications',
+      'Catalog sharing',
+      '24/7 auto-replies'
+    ],
   },
   {
-    icon: Webhook,
-    title: 'Custom API Integrations',
-    description: 'Connect your existing tools and platforms with custom webhook integrations.',
-    features: ['CRM syncing', 'Payment gateways', 'Inventory systems', 'Custom workflows'],
-  },
-  {
-    icon: Database,
-    title: 'Lead Management CRM',
-    description: 'Centralized dashboard to track, manage, and convert all your leads in one place.',
-    features: ['Multi-platform leads', 'Sales pipeline', 'Team assignments', 'Analytics & reports'],
+    icon: MessageSquare,
+    name: 'TikTok',
+    color: 'from-gray-900 to-gray-700',
+    features: [
+      'Comment automation',
+      'Bio link tracking',
+      'Lead magnet delivery',
+      'Creator collaborations',
+      'Viral content capture'
+    ],
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 },
-  },
-};
-
 export function Services() {
   return (
-    <section id="services" className="py-24">
-      <div className="container mx-auto px-4">
+    <section id="services" className="py-24 relative overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/5 rounded-full blur-3xl" />
+      
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -83,64 +75,63 @@ export function Services() {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Our Services
+            Channels
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Automation solutions for every platform
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            One platform,
+            <br />
+            <span className="text-gradient">all your channels</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            We specialize in building intelligent automation systems that help you capture leads, 
-            convert customers, and scale your business across all major platforms.
+            Connect all your social media accounts and manage everything from a single, 
+            powerful dashboard. No more switching between apps.
           </p>
         </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {services.map((service, index) => (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="h-full border-border/50 bg-card hover:shadow-medium transition-all duration-300 hover:-translate-y-1 group">
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-lg gradient-accent flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <service.icon className="h-6 w-6 text-accent-foreground" />
-                  </div>
-                  <CardTitle className="flex items-center justify-between">
-                    {service.title}
-                    <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                  </CardTitle>
-                  <CardDescription className="text-base">
-                    {service.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {service.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-accent shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {channels.map((channel, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="group"
+            >
+              <div className="h-full p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${channel.color} flex items-center justify-center mb-6 text-white group-hover:scale-110 transition-transform duration-300`}>
+                  {channel.name === 'TikTok' ? (
+                    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                    </svg>
+                  ) : (
+                    <channel.icon className="h-8 w-8" />
+                  )}
+                </div>
+                <h3 className="text-xl font-bold mb-4">{channel.name}</h3>
+                <ul className="space-y-3">
+                  {channel.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mt-12"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center mt-16"
         >
           <Link to="/signup">
-            <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90 gap-2">
-              Get Started Now
+            <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90 gap-2 px-8 h-14 font-semibold shadow-lg">
+              Connect Your Accounts
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
