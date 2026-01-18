@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, Building2 } from 'lucide-react';
+import { Check, Zap, Crown, Building2, Instagram, Facebook, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,16 +9,17 @@ const plans = [
   {
     name: 'Starter',
     icon: Zap,
-    price: '₦75,000',
+    price: '₦49,000',
     period: '/month',
-    description: 'Perfect for small businesses just getting started with automation.',
+    description: 'Perfect for beginners getting started with social media automation.',
+    channels: '1 channel (Instagram or Facebook)',
+    automations: '1–3 automations',
     features: [
-      'Up to 500 leads/month',
-      '1 Platform integration',
-      'Basic chatbot flows',
+      'Comment → DM automation',
+      'Lead capture & storage',
+      'Dashboard view',
+      'Basic analytics (leads, responses, conversion)',
       'Email support',
-      'Lead CRM access',
-      'Basic analytics',
     ],
     cta: 'Get Started',
     popular: false,
@@ -26,18 +27,18 @@ const plans = [
   {
     name: 'Professional',
     icon: Crown,
-    price: '₦150,000',
+    price: '₦99,000',
     period: '/month',
     description: 'For growing businesses that need more power and flexibility.',
+    channels: '2 channels (IG + FB or WhatsApp)',
+    automations: '5–10 automations',
     features: [
-      'Up to 2,000 leads/month',
-      '3 Platform integrations',
-      'Advanced chatbot flows',
-      'Priority email & chat support',
-      'Full CRM features',
-      'Advanced analytics & reports',
-      'Custom webhook integrations',
-      'Team collaboration (3 users)',
+      'Everything in Starter',
+      'Broadcast messages',
+      'Message templates',
+      'Full analytics (leads, responses, redirect to WhatsApp, flow stats)',
+      'Advanced reporting',
+      'Priority support',
     ],
     cta: 'Get Started',
     popular: true,
@@ -45,20 +46,19 @@ const plans = [
   {
     name: 'Enterprise',
     icon: Building2,
-    price: 'Custom',
-    period: '',
+    price: '₦199,000',
+    period: '/month',
     description: 'For large organizations with custom requirements.',
+    channels: '4 channels (IG + FB + WhatsApp + TikTok)',
+    automations: 'Unlimited automations',
     features: [
-      'Unlimited leads',
-      'All platform integrations',
-      'Custom AI bot development',
+      'Everything in Professional',
+      'Multi-channel management',
+      'AI-powered replies',
+      'Custom reporting',
+      'Advanced analytics + downloadable reports',
+      'Priority support',
       'Dedicated account manager',
-      'White-label options',
-      'Custom analytics dashboards',
-      'API access',
-      'Unlimited team members',
-      'SLA guarantee',
-      'On-premise deployment option',
     ],
     cta: 'Contact Sales',
     popular: false,
@@ -86,8 +86,12 @@ const itemVariants = {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="py-24 bg-secondary/30">
-      <div className="container mx-auto px-4">
+    <section id="pricing" className="py-24 bg-secondary/30 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
+      
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -98,11 +102,14 @@ export function Pricing() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             Pricing
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Simple, transparent pricing
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Simple, transparent
+            <br />
+            <span className="text-gradient">pricing plans</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your business needs. All plans include our core automation platform.
+            Choose the plan that fits your business needs. All plans include our core automation platform 
+            with lead capture and analytics.
           </p>
         </motion.div>
 
@@ -111,13 +118,13 @@ export function Pricing() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
         >
           {plans.map((plan, index) => (
             <motion.div key={index} variants={itemVariants} className="relative">
               {plan.popular && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center z-10">
-                  <Badge className="gradient-primary text-primary-foreground px-4 py-1">
+                  <Badge className="gradient-primary text-primary-foreground px-4 py-1.5 text-sm font-semibold shadow-lg">
                     Most Popular
                   </Badge>
                 </div>
@@ -125,8 +132,8 @@ export function Pricing() {
               <Card 
                 className={`h-full flex flex-col transition-all duration-300 hover:-translate-y-2 ${
                   plan.popular 
-                    ? 'border-primary shadow-elegant ring-1 ring-primary/20' 
-                    : 'border-border/50 hover:shadow-medium'
+                    ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-105' 
+                    : 'border-border/50 hover:shadow-lg hover:border-primary/20'
                 }`}
               >
                 <CardHeader className="text-center pb-4">
@@ -135,16 +142,46 @@ export function Pricing() {
                   }`}>
                     <plan.icon className={`h-7 w-7 ${plan.popular ? 'text-primary-foreground' : 'text-foreground'}`} />
                   </div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <div className="mt-4">
                     <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-muted-foreground">{plan.period}</span>
                   </div>
-                  <CardDescription className="mt-3">
+                  <CardDescription className="mt-3 text-base">
                     {plan.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
+                  {/* Channels & Automations */}
+                  <div className="mb-6 space-y-3 p-4 rounded-xl bg-secondary/50">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="flex -space-x-1">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-card">
+                          <Instagram className="h-3 w-3 text-white" />
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center border-2 border-card">
+                          <Facebook className="h-3 w-3 text-white" />
+                        </div>
+                        {(plan.name === 'Professional' || plan.name === 'Enterprise') && (
+                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
+                            <MessageSquare className="h-3 w-3 text-white" />
+                          </div>
+                        )}
+                        {plan.name === 'Enterprise' && (
+                          <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center border-2 border-card">
+                            <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-muted-foreground">{plan.channels}</span>
+                    </div>
+                    <div className="text-sm font-medium text-foreground">
+                      {plan.automations}
+                    </div>
+                  </div>
+
                   <ul className="space-y-3 flex-1 mb-6">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm">
@@ -153,9 +190,9 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/signup" className="w-full">
+                  <Link to={plan.cta === 'Contact Sales' ? '/demo' : '/signup'} className="w-full">
                     <Button 
-                      className={`w-full ${plan.popular ? 'gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                      className={`w-full h-12 text-base font-semibold ${plan.popular ? 'gradient-primary text-primary-foreground hover:opacity-90 shadow-lg' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
                       size="lg"
                     >
@@ -168,6 +205,7 @@ export function Pricing() {
           ))}
         </motion.div>
 
+        {/* Comparison note */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -175,12 +213,12 @@ export function Pricing() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center mt-16"
         >
-          <p className="text-muted-foreground mb-4">
-            Need a custom solution? Have questions about our plans?
-          </p>
-          <Button variant="ghost" className="text-primary hover:text-primary/80">
-            Contact our sales team →
-          </Button>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-card border border-border/50">
+            <span className="text-muted-foreground">Need a custom solution?</span>
+            <Link to="/demo" className="text-primary font-medium hover:underline">
+              Contact our sales team →
+            </Link>
+          </div>
         </motion.div>
       </div>
     </section>
