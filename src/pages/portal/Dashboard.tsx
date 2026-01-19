@@ -17,27 +17,110 @@ import {
   Zap,
   Crown,
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  Plus,
+  Settings,
+  Play,
+  Pause,
+  CheckCircle2,
+  MoreVertical
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
-import { useState } from 'react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-// Mock current plan - in real app this would come from user context/API
-const currentPlan = {
+// Mock current plan and connected channels - in real app this would come from user context/API
+const currentPlan: {
+  name: string;
+  type: 'starter' | 'professional' | 'enterprise';
+  channels: number;
+  maxChannels: number;
+  automations: number;
+  maxAutomations: number;
+} = {
   name: 'Professional',
+  type: 'professional',
   channels: 2,
   maxChannels: 2,
   automations: 7,
   maxAutomations: 10,
-  connectedChannels: ['instagram', 'whatsapp'],
 };
+
+// Mock connected channels with detailed info
+const connectedChannels = [
+  { 
+    type: 'instagram', 
+    name: 'Instagram',
+    accountName: '@mybusiness',
+    connected: true,
+    leads: 847,
+    automationsActive: 4,
+    status: 'active',
+    icon: <Instagram className="h-4 w-4" />,
+    color: 'bg-gradient-to-br from-purple-500 to-pink-500',
+  },
+  { 
+    type: 'whatsapp', 
+    name: 'WhatsApp',
+    accountName: '+234 812 345 6789',
+    connected: true,
+    leads: 423,
+    automationsActive: 3,
+    status: 'active',
+    icon: <MessageSquare className="h-4 w-4" />,
+    color: 'bg-green-500',
+  },
+];
+
+// Mock automations
+const automations = [
+  {
+    id: '1',
+    name: 'Comment → DM Welcome',
+    channel: 'instagram',
+    status: 'active',
+    triggeredCount: 1247,
+    lastTriggered: '2 mins ago',
+  },
+  {
+    id: '2',
+    name: 'Lead Capture Flow',
+    channel: 'instagram',
+    status: 'active',
+    triggeredCount: 856,
+    lastTriggered: '5 mins ago',
+  },
+  {
+    id: '3',
+    name: 'WhatsApp Welcome',
+    channel: 'whatsapp',
+    status: 'active',
+    triggeredCount: 423,
+    lastTriggered: '12 mins ago',
+  },
+  {
+    id: '4',
+    name: 'Product Inquiry',
+    channel: 'whatsapp',
+    status: 'paused',
+    triggeredCount: 156,
+    lastTriggered: '2 hours ago',
+  },
+  {
+    id: '5',
+    name: 'Follow-up Sequence',
+    channel: 'instagram',
+    status: 'active',
+    triggeredCount: 312,
+    lastTriggered: '25 mins ago',
+  },
+];
 
 const stats = [
   { 
     label: 'Total Leads', 
-    value: '1,247', 
+    value: '1,270', 
     change: '+23%',
     icon: Users,
     color: 'text-primary',
@@ -60,8 +143,8 @@ const stats = [
     bgColor: 'bg-yellow-500/10',
   },
   { 
-    label: 'Bot Status', 
-    value: 'Active', 
+    label: 'Automations', 
+    value: '7 Active', 
     status: 'online',
     icon: Bot,
     color: 'text-green-600 dark:text-green-400',
@@ -71,31 +154,17 @@ const stats = [
 
 const chartData = generateChartData();
 
-const channelIcons: Record<string, { icon: React.ReactNode; color: string; name: string }> = {
-  instagram: { 
-    icon: <Instagram className="h-4 w-4" />, 
-    color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    name: 'Instagram'
-  },
-  facebook: { 
-    icon: <Facebook className="h-4 w-4" />, 
-    color: 'bg-blue-600',
-    name: 'Facebook'
-  },
-  whatsapp: { 
-    icon: <MessageSquare className="h-4 w-4" />, 
-    color: 'bg-green-500',
-    name: 'WhatsApp'
-  },
-  tiktok: { 
-    icon: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-      </svg>
-    ), 
-    color: 'bg-black dark:bg-white dark:text-black',
-    name: 'TikTok'
-  },
+const TikTokIcon = () => (
+  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+  </svg>
+);
+
+const channelIcons: Record<string, React.ReactNode> = {
+  instagram: <Instagram className="h-4 w-4" />,
+  facebook: <Facebook className="h-4 w-4" />,
+  whatsapp: <MessageSquare className="h-4 w-4" />,
+  tiktok: <TikTokIcon />,
 };
 
 const platformIcons: Record<string, string> = {
@@ -113,8 +182,9 @@ const activityIcons: Record<string, typeof UserPlus> = {
 };
 
 export default function ClientDashboard() {
-  const planIcon = currentPlan.name === 'Starter' ? Zap : currentPlan.name === 'Professional' ? Crown : Sparkles;
+  const planIcon = currentPlan.type === 'starter' ? Zap : currentPlan.type === 'professional' ? Crown : Sparkles;
   const PlanIcon = planIcon;
+  const totalLeads = connectedChannels.reduce((acc, ch) => acc + ch.leads, 0);
 
   return (
     <ClientLayout>
@@ -142,21 +212,17 @@ export default function ClientDashboard() {
                   </div>
                 </div>
                 
-                {/* Connected Channels */}
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    {currentPlan.connectedChannels.map((channel) => {
-                      const channelInfo = channelIcons[channel];
-                      return (
-                        <div
-                          key={channel}
-                          className={`h-9 w-9 rounded-full ${channelInfo.color} flex items-center justify-center text-white border-2 border-card`}
-                          title={channelInfo.name}
-                        >
-                          {channelInfo.icon}
-                        </div>
-                      );
-                    })}
+                    {connectedChannels.map((channel) => (
+                      <div
+                        key={channel.type}
+                        className={`h-9 w-9 rounded-full ${channel.color} flex items-center justify-center text-white border-2 border-card`}
+                        title={channel.name}
+                      >
+                        {channel.icon}
+                      </div>
+                    ))}
                     {currentPlan.channels < currentPlan.maxChannels && (
                       <div className="h-9 w-9 rounded-full bg-secondary border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                         <span className="text-xs text-muted-foreground">+{currentPlan.maxChannels - currentPlan.channels}</span>
@@ -169,7 +235,6 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {/* Usage Progress */}
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -224,6 +289,140 @@ export default function ClientDashboard() {
             </motion.div>
           ))}
         </div>
+
+        {/* Connected Channels Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Connected Channels</CardTitle>
+                <CardDescription>Leads and automation status per channel</CardDescription>
+              </div>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Channel
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {connectedChannels.map((channel) => (
+                  <div 
+                    key={channel.type}
+                    className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-11 w-11 rounded-lg ${channel.color} flex items-center justify-center text-white`}>
+                          {channel.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{channel.name}</div>
+                          <div className="text-sm text-muted-foreground">{channel.accountName}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                          Active
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem><Settings className="h-4 w-4 mr-2" /> Settings</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">Disconnect</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 rounded-lg bg-secondary/50">
+                        <div className="text-2xl font-bold">{channel.leads.toLocaleString()}</div>
+                        <div className="text-xs text-muted-foreground">Total Leads</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-secondary/50">
+                        <div className="text-2xl font-bold">{channel.automationsActive}</div>
+                        <div className="text-xs text-muted-foreground">Automations</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Active Automations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  Active Automations
+                </CardTitle>
+                <CardDescription>{currentPlan.automations} of {currentPlan.maxAutomations} automations running</CardDescription>
+              </div>
+              <Button size="sm" className="gap-2 gradient-primary text-primary-foreground">
+                <Plus className="h-4 w-4" />
+                Create Automation
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {automations.map((automation) => (
+                  <div 
+                    key={automation.id}
+                    className="p-4 rounded-lg border border-border hover:bg-secondary/30 transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                        automation.channel === 'instagram' 
+                          ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+                          : 'bg-green-500'
+                      } text-white`}>
+                        {channelIcons[automation.channel]}
+                      </div>
+                      <div>
+                        <div className="font-medium">{automation.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Triggered {automation.triggeredCount.toLocaleString()} times • {automation.lastTriggered}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {automation.status === 'active' ? (
+                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 gap-1">
+                          <Play className="h-3 w-3" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 gap-1">
+                          <Pause className="h-3 w-3" />
+                          Paused
+                        </Badge>
+                      )}
+                      <Button size="icon" variant="ghost" className="h-8 w-8">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Chart and Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
