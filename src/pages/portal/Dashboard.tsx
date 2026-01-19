@@ -29,6 +29,8 @@ import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AutomationManager } from '@/components/portal/AutomationManager';
+import { ChannelType } from '@/lib/onboardingTypes';
 
 // Mock current plan and connected channels - in real app this would come from user context/API
 const currentPlan: {
@@ -359,69 +361,16 @@ export default function ClientDashboard() {
           </Card>
         </motion.div>
 
-        {/* Active Automations */}
+        {/* Automation Manager */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5" />
-                  Active Automations
-                </CardTitle>
-                <CardDescription>{currentPlan.automations} of {currentPlan.maxAutomations} automations running</CardDescription>
-              </div>
-              <Button size="sm" className="gap-2 gradient-primary text-primary-foreground">
-                <Plus className="h-4 w-4" />
-                Create Automation
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {automations.map((automation) => (
-                  <div 
-                    key={automation.id}
-                    className="p-4 rounded-lg border border-border hover:bg-secondary/30 transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                        automation.channel === 'instagram' 
-                          ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
-                          : 'bg-green-500'
-                      } text-white`}>
-                        {channelIcons[automation.channel]}
-                      </div>
-                      <div>
-                        <div className="font-medium">{automation.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Triggered {automation.triggeredCount.toLocaleString()} times • {automation.lastTriggered}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {automation.status === 'active' ? (
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 gap-1">
-                          <Play className="h-3 w-3" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 gap-1">
-                          <Pause className="h-3 w-3" />
-                          Paused
-                        </Badge>
-                      )}
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <AutomationManager 
+            maxAutomations={currentPlan.maxAutomations} 
+            connectedChannels={connectedChannels.map(c => c.type as ChannelType)} 
+          />
         </motion.div>
 
         {/* Chart and Activity */}
