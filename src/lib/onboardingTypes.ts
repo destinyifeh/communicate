@@ -57,6 +57,67 @@ export interface BusinessDetails {
   country: string;
 }
 
+// Automation Goal Types
+export type AutomationGoalType = 'lead_capture' | 'auto_reply' | 'whatsapp_redirect' | 'faq_bot';
+
+export interface AutomationGoal {
+  id: AutomationGoalType;
+  name: string;
+  description: string;
+  icon: string;
+  followUpQuestion: string;
+  followUpPlaceholder: string;
+  followUpType: 'text' | 'textarea' | 'phone';
+}
+
+export const automationGoals: AutomationGoal[] = [
+  {
+    id: 'lead_capture',
+    name: 'Get leads from comments',
+    description: 'Automatically DM users who comment on your posts with a keyword',
+    icon: '📥',
+    followUpQuestion: 'What keyword should trigger the lead capture?',
+    followUpPlaceholder: 'e.g., "INFO", "PRICE", "BUY"',
+    followUpType: 'text',
+  },
+  {
+    id: 'auto_reply',
+    name: 'Reply to DMs automatically',
+    description: 'Send instant welcome messages to new DM conversations',
+    icon: '💬',
+    followUpQuestion: 'What welcome message should we send?',
+    followUpPlaceholder: 'e.g., "Hi! 👋 Thanks for reaching out. How can I help you today?"',
+    followUpType: 'textarea',
+  },
+  {
+    id: 'whatsapp_redirect',
+    name: 'Redirect customers to WhatsApp',
+    description: 'Send your WhatsApp link when customers want to chat',
+    icon: '📱',
+    followUpQuestion: 'What is your WhatsApp business number?',
+    followUpPlaceholder: '+234 xxx xxx xxxx',
+    followUpType: 'phone',
+  },
+  {
+    id: 'faq_bot',
+    name: 'Answer FAQs automatically',
+    description: 'Set up automatic responses to common questions',
+    icon: '🤖',
+    followUpQuestion: 'What are your top 3 frequently asked questions? (one per line)',
+    followUpPlaceholder: 'What are your prices?\nDo you deliver?\nWhat are your working hours?',
+    followUpType: 'textarea',
+  },
+];
+
+export interface ConfiguredAutomation {
+  goalId: AutomationGoalType;
+  goalName: string;
+  config: string;
+  channel: ChannelType;
+  status: 'active' | 'paused';
+  createdAt: string;
+}
+
 export interface OnboardingData {
   email: string;
   password: string;
@@ -65,6 +126,7 @@ export interface OnboardingData {
   selectedPlan: PlanType;
   paymentCompleted: boolean;
   channels: ChannelConnection[];
+  automations: ConfiguredAutomation[];
 }
 
 export const initialOnboardingData: OnboardingData = {
@@ -80,6 +142,7 @@ export const initialOnboardingData: OnboardingData = {
     { type: 'whatsapp', connected: false },
     { type: 'tiktok', connected: false },
   ],
+  automations: [],
 };
 
 // Mock ManyChat OAuth response

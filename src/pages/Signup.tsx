@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
   Instagram, Facebook, MessageSquare, Mail, CreditCard,
-  ArrowRight, CheckCircle2, Globe, Phone, Building, Sparkles
+  ArrowRight, CheckCircle2, Globe, Phone, Building, Sparkles,
+  Target, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -21,11 +23,14 @@ import {
   BusinessDetails,
   countries,
   mockManyChatOAuth,
-  mockTikTokOAuth 
+  mockTikTokOAuth,
+  automationGoals,
+  AutomationGoalType,
+  ConfiguredAutomation
 } from '@/lib/onboardingTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const stepTitles = {
   1: 'Create Account',
@@ -34,6 +39,7 @@ const stepTitles = {
   4: 'Select Plan',
   5: 'Payment',
   6: 'Connect Channels',
+  7: 'Setup Automations',
 };
 
 const TikTokIcon = () => (
@@ -87,6 +93,12 @@ export default function Signup() {
     { type: 'tiktok', connected: false },
   ]);
 
+  // Step 7: Automation Setup
+  const [selectedGoal, setSelectedGoal] = useState<AutomationGoalType | null>(null);
+  const [goalConfig, setGoalConfig] = useState('');
+  const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredAutomation[]>([]);
+  const [selectedChannelForAutomation, setSelectedChannelForAutomation] = useState<ChannelType | null>(null);
+
   const { signup } = useAuth();
   const navigate = useNavigate();
   const currentPlan = planDetails[selectedPlan];
@@ -100,6 +112,8 @@ export default function Signup() {
 
   const connectedChannelsCount = channels.filter(c => c.connected).length;
   const maxChannels = currentPlan.maxChannels;
+  const connectedChannelsList = channels.filter(c => c.connected);
+  const maxAutomations = currentPlan.maxAutomations === 'unlimited' ? 999 : currentPlan.maxAutomations;
 
   const handleNextStep = async () => {
     if (step === 1) {
@@ -112,7 +126,6 @@ export default function Signup() {
         return;
       }
       setIsLoading(true);
-      // Simulate sending verification email
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsLoading(false);
       toast.success('Verification code sent to your email');
@@ -134,13 +147,22 @@ export default function Signup() {
     } else if (step === 4) {
       setStep(5);
     } else if (step === 5) {
-      // Mock payment processing
       setIsLoading(true);
       await new Promise(resolve => setTimeout(resolve, 2000));
       setPaymentCompleted(true);
       setIsLoading(false);
       toast.success('Payment successful!');
       setStep(6);
+    } else if (step === 6) {
+      if (connectedChannelsCount === 0) {
+        toast.error('Please connect at least one channel');
+        return;
+      }
+      // Set default channel for automation
+      if (connectedChannelsList.length > 0) {
+        setSelectedChannelForAutomation(connectedChannelsList[0].type);
+      }
+      setStep(7);
     }
   };
 
@@ -153,7 +175,6 @@ export default function Signup() {
     setConnectingChannel(channelType);
     
     try {
-      // Simulate OAuth redirect and callback
       const response = channelType === 'tiktok' 
         ? await mockTikTokOAuth() 
         : await mockManyChatOAuth(channelType);
@@ -180,15 +201,48 @@ export default function Signup() {
     }
   };
 
+  const handleAddAutomation = () => {
+    if (!selectedGoal || !goalConfig || !selectedChannelForAutomation) {
+      toast.error('Please select a goal, channel, and provide configuration');
+      return;
+    }
+
+    if (configuredAutomations.length >= maxAutomations) {
+      toast.error(`You've reached the maximum automations for your ${currentPlan.name} plan`);
+      return;
+    }
+
+    const goal = automationGoals.find(g => g.id === selectedGoal);
+    if (!goal) return;
+
+    const newAutomation: ConfiguredAutomation = {
+      goalId: selectedGoal,
+      goalName: goal.name,
+      config: goalConfig,
+      channel: selectedChannelForAutomation,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    setConfiguredAutomations(prev => [...prev, newAutomation]);
+    setSelectedGoal(null);
+    setGoalConfig('');
+    toast.success('Automation configured successfully!');
+  };
+
   const handleCompleteOnboarding = async () => {
-    if (connectedChannelsCount === 0) {
-      toast.error('Please connect at least one channel');
+    if (configuredAutomations.length === 0) {
+      toast.error('Please set up at least one automation');
       return;
     }
     
     setIsLoading(true);
     try {
       await signup(email, password, businessDetails.name, 'client');
+      // In a real app, save automations to backend here
+      localStorage.setItem('configured_automations', JSON.stringify(configuredAutomations));
+      localStorage.setItem('connected_channels', JSON.stringify(channels.filter(c => c.connected)));
+      localStorage.setItem('selected_plan', selectedPlan);
       toast.success('Welcome to AutomateFlow!');
       navigate('/portal');
     } catch (error) {
@@ -205,6 +259,8 @@ export default function Signup() {
       case 'enterprise': return Building2;
     }
   };
+
+  const currentGoal = automationGoals.find(g => g.id === selectedGoal);
 
   return (
     <div className="min-h-screen flex">
@@ -246,6 +302,7 @@ export default function Signup() {
               {step === 4 && 'Choose the plan that fits your needs.'}
               {step === 5 && 'Complete your subscription to unlock features.'}
               {step === 6 && 'Connect your social channels to start automating.'}
+              {step === 7 && 'Set up your first automation to start capturing leads.'}
             </motion.p>
           </div>
 
@@ -276,7 +333,6 @@ export default function Signup() {
             <span className="text-lg font-semibold">AutomateFlow</span>
           </Link>
           <div className="flex items-center gap-4 ml-auto">
-            {/* Step indicators */}
             <div className="flex items-center gap-1.5">
               {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
                 <div
@@ -621,7 +677,6 @@ export default function Signup() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Order Summary */}
                     <div className="p-4 rounded-xl bg-secondary/50 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -655,7 +710,6 @@ export default function Signup() {
                       </div>
                     </div>
 
-                    {/* Mock Payment Form */}
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Card Number</Label>
@@ -725,13 +779,11 @@ export default function Signup() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Progress */}
                     <div className="p-3 rounded-lg bg-secondary/50 flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Channels connected</span>
                       <span className="font-semibold">{connectedChannelsCount} / {maxChannels}</span>
                     </div>
 
-                    {/* Channel List */}
                     <div className="space-y-3">
                       {channels.map((channel) => {
                         const info = channelInfo[channel.type];
@@ -794,36 +846,218 @@ export default function Signup() {
                       Channels are connected via ManyChat/TikTok OAuth for secure access
                     </p>
 
-                    <Button 
-                      onClick={handleCompleteOnboarding}
-                      disabled={isLoading || connectedChannelsCount === 0}
-                      className="w-full h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Setting up...
-                        </>
-                      ) : (
-                        <>
-                          Complete Setup <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => setStep(5)}
+                        className="flex-1 h-11"
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        onClick={handleNextStep}
+                        disabled={connectedChannelsCount === 0}
+                        className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
+                      >
+                        Continue to Automations <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Step 7: Setup Automations */}
+            {step === 7 && (
+              <motion.div 
+                key="step7"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full max-w-2xl"
+              >
+                <Card className="border-border/50 shadow-large">
+                  <CardHeader className="space-y-1 text-center">
+                    <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2">
+                      <Target className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">Setup Your Automations</CardTitle>
+                    <CardDescription>
+                      What do you want to automate first? Configure up to {maxAutomations === 999 ? 'unlimited' : maxAutomations} automations.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Configured Automations */}
+                    {configuredAutomations.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-sm text-muted-foreground">Configured Automations ({configuredAutomations.length})</h3>
+                        </div>
+                        <div className="space-y-2">
+                          {configuredAutomations.map((automation, index) => (
+                            <div 
+                              key={index}
+                              className="p-3 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="text-lg">
+                                  {automationGoals.find(g => g.id === automation.goalId)?.icon}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm">{automation.goalName}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {channelInfo[automation.channel].name} • {automation.config.substring(0, 30)}...
+                                  </div>
+                                </div>
+                              </div>
+                              <CheckCircle2 className="h-5 w-5 text-accent" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add New Automation */}
+                    {configuredAutomations.length < maxAutomations && (
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Automation
+                        </h3>
+
+                        {/* Channel Selection */}
+                        <div className="space-y-2">
+                          <Label>Select Channel</Label>
+                          <div className="flex gap-2 flex-wrap">
+                            {connectedChannelsList.map((channel) => {
+                              const info = channelInfo[channel.type];
+                              return (
+                                <button
+                                  key={channel.type}
+                                  type="button"
+                                  onClick={() => setSelectedChannelForAutomation(channel.type)}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                                    selectedChannelForAutomation === channel.type
+                                      ? 'border-primary bg-primary/5'
+                                      : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  <div className={`h-6 w-6 rounded bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
+                                    {info.icon}
+                                  </div>
+                                  <span className="text-sm font-medium">{info.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Automation Goals */}
+                        <div className="space-y-2">
+                          <Label>What do you want to automate?</Label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {automationGoals.map((goal) => (
+                              <button
+                                key={goal.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedGoal(goal.id);
+                                  setGoalConfig('');
+                                }}
+                                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                                  selectedGoal === goal.id
+                                    ? 'border-primary bg-primary/5 shadow-md'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span className="text-2xl">{goal.icon}</span>
+                                  <div>
+                                    <div className="font-medium text-sm">{goal.name}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">{goal.description}</div>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Follow-up Question */}
+                        {selectedGoal && currentGoal && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="space-y-3"
+                          >
+                            <Label>{currentGoal.followUpQuestion}</Label>
+                            {currentGoal.followUpType === 'textarea' ? (
+                              <Textarea
+                                placeholder={currentGoal.followUpPlaceholder}
+                                value={goalConfig}
+                                onChange={(e) => setGoalConfig(e.target.value)}
+                                rows={3}
+                                className="resize-none"
+                              />
+                            ) : (
+                              <Input
+                                type={currentGoal.followUpType === 'phone' ? 'tel' : 'text'}
+                                placeholder={currentGoal.followUpPlaceholder}
+                                value={goalConfig}
+                                onChange={(e) => setGoalConfig(e.target.value)}
+                                className="h-11"
+                              />
+                            )}
+                            <Button
+                              onClick={handleAddAutomation}
+                              disabled={!goalConfig || !selectedChannelForAutomation}
+                              className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add This Automation
+                            </Button>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Complete Setup */}
+                    <div className="pt-4 border-t border-border space-y-3">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          onClick={() => setStep(6)}
+                          className="flex-1 h-11"
+                        >
+                          Back
+                        </Button>
+                        <Button 
+                          onClick={handleCompleteOnboarding}
+                          disabled={isLoading || configuredAutomations.length === 0}
+                          className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Finishing Setup...
+                            </>
+                          ) : (
+                            <>
+                              Complete Setup <CheckCircle2 className="ml-2 h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {configuredAutomations.length === 0 && (
+                        <p className="text-xs text-center text-muted-foreground">
+                          Add at least one automation to complete setup
+                        </p>
                       )}
-                    </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        <div className="p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            By continuing, you agree to our{' '}
-            <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-          </p>
         </div>
       </div>
     </div>
