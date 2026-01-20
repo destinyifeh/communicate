@@ -60,6 +60,13 @@ export interface BusinessDetails {
 // Automation Goal Types
 export type AutomationGoalType = 'lead_capture' | 'auto_reply' | 'whatsapp_redirect' | 'faq_bot';
 
+// FAQ Item for the FAQ bot automation
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
 export interface AutomationGoal {
   id: AutomationGoalType;
   name: string;
@@ -67,7 +74,7 @@ export interface AutomationGoal {
   icon: string;
   followUpQuestion: string;
   followUpPlaceholder: string;
-  followUpType: 'text' | 'textarea' | 'phone';
+  followUpType: 'text' | 'textarea' | 'phone' | 'faq';
 }
 
 export const automationGoals: AutomationGoal[] = [
@@ -103,9 +110,9 @@ export const automationGoals: AutomationGoal[] = [
     name: 'Answer FAQs automatically',
     description: 'Set up automatic responses to common questions',
     icon: '🤖',
-    followUpQuestion: 'What are your top 3 frequently asked questions? (one per line)',
-    followUpPlaceholder: 'What are your prices?\nDo you deliver?\nWhat are your working hours?',
-    followUpType: 'textarea',
+    followUpQuestion: 'Set up your FAQ responses',
+    followUpPlaceholder: '',
+    followUpType: 'faq',
   },
 ];
 
@@ -113,6 +120,7 @@ export interface ConfiguredAutomation {
   goalId: AutomationGoalType;
   goalName: string;
   config: string;
+  faqItems?: FAQItem[];
   channel: ChannelType;
   status: 'active' | 'paused';
   createdAt: string;
@@ -186,3 +194,6 @@ export const mockTikTokOAuth = async (): Promise<ManyChatOAuthResponse> => {
     accountName: `@demo_tiktok_account`,
   };
 };
+
+// Helper to generate unique ID
+export const generateId = () => Math.random().toString(36).substring(2, 9);
