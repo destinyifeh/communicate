@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ClientLayout } from '@/components/layouts/ClientLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,139 +24,35 @@ import {
   Settings,
   Play,
   Pause,
-  CheckCircle2,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AutomationManager } from '@/components/portal/AutomationManager';
-import { ChannelType } from '@/lib/onboardingTypes';
-
-// Mock current plan and connected channels - in real app this would come from user context/API
-const currentPlan: {
-  name: string;
-  type: 'starter' | 'professional' | 'enterprise';
-  channels: number;
-  maxChannels: number;
-  automations: number;
-  maxAutomations: number;
-} = {
-  name: 'Professional',
-  type: 'professional',
-  channels: 2,
-  maxChannels: 2,
-  automations: 7,
-  maxAutomations: 10,
-};
-
-// Mock connected channels with detailed info
-const connectedChannels = [
-  { 
-    type: 'instagram', 
-    name: 'Instagram',
-    accountName: '@mybusiness',
-    connected: true,
-    leads: 847,
-    automationsActive: 4,
-    status: 'active',
-    icon: <Instagram className="h-4 w-4" />,
-    color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-  },
-  { 
-    type: 'whatsapp', 
-    name: 'WhatsApp',
-    accountName: '+234 812 345 6789',
-    connected: true,
-    leads: 423,
-    automationsActive: 3,
-    status: 'active',
-    icon: <MessageSquare className="h-4 w-4" />,
-    color: 'bg-green-500',
-  },
-];
-
-// Mock automations
-const automations = [
-  {
-    id: '1',
-    name: 'Comment → DM Welcome',
-    channel: 'instagram',
-    status: 'active',
-    triggeredCount: 1247,
-    lastTriggered: '2 mins ago',
-  },
-  {
-    id: '2',
-    name: 'Lead Capture Flow',
-    channel: 'instagram',
-    status: 'active',
-    triggeredCount: 856,
-    lastTriggered: '5 mins ago',
-  },
-  {
-    id: '3',
-    name: 'WhatsApp Welcome',
-    channel: 'whatsapp',
-    status: 'active',
-    triggeredCount: 423,
-    lastTriggered: '12 mins ago',
-  },
-  {
-    id: '4',
-    name: 'Product Inquiry',
-    channel: 'whatsapp',
-    status: 'paused',
-    triggeredCount: 156,
-    lastTriggered: '2 hours ago',
-  },
-  {
-    id: '5',
-    name: 'Follow-up Sequence',
-    channel: 'instagram',
-    status: 'active',
-    triggeredCount: 312,
-    lastTriggered: '25 mins ago',
-  },
-];
-
-const stats = [
-  { 
-    label: 'Total Leads', 
-    value: '1,270', 
-    change: '+23%',
-    icon: Users,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
-  },
-  { 
-    label: 'Confirmed Sales', 
-    value: '₦2.4M', 
-    change: '+18%',
-    icon: DollarSign,
-    color: 'text-accent',
-    bgColor: 'bg-accent/10',
-  },
-  { 
-    label: 'Conversion Rate', 
-    value: '12.4%', 
-    change: '+2.1%',
-    icon: TrendingUp,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bgColor: 'bg-yellow-500/10',
-  },
-  { 
-    label: 'Automations', 
-    value: '7 Active', 
-    status: 'online',
-    icon: Bot,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-500/10',
-  },
-];
-
-const chartData = generateChartData();
+import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
+import { ChannelSettingsDialog } from '@/components/portal/ChannelSettingsDialog';
+import { ChannelType, PlanType, planDetails, ChannelConnection, mockManyChatOAuth, mockTikTokOAuth } from '@/lib/onboardingTypes';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -167,6 +65,13 @@ const channelIcons: Record<string, React.ReactNode> = {
   facebook: <Facebook className="h-4 w-4" />,
   whatsapp: <MessageSquare className="h-4 w-4" />,
   tiktok: <TikTokIcon />,
+};
+
+const channelColors: Record<string, string> = {
+  instagram: 'bg-gradient-to-br from-purple-500 to-pink-500',
+  facebook: 'bg-blue-600',
+  whatsapp: 'bg-green-500',
+  tiktok: 'bg-foreground',
 };
 
 const platformIcons: Record<string, string> = {
@@ -183,10 +88,185 @@ const activityIcons: Record<string, typeof UserPlus> = {
   bot: Bot,
 };
 
+const chartData = generateChartData();
+
 export default function ClientDashboard() {
-  const planIcon = currentPlan.type === 'starter' ? Zap : currentPlan.type === 'professional' ? Crown : Sparkles;
-  const PlanIcon = planIcon;
+  const navigate = useNavigate();
+  
+  // Load data from localStorage (simulating API)
+  const [currentPlan, setCurrentPlan] = useState<PlanType>('starter');
+  const [connectedChannels, setConnectedChannels] = useState<Array<{
+    type: ChannelType;
+    name: string;
+    accountName: string;
+    connected: boolean;
+    leads: number;
+    automationsActive: number;
+    status: string;
+  }>>([]);
+  
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<typeof connectedChannels[0] | null>(null);
+  const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
+  const [disconnectAlertOpen, setDisconnectAlertOpen] = useState(false);
+  const [channelToDisconnect, setChannelToDisconnect] = useState<ChannelType | null>(null);
+  const [connectingChannel, setConnectingChannel] = useState<ChannelType | null>(null);
+
+  useEffect(() => {
+    // Load plan from localStorage
+    const savedPlan = localStorage.getItem('selected_plan') as PlanType;
+    if (savedPlan) {
+      setCurrentPlan(savedPlan);
+    }
+
+    // Load connected channels
+    const savedChannels = localStorage.getItem('connected_channels');
+    if (savedChannels) {
+      const channels = JSON.parse(savedChannels);
+      // Enrich with mock data
+      const enrichedChannels = channels.map((ch: ChannelConnection) => ({
+        type: ch.type,
+        name: ch.type.charAt(0).toUpperCase() + ch.type.slice(1),
+        accountName: ch.accountName || `@${ch.type}_account`,
+        connected: true,
+        leads: Math.floor(Math.random() * 500) + 100,
+        automationsActive: Math.floor(Math.random() * 5) + 1,
+        status: 'active',
+      }));
+      setConnectedChannels(enrichedChannels);
+    }
+  }, []);
+
+  const plan = planDetails[currentPlan];
+  const maxChannels = plan.maxChannels;
+  const maxAutomations = plan.maxAutomations === 'unlimited' ? 999 : plan.maxAutomations;
+  const automationsCount = connectedChannels.reduce((acc, ch) => acc + ch.automationsActive, 0);
   const totalLeads = connectedChannels.reduce((acc, ch) => acc + ch.leads, 0);
+
+  const planIcon = currentPlan === 'starter' ? Zap : currentPlan === 'professional' ? Crown : Sparkles;
+  const PlanIcon = planIcon;
+
+  // Available channels that can be added
+  const availableChannels: ChannelType[] = (['instagram', 'facebook', 'whatsapp', 'tiktok'] as ChannelType[])
+    .filter(ch => !connectedChannels.some(c => c.type === ch));
+
+  const handlePlanChange = (newPlan: PlanType) => {
+    setCurrentPlan(newPlan);
+    // Check if connected channels exceed new plan limit
+    const newMax = planDetails[newPlan].maxChannels;
+    if (connectedChannels.length > newMax) {
+      toast.warning(`Note: You have more channels than allowed in ${planDetails[newPlan].name}. Some features may be limited.`);
+    }
+  };
+
+  const handleConnectChannel = async (channelType: ChannelType) => {
+    if (connectedChannels.length >= maxChannels) {
+      toast.error('Channel limit reached. Upgrade to add more channels.');
+      setAddChannelDialogOpen(false);
+      setUpgradeDialogOpen(true);
+      return;
+    }
+
+    setConnectingChannel(channelType);
+
+    try {
+      const response = channelType === 'tiktok'
+        ? await mockTikTokOAuth()
+        : await mockManyChatOAuth(channelType);
+
+      if (response.success) {
+        const newChannel = {
+          type: channelType,
+          name: channelType.charAt(0).toUpperCase() + channelType.slice(1),
+          accountName: response.accountName,
+          connected: true,
+          leads: 0,
+          automationsActive: 0,
+          status: 'active',
+        };
+
+        const updatedChannels = [...connectedChannels, newChannel];
+        setConnectedChannels(updatedChannels);
+        
+        // Save to localStorage
+        const savedChannels = updatedChannels.map(ch => ({
+          type: ch.type,
+          connected: true,
+          accountName: ch.accountName,
+        }));
+        localStorage.setItem('connected_channels', JSON.stringify(savedChannels));
+
+        toast.success(`${newChannel.name} connected successfully!`);
+        setAddChannelDialogOpen(false);
+      }
+    } catch (error) {
+      toast.error(`Failed to connect ${channelType}`);
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
+  const handleDisconnectChannel = (channelType: ChannelType) => {
+    const updatedChannels = connectedChannels.filter(ch => ch.type !== channelType);
+    setConnectedChannels(updatedChannels);
+    
+    // Update localStorage
+    const savedChannels = updatedChannels.map(ch => ({
+      type: ch.type,
+      connected: true,
+      accountName: ch.accountName,
+    }));
+    localStorage.setItem('connected_channels', JSON.stringify(savedChannels));
+    
+    toast.success(`Channel disconnected successfully`);
+    setDisconnectAlertOpen(false);
+    setChannelToDisconnect(null);
+  };
+
+  const handleAddChannelClick = () => {
+    if (connectedChannels.length >= maxChannels) {
+      toast.error(`You've reached your channel limit (${maxChannels}). Please upgrade to add more.`);
+      setUpgradeDialogOpen(true);
+    } else {
+      setAddChannelDialogOpen(true);
+    }
+  };
+
+  const stats = [
+    { 
+      label: 'Total Leads', 
+      value: totalLeads.toLocaleString(), 
+      change: '+23%',
+      icon: Users,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    { 
+      label: 'Confirmed Sales', 
+      value: '₦2.4M', 
+      change: '+18%',
+      icon: DollarSign,
+      color: 'text-accent',
+      bgColor: 'bg-accent/10',
+    },
+    { 
+      label: 'Conversion Rate', 
+      value: '12.4%', 
+      change: '+2.1%',
+      icon: TrendingUp,
+      color: 'text-yellow-600 dark:text-yellow-400',
+      bgColor: 'bg-yellow-500/10',
+    },
+    { 
+      label: 'Automations', 
+      value: `${automationsCount} Active`, 
+      status: 'online',
+      icon: Bot,
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-500/10',
+    },
+  ];
 
   return (
     <ClientLayout>
@@ -205,11 +285,11 @@ export default function ClientDashboard() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{currentPlan.name} Plan</h3>
+                      <h3 className="font-semibold text-lg">{plan.name} Plan</h3>
                       <Badge variant="secondary" className="bg-primary/10 text-primary">Active</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {currentPlan.channels} of {currentPlan.maxChannels} channels • {currentPlan.automations} of {currentPlan.maxAutomations} automations
+                      {connectedChannels.length} of {maxChannels} channels • {automationsCount} of {maxAutomations === 999 ? '∞' : maxAutomations} automations
                     </p>
                   </div>
                 </div>
@@ -219,19 +299,24 @@ export default function ClientDashboard() {
                     {connectedChannels.map((channel) => (
                       <div
                         key={channel.type}
-                        className={`h-9 w-9 rounded-full ${channel.color} flex items-center justify-center text-white border-2 border-card`}
+                        className={`h-9 w-9 rounded-full ${channelColors[channel.type]} flex items-center justify-center text-primary-foreground border-2 border-card`}
                         title={channel.name}
                       >
-                        {channel.icon}
+                        {channelIcons[channel.type]}
                       </div>
                     ))}
-                    {currentPlan.channels < currentPlan.maxChannels && (
+                    {connectedChannels.length < maxChannels && (
                       <div className="h-9 w-9 rounded-full bg-secondary border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">+{currentPlan.maxChannels - currentPlan.channels}</span>
+                        <span className="text-xs text-muted-foreground">+{maxChannels - connectedChannels.length}</span>
                       </div>
                     )}
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="gap-1"
+                    onClick={() => setUpgradeDialogOpen(true)}
+                  >
                     Upgrade <ArrowUpRight className="h-3 w-3" />
                   </Button>
                 </div>
@@ -241,16 +326,16 @@ export default function ClientDashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Channels Used</span>
-                    <span className="font-medium">{currentPlan.channels}/{currentPlan.maxChannels}</span>
+                    <span className="font-medium">{connectedChannels.length}/{maxChannels}</span>
                   </div>
-                  <Progress value={(currentPlan.channels / currentPlan.maxChannels) * 100} className="h-2" />
+                  <Progress value={(connectedChannels.length / maxChannels) * 100} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Automations Active</span>
-                    <span className="font-medium">{currentPlan.automations}/{currentPlan.maxAutomations}</span>
+                    <span className="font-medium">{automationsCount}/{maxAutomations === 999 ? '∞' : maxAutomations}</span>
                   </div>
-                  <Progress value={(currentPlan.automations / currentPlan.maxAutomations) * 100} className="h-2" />
+                  <Progress value={maxAutomations === 999 ? 10 : (automationsCount / maxAutomations) * 100} className="h-2" />
                 </div>
               </div>
             </CardContent>
@@ -304,59 +389,91 @@ export default function ClientDashboard() {
                 <CardTitle>Connected Channels</CardTitle>
                 <CardDescription>Leads and automation status per channel</CardDescription>
               </div>
-              <Button size="sm" variant="outline" className="gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-2"
+                onClick={handleAddChannelClick}
+              >
                 <Plus className="h-4 w-4" />
                 Add Channel
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {connectedChannels.map((channel) => (
-                  <div 
-                    key={channel.type}
-                    className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
+              {connectedChannels.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No channels connected yet.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 gap-2"
+                    onClick={handleAddChannelClick}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-11 w-11 rounded-lg ${channel.color} flex items-center justify-center text-white`}>
-                          {channel.icon}
+                    <Plus className="h-4 w-4" />
+                    Connect Your First Channel
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {connectedChannels.map((channel) => (
+                    <div 
+                      key={channel.type}
+                      className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-11 w-11 rounded-lg ${channelColors[channel.type]} flex items-center justify-center text-primary-foreground`}>
+                            {channelIcons[channel.type]}
+                          </div>
+                          <div>
+                            <div className="font-medium">{channel.name}</div>
+                            <div className="text-sm text-muted-foreground">{channel.accountName}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{channel.name}</div>
-                          <div className="text-sm text-muted-foreground">{channel.accountName}</div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                            Active
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedChannel(channel);
+                                setChannelSettingsOpen(true);
+                              }}>
+                                <Settings className="h-4 w-4 mr-2" /> Settings
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => {
+                                  setChannelToDisconnect(channel.type);
+                                  setDisconnectAlertOpen(true);
+                                }}
+                              >
+                                Disconnect
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                          Active
-                        </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem><Settings className="h-4 w-4 mr-2" /> Settings</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Disconnect</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 rounded-lg bg-secondary/50">
+                          <div className="text-2xl font-bold">{channel.leads.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Total Leads</div>
+                        </div>
+                        <div className="p-3 rounded-lg bg-secondary/50">
+                          <div className="text-2xl font-bold">{channel.automationsActive}</div>
+                          <div className="text-xs text-muted-foreground">Automations</div>
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-2xl font-bold">{channel.leads.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">Total Leads</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-2xl font-bold">{channel.automationsActive}</div>
-                        <div className="text-xs text-muted-foreground">Automations</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -368,8 +485,9 @@ export default function ClientDashboard() {
           transition={{ delay: 0.3 }}
         >
           <AutomationManager 
-            maxAutomations={currentPlan.maxAutomations} 
-            connectedChannels={connectedChannels.map(c => c.type as ChannelType)} 
+            maxAutomations={maxAutomations} 
+            connectedChannels={connectedChannels.map(c => c.type)} 
+            onUpgradeNeeded={() => setUpgradeDialogOpen(true)}
           />
         </motion.div>
 
@@ -504,27 +622,132 @@ export default function ClientDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 flex-col gap-2"
+                  onClick={() => {
+                    const automationSection = document.querySelector('[data-automation-manager]');
+                    if (automationSection) {
+                      automationSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
                   <Bot className="h-5 w-5 text-primary" />
                   <span className="text-sm">Create Automation</span>
                 </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 flex-col gap-2"
+                  onClick={handleAddChannelClick}
+                >
                   <MessageSquare className="h-5 w-5 text-green-500" />
                   <span className="text-sm">Connect Channel</span>
                 </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 flex-col gap-2"
+                  onClick={() => navigate('/portal/leads')}
+                >
                   <Users className="h-5 w-5 text-accent" />
                   <span className="text-sm">View Leads</span>
                 </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 flex-col gap-2"
+                  onClick={() => setUpgradeDialogOpen(true)}
+                >
                   <TrendingUp className="h-5 w-5 text-yellow-500" />
-                  <span className="text-sm">Analytics</span>
+                  <span className="text-sm">Upgrade Plan</span>
                 </Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
       </div>
+
+      {/* Upgrade Dialog */}
+      <UpgradeDialog
+        open={upgradeDialogOpen}
+        onOpenChange={setUpgradeDialogOpen}
+        currentPlan={currentPlan}
+        onPlanChange={handlePlanChange}
+        mode="both"
+      />
+
+      {/* Channel Settings Dialog */}
+      {selectedChannel && (
+        <ChannelSettingsDialog
+          open={channelSettingsOpen}
+          onOpenChange={setChannelSettingsOpen}
+          channel={selectedChannel}
+          onDisconnect={() => {
+            setChannelToDisconnect(selectedChannel.type);
+            setChannelSettingsOpen(false);
+            setDisconnectAlertOpen(true);
+          }}
+        />
+      )}
+
+      {/* Add Channel Dialog */}
+      <Dialog open={addChannelDialogOpen} onOpenChange={setAddChannelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect a Channel</DialogTitle>
+            <DialogDescription>
+              Choose a channel to connect ({connectedChannels.length}/{maxChannels} used)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {availableChannels.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No more channels available to connect.</p>
+              </div>
+            ) : (
+              availableChannels.map((channelType) => (
+                <button
+                  key={channelType}
+                  onClick={() => handleConnectChannel(channelType)}
+                  disabled={connectingChannel !== null}
+                  className="w-full p-4 rounded-xl border-2 border-border hover:border-primary/50 transition-all flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-10 w-10 rounded-lg ${channelColors[channelType]} flex items-center justify-center text-primary-foreground`}>
+                      {channelIcons[channelType]}
+                    </div>
+                    <span className="font-medium capitalize">{channelType}</span>
+                  </div>
+                  {connectingChannel === channelType ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Plus className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disconnect Alert */}
+      <AlertDialog open={disconnectAlertOpen} onOpenChange={setDisconnectAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Channel?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disconnect the channel and remove all associated automations. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => channelToDisconnect && handleDisconnectChannel(channelToDisconnect)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ClientLayout>
   );
 }

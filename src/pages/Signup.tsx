@@ -11,7 +11,7 @@ import {
   Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
   Instagram, Facebook, MessageSquare, Mail, CreditCard,
   ArrowRight, CheckCircle2, Globe, Phone, Building, Sparkles,
-  Target, Plus
+  Target, Plus, X, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -26,9 +26,12 @@ import {
   mockTikTokOAuth,
   automationGoals,
   AutomationGoalType,
-  ConfiguredAutomation
+  ConfiguredAutomation,
+  FAQItem,
+  generateId
 } from '@/lib/onboardingTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FAQEditor } from '@/components/portal/FAQEditor';
 
 const TOTAL_STEPS = 7;
 
@@ -98,6 +101,7 @@ export default function Signup() {
   const [goalConfig, setGoalConfig] = useState('');
   const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredAutomation[]>([]);
   const [selectedChannelForAutomation, setSelectedChannelForAutomation] = useState<ChannelType | null>(null);
+  const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
 
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -201,14 +205,61 @@ export default function Signup() {
     }
   };
 
+  const handleDisconnectChannel = (channelType: ChannelType) => {
+    setChannels(prev => prev.map(ch => 
+      ch.type === channelType 
+        ? { type: ch.type, connected: false } 
+        : ch
+    ));
+    // Remove automations for this channel
+    setConfiguredAutomations(prev => prev.filter(a => a.channel !== channelType));
+    toast.success(`${channelInfo[channelType].name} disconnected`);
+  };
+
+  const isAutomationDuplicate = (goalId: AutomationGoalType, channel: ChannelType): boolean => {
+    return configuredAutomations.some(a => a.goalId === goalId && a.channel === channel);
+  };
+
+  const handleSelectGoal = (goalId: AutomationGoalType) => {
+    if (selectedChannelForAutomation && isAutomationDuplicate(goalId, selectedChannelForAutomation)) {
+      const goal = automationGoals.find(g => g.id === goalId);
+      toast.error(`"${goal?.name}" is already added for this channel`);
+      return;
+    }
+    setSelectedGoal(goalId);
+    setGoalConfig('');
+    setFaqItems([]);
+  };
+
+  const handleRemoveAutomation = (index: number) => {
+    setConfiguredAutomations(prev => prev.filter((_, i) => i !== index));
+    toast.success('Automation removed');
+  };
+
   const handleAddAutomation = () => {
-    if (!selectedGoal || !goalConfig || !selectedChannelForAutomation) {
-      toast.error('Please select a goal, channel, and provide configuration');
+    if (!selectedGoal || !selectedChannelForAutomation) {
+      toast.error('Please select a goal and channel');
+      return;
+    }
+
+    // Validate based on goal type
+    if (selectedGoal === 'faq_bot') {
+      if (faqItems.length === 0) {
+        toast.error('Please add at least one FAQ');
+        return;
+      }
+    } else if (!goalConfig) {
+      toast.error('Please provide configuration');
       return;
     }
 
     if (configuredAutomations.length >= maxAutomations) {
       toast.error(`You've reached the maximum automations for your ${currentPlan.name} plan`);
+      return;
+    }
+
+    if (isAutomationDuplicate(selectedGoal, selectedChannelForAutomation)) {
+      toast.error('This automation is already added for this channel');
       return;
     }
 
@@ -218,7 +269,8 @@ export default function Signup() {
     const newAutomation: ConfiguredAutomation = {
       goalId: selectedGoal,
       goalName: goal.name,
-      config: goalConfig,
+      config: selectedGoal === 'faq_bot' ? `${faqItems.length} FAQ(s) configured` : goalConfig,
+      faqItems: selectedGoal === 'faq_bot' ? faqItems : undefined,
       channel: selectedChannelForAutomation,
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -227,6 +279,7 @@ export default function Signup() {
     setConfiguredAutomations(prev => [...prev, newAutomation]);
     setSelectedGoal(null);
     setGoalConfig('');
+    setFaqItems([]);
     toast.success('Automation configured successfully!');
   };
 
