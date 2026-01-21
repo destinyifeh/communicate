@@ -18,7 +18,7 @@ export interface Client {
   phone: string;
   apiKey: string;
   status: 'active' | 'suspended';
-  plan: string;
+  plan: 'Starter' | 'Professional' | 'Enterprise';
   leadLimit: number;
   leadsUsed: number;
   revenue: number;
@@ -30,6 +30,13 @@ export interface Client {
     tiktok: boolean;
   };
   notificationNumber: string;
+  automations: {
+    goalId: string;
+    goalName: string;
+    channel: string;
+    status: 'active' | 'paused';
+  }[];
+  planExpiryDate: string;
 }
 
 export interface Activity {
@@ -200,6 +207,11 @@ export const mockClients: Client[] = [
     joinedDate: '2024-06-15',
     platforms: { whatsapp: true, instagram: true, facebook: false, tiktok: false },
     notificationNumber: '+234 801 111 1111',
+    automations: [
+      { goalId: 'lead_capture', goalName: 'Get Leads from Comments', channel: 'instagram', status: 'active' },
+      { goalId: 'whatsapp_redirect', goalName: 'Redirect to WhatsApp', channel: 'instagram', status: 'active' },
+    ],
+    planExpiryDate: '2025-02-15',
   },
   {
     id: '2',
@@ -216,6 +228,13 @@ export const mockClients: Client[] = [
     joinedDate: '2024-03-20',
     platforms: { whatsapp: true, instagram: true, facebook: true, tiktok: true },
     notificationNumber: '+234 802 222 2222',
+    automations: [
+      { goalId: 'lead_capture', goalName: 'Get Leads from Comments', channel: 'instagram', status: 'active' },
+      { goalId: 'auto_reply', goalName: 'Reply to DMs', channel: 'facebook', status: 'active' },
+      { goalId: 'faq_bot', goalName: 'Answer FAQs', channel: 'whatsapp', status: 'active' },
+      { goalId: 'whatsapp_redirect', goalName: 'Redirect to WhatsApp', channel: 'tiktok', status: 'paused' },
+    ],
+    planExpiryDate: '2025-03-20',
   },
   {
     id: '3',
@@ -232,6 +251,10 @@ export const mockClients: Client[] = [
     joinedDate: '2024-09-01',
     platforms: { whatsapp: true, instagram: false, facebook: false, tiktok: false },
     notificationNumber: '+234 803 333 3333',
+    automations: [
+      { goalId: 'faq_bot', goalName: 'Answer FAQs', channel: 'whatsapp', status: 'active' },
+    ],
+    planExpiryDate: '2025-01-01',
   },
   {
     id: '4',
@@ -248,6 +271,10 @@ export const mockClients: Client[] = [
     joinedDate: '2024-07-10',
     platforms: { whatsapp: true, instagram: true, facebook: false, tiktok: false },
     notificationNumber: '+234 804 444 4444',
+    automations: [
+      { goalId: 'lead_capture', goalName: 'Get Leads from Comments', channel: 'instagram', status: 'paused' },
+    ],
+    planExpiryDate: '2025-02-10',
   },
   {
     id: '5',
@@ -264,6 +291,14 @@ export const mockClients: Client[] = [
     joinedDate: '2024-01-05',
     platforms: { whatsapp: true, instagram: true, facebook: true, tiktok: true },
     notificationNumber: '+234 805 555 5555',
+    automations: [
+      { goalId: 'lead_capture', goalName: 'Get Leads from Comments', channel: 'instagram', status: 'active' },
+      { goalId: 'lead_capture', goalName: 'Get Leads from Comments', channel: 'tiktok', status: 'active' },
+      { goalId: 'auto_reply', goalName: 'Reply to DMs', channel: 'instagram', status: 'active' },
+      { goalId: 'faq_bot', goalName: 'Answer FAQs', channel: 'whatsapp', status: 'active' },
+      { goalId: 'whatsapp_redirect', goalName: 'Redirect to WhatsApp', channel: 'facebook', status: 'active' },
+    ],
+    planExpiryDate: '2025-04-05',
   },
 ];
 

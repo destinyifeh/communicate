@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Textarea } from '@/components/ui/textarea';
@@ -1009,29 +1010,36 @@ export default function Signup() {
                         <div className="space-y-2">
                           <Label>What do you want to automate?</Label>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {automationGoals.map((goal) => (
-                              <button
-                                key={goal.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedGoal(goal.id);
-                                  setGoalConfig('');
-                                }}
-                                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                                  selectedGoal === goal.id
-                                    ? 'border-primary bg-primary/5 shadow-md'
-                                    : 'border-border hover:border-primary/50'
-                                }`}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <span className="text-2xl">{goal.icon}</span>
-                                  <div>
-                                    <div className="font-medium text-sm">{goal.name}</div>
-                                    <div className="text-xs text-muted-foreground mt-1">{goal.description}</div>
+                            {automationGoals.map((goal) => {
+                              const isDuplicate = selectedChannelForAutomation && isAutomationDuplicate(goal.id, selectedChannelForAutomation);
+                              return (
+                                <button
+                                  key={goal.id}
+                                  type="button"
+                                  onClick={() => handleSelectGoal(goal.id)}
+                                  className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                                    selectedGoal === goal.id
+                                      ? 'border-primary bg-primary/5 shadow-md'
+                                      : isDuplicate
+                                        ? 'border-accent/50 bg-accent/5'
+                                        : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  {isDuplicate && (
+                                    <Badge className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] px-1.5">
+                                      Added
+                                    </Badge>
+                                  )}
+                                  <div className="flex items-start gap-3">
+                                    <span className="text-2xl">{goal.icon}</span>
+                                    <div>
+                                      <div className="font-medium text-sm">{goal.name}</div>
+                                      <div className="text-xs text-muted-foreground mt-1">{goal.description}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </button>
-                            ))}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
 
@@ -1043,31 +1051,57 @@ export default function Signup() {
                             className="space-y-3"
                           >
                             <Label>{currentGoal.followUpQuestion}</Label>
-                            {currentGoal.followUpType === 'textarea' ? (
-                              <Textarea
-                                placeholder={currentGoal.followUpPlaceholder}
-                                value={goalConfig}
-                                onChange={(e) => setGoalConfig(e.target.value)}
-                                rows={3}
-                                className="resize-none"
-                              />
+                            
+                            {/* FAQ Editor for faq_bot goal */}
+                            {selectedGoal === 'faq_bot' ? (
+                              <div className="space-y-3">
+                                <FAQEditor faqs={faqItems} onFaqsChange={setFaqItems} />
+                                <Button
+                                  onClick={handleAddAutomation}
+                                  disabled={faqItems.length === 0 || !selectedChannelForAutomation}
+                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add FAQ Automation ({faqItems.length} Q&As)
+                                </Button>
+                              </div>
+                            ) : currentGoal.followUpType === 'textarea' ? (
+                              <>
+                                <Textarea
+                                  placeholder={currentGoal.followUpPlaceholder}
+                                  value={goalConfig}
+                                  onChange={(e) => setGoalConfig(e.target.value)}
+                                  rows={3}
+                                  className="resize-none"
+                                />
+                                <Button
+                                  onClick={handleAddAutomation}
+                                  disabled={!goalConfig || !selectedChannelForAutomation}
+                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add This Automation
+                                </Button>
+                              </>
                             ) : (
-                              <Input
-                                type={currentGoal.followUpType === 'phone' ? 'tel' : 'text'}
-                                placeholder={currentGoal.followUpPlaceholder}
-                                value={goalConfig}
-                                onChange={(e) => setGoalConfig(e.target.value)}
-                                className="h-11"
-                              />
+                              <>
+                                <Input
+                                  type={currentGoal.followUpType === 'phone' ? 'tel' : 'text'}
+                                  placeholder={currentGoal.followUpPlaceholder}
+                                  value={goalConfig}
+                                  onChange={(e) => setGoalConfig(e.target.value)}
+                                  className="h-11"
+                                />
+                                <Button
+                                  onClick={handleAddAutomation}
+                                  disabled={!goalConfig || !selectedChannelForAutomation}
+                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add This Automation
+                                </Button>
+                              </>
                             )}
-                            <Button
-                              onClick={handleAddAutomation}
-                              disabled={!goalConfig || !selectedChannelForAutomation}
-                              className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add This Automation
-                            </Button>
                           </motion.div>
                         )}
                       </div>
