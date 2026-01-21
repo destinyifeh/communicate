@@ -117,6 +117,8 @@ export default function ClientManagement() {
           tiktok: false,
         },
         notificationNumber: newClient.phone || '+234 000 000 0000',
+        automations: [],
+        planExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       };
       setClients(prev => [client, ...prev]);
       toast.success('Client added successfully');

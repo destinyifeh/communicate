@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClientLayout } from '@/components/layouts/ClientLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,17 @@ import {
   Key,
   MessageSquare,
   RefreshCw,
-  Shield
+  Shield,
+  Crown,
+  Zap,
+  Building2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { PlanType, planDetails } from '@/lib/onboardingTypes';
+import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
 
 const platforms = [
   { id: 'whatsapp', name: 'WhatsApp', icon: '💬', description: 'WhatsApp Business API integration' },
@@ -34,6 +41,16 @@ export default function AutomationSettings() {
     facebook: false,
     tiktok: false,
   });
+  const [currentPlan, setCurrentPlan] = useState<PlanType>('professional');
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [upgradeMode, setUpgradeMode] = useState<'upgrade' | 'downgrade' | 'both'>('both');
+
+  useEffect(() => {
+    const savedPlan = localStorage.getItem('selected_plan') as PlanType;
+    if (savedPlan) {
+      setCurrentPlan(savedPlan);
+    }
+  }, []);
 
   const copyApiKey = () => {
     navigator.clipboard.writeText(apiKey);
@@ -54,19 +71,118 @@ export default function AutomationSettings() {
     toast.success('Notification number updated successfully');
   };
 
+  const getPlanIcon = (plan: PlanType) => {
+    switch (plan) {
+      case 'starter': return Zap;
+      case 'professional': return Crown;
+      case 'enterprise': return Building2;
+    }
+  };
+
+  const PlanIcon = getPlanIcon(currentPlan);
+  const planInfo = planDetails[currentPlan];
+
+  const handleOpenUpgrade = () => {
+    setUpgradeMode('upgrade');
+    setUpgradeDialogOpen(true);
+  };
+
+  const handleOpenDowngrade = () => {
+    setUpgradeMode('downgrade');
+    setUpgradeDialogOpen(true);
+  };
+
   return (
     <ClientLayout>
       <div className="space-y-6 max-w-4xl">
         {/* Page Header */}
         <div>
           <h2 className="text-2xl font-bold">Automation Settings</h2>
-          <p className="text-muted-foreground">Manage your API keys and platform integrations</p>
+          <p className="text-muted-foreground">Manage your API keys, platform integrations, and subscription</p>
         </div>
+
+        {/* Plan Management Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
+                  <PlanIcon className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <CardTitle>Subscription Plan</CardTitle>
+                  <CardDescription>Manage your current subscription and billing</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-lg gradient-primary flex items-center justify-center">
+                    <PlanIcon className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-lg">{planInfo.name}</div>
+                    <div className="text-sm text-muted-foreground">{planInfo.description}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-xl">{planInfo.price}</div>
+                  <div className="text-xs text-muted-foreground">/month</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                  <span className="text-muted-foreground">Channels:</span>{' '}
+                  <span className="font-semibold">{planInfo.maxChannels}</span>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                  <span className="text-muted-foreground">Automations:</span>{' '}
+                  <span className="font-semibold">{planInfo.maxAutomations === 'unlimited' ? 'Unlimited' : planInfo.maxAutomations}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                {currentPlan !== 'enterprise' && (
+                  <Button 
+                    onClick={handleOpenUpgrade}
+                    className="gradient-primary text-primary-foreground gap-2"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    Upgrade Plan
+                  </Button>
+                )}
+                {currentPlan !== 'starter' && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleOpenDowngrade}
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                    Downgrade Plan
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border text-sm">
+                <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-muted-foreground">
+                  Plan expires on <strong>February 15, 2025</strong>. You can upgrade anytime or schedule a downgrade for your next billing cycle.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* API Key Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
         >
           <Card className="border-border/50">
             <CardHeader>
@@ -91,7 +207,7 @@ export default function AutomationSettings() {
                   />
                   <Badge 
                     variant="secondary" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500/10 text-green-600 dark:text-green-400"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-accent/10 text-accent"
                   >
                     Live
                   </Badge>
@@ -102,12 +218,12 @@ export default function AutomationSettings() {
                   onClick={copyApiKey}
                   className="shrink-0"
                 >
-                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <Shield className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <Shield className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-sm text-destructive">
                   Keep your API key secure. Never share it publicly or commit it to version control.
                 </p>
               </div>
@@ -123,7 +239,7 @@ export default function AutomationSettings() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
         >
           <Card className="border-border/50">
             <CardHeader>
@@ -160,7 +276,7 @@ export default function AutomationSettings() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <Card className="border-border/50">
             <CardHeader>
@@ -198,6 +314,15 @@ export default function AutomationSettings() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Upgrade/Downgrade Dialog */}
+      <UpgradeDialog
+        open={upgradeDialogOpen}
+        onOpenChange={setUpgradeDialogOpen}
+        currentPlan={currentPlan}
+        onPlanChange={setCurrentPlan}
+        mode={upgradeMode}
+      />
     </ClientLayout>
   );
 }

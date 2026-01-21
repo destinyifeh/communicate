@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Zap, Crown, Building2, Loader2, ArrowDown, ArrowUp } from 'lucide-react';
+import { Check, Zap, Crown, Building2, Loader2, ArrowDown, ArrowUp, AlertCircle, CreditCard, Calendar } from 'lucide-react';
 import { PlanType, planDetails } from '@/lib/onboardingTypes';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -19,6 +19,7 @@ interface UpgradeDialogProps {
   currentPlan: PlanType;
   onPlanChange: (newPlan: PlanType) => void;
   mode?: 'upgrade' | 'downgrade' | 'both';
+  planExpiryDate?: string;
 }
 
 const planOrder: PlanType[] = ['starter', 'professional', 'enterprise'];
@@ -28,10 +29,13 @@ export function UpgradeDialog({
   onOpenChange, 
   currentPlan, 
   onPlanChange,
-  mode = 'both'
+  mode = 'both',
+  planExpiryDate = '2025-02-15'
 }: UpgradeDialogProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
+  const [showDowngradeInfo, setShowDowngradeInfo] = useState(false);
 
   const getPlanIcon = (plan: PlanType) => {
     switch (plan) {
@@ -56,20 +60,47 @@ export function UpgradeDialog({
     return planOrder.indexOf(plan) > currentPlanIndex;
   };
 
+  const handlePlanSelect = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    if (isUpgrade(plan)) {
+      setShowPaymentConfirm(true);
+      setShowDowngradeInfo(false);
+    } else {
+      setShowDowngradeInfo(true);
+      setShowPaymentConfirm(false);
+    }
+  };
+
   const handleChangePlan = async () => {
     if (!selectedPlan) return;
     
+    const upgrading = isUpgrade(selectedPlan);
+    
+    if (!upgrading) {
+      // Downgrade - just schedule for expiry
+      toast.success(`Plan downgrade to ${planDetails[selectedPlan].name} scheduled`, {
+        description: `Your plan will change on ${new Date(planExpiryDate).toLocaleDateString()}`
+      });
+      setSelectedPlan(null);
+      setShowDowngradeInfo(false);
+      onOpenChange(false);
+      return;
+    }
+    
+    // Upgrade - process payment
     setIsProcessing(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     onPlanChange(selectedPlan);
     localStorage.setItem('selected_plan', selectedPlan);
     
-    const action = isUpgrade(selectedPlan) ? 'upgraded' : 'downgraded';
-    toast.success(`Successfully ${action} to ${planDetails[selectedPlan].name} plan!`);
+    toast.success(`Successfully upgraded to ${planDetails[selectedPlan].name} plan!`, {
+      description: 'Your new features are now active'
+    });
     
     setIsProcessing(false);
     setSelectedPlan(null);
+    setShowPaymentConfirm(false);
     onOpenChange(false);
   };
 
@@ -77,7 +108,7 @@ export function UpgradeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'upgrade' ? 'Upgrade Your Plan' : mode === 'downgrade' ? 'Downgrade Your Plan' : 'Change Your Plan'}
@@ -107,12 +138,67 @@ export function UpgradeDialog({
                 })()}
                 <div>
                   <div className="font-semibold">{planDetails[currentPlan].name}</div>
-                  <div className="text-sm text-muted-foreground">Current plan</div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    Current plan 
+                    <span className="text-xs">• Expires {new Date(planExpiryDate).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary">Active</Badge>
             </div>
           </div>
+
+          {/* Payment Confirmation for Upgrade */}
+          {showPaymentConfirm && selectedPlan && isUpgrade(selectedPlan) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-lg bg-primary/5 border-2 border-primary"
+            >
+              <div className="flex items-start gap-3">
+                <CreditCard className="h-5 w-5 text-primary mt-0.5" />
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-primary">Payment Required</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Upgrading to <strong>{planDetails[selectedPlan].name}</strong> requires payment of{' '}
+                    <strong>{planDetails[selectedPlan].price}/month</strong>. Your new features will be activated immediately after payment.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Check className="h-3 w-3 text-accent" />
+                    <span>Instant activation</span>
+                    <Check className="h-3 w-3 text-accent ml-2" />
+                    <span>Pro-rated billing</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Downgrade Info */}
+          {showDowngradeInfo && selectedPlan && !isUpgrade(selectedPlan) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-lg bg-yellow-500/10 border-2 border-yellow-500/30"
+            >
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-yellow-600 dark:text-yellow-400">Downgrade Scheduled</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Downgrading to <strong>{planDetails[selectedPlan].name}</strong> will take effect when your current plan expires on{' '}
+                    <strong>{new Date(planExpiryDate).toLocaleDateString()}</strong>. You'll continue to have access to all current features until then.
+                  </p>
+                  <div className="flex items-center gap-2 p-2 rounded bg-yellow-500/10 text-xs">
+                    <AlertCircle className="h-3 w-3 text-yellow-600" />
+                    <span className="text-yellow-600 dark:text-yellow-400">
+                      You may lose access to some channels and automations with a lower plan
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Available Plans */}
           <div className="space-y-3">
@@ -125,7 +211,7 @@ export function UpgradeDialog({
                 <motion.button
                   key={key}
                   type="button"
-                  onClick={() => setSelectedPlan(key)}
+                  onClick={() => handlePlanSelect(key)}
                   whileTap={{ scale: 0.98 }}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                     isSelected
@@ -207,7 +293,12 @@ export function UpgradeDialog({
         </div>
 
         <div className="flex gap-3 pt-4 border-t border-border">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+          <Button variant="outline" onClick={() => {
+            setSelectedPlan(null);
+            setShowPaymentConfirm(false);
+            setShowDowngradeInfo(false);
+            onOpenChange(false);
+          }} className="flex-1">
             Cancel
           </Button>
           <Button 
@@ -218,10 +309,17 @@ export function UpgradeDialog({
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
+                Processing Payment...
               </>
             ) : selectedPlan ? (
-              `${isUpgrade(selectedPlan) ? 'Upgrade' : 'Downgrade'} to ${planDetails[selectedPlan].name}`
+              isUpgrade(selectedPlan) ? (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Pay & Upgrade to {planDetails[selectedPlan].name}
+                </>
+              ) : (
+                <>Schedule Downgrade to {planDetails[selectedPlan].name}</>
+              )
             ) : (
               'Select a Plan'
             )}
