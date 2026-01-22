@@ -25,7 +25,9 @@ import {
   Play,
   Pause,
   MoreVertical,
-  Loader2
+  Loader2,
+  Calendar,
+  CreditCard
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
@@ -95,6 +97,7 @@ export default function ClientDashboard() {
   
   // Load data from localStorage (simulating API)
   const [currentPlan, setCurrentPlan] = useState<PlanType>('starter');
+  const [planExpiryDate, setPlanExpiryDate] = useState('2025-02-15');
   const [connectedChannels, setConnectedChannels] = useState<Array<{
     type: ChannelType;
     name: string;
@@ -112,6 +115,10 @@ export default function ClientDashboard() {
   const [disconnectAlertOpen, setDisconnectAlertOpen] = useState(false);
   const [channelToDisconnect, setChannelToDisconnect] = useState<ChannelType | null>(null);
   const [connectingChannel, setConnectingChannel] = useState<ChannelType | null>(null);
+
+  // Check if plan is expired
+  const isExpired = new Date(planExpiryDate) < new Date();
+  const daysUntilExpiry = Math.ceil((new Date(planExpiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
   useEffect(() => {
     // Load plan from localStorage
@@ -284,12 +291,22 @@ export default function ClientDashboard() {
                     <PlanIcon className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-lg">{plan.name} Plan</h3>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">Active</Badge>
+                      <Badge variant="secondary" className={isExpired ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}>
+                        {isExpired ? 'Expired' : 'Active'}
+                      </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {connectedChannels.length} of {maxChannels} channels • {automationsCount} of {maxAutomations === 999 ? '∞' : maxAutomations} automations
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {isExpired ? (
+                        <span className="text-destructive">Plan expired on {new Date(planExpiryDate).toLocaleDateString()}</span>
+                      ) : (
+                        <span>Expires on {new Date(planExpiryDate).toLocaleDateString()} ({daysUntilExpiry} days left)</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -311,14 +328,24 @@ export default function ClientDashboard() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="gap-1"
-                    onClick={() => setUpgradeDialogOpen(true)}
-                  >
-                    Upgrade <ArrowUpRight className="h-3 w-3" />
-                  </Button>
+                  {isExpired ? (
+                    <Button 
+                      size="sm" 
+                      className="gap-1 gradient-primary text-primary-foreground"
+                      onClick={() => setUpgradeDialogOpen(true)}
+                    >
+                      <CreditCard className="h-3 w-3" /> Renew Plan
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="gap-1"
+                      onClick={() => setUpgradeDialogOpen(true)}
+                    >
+                      Upgrade <ArrowUpRight className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
 

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   Zap,
   LayoutDashboard,
@@ -24,9 +24,9 @@ import {
   Bell,
   MessageSquare,
   Menu,
-  X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -164,7 +164,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </span>
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="hidden sm:flex">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden sm:flex"
+              onClick={() => toast.info('Messages coming soon!', { description: 'Direct messaging will be available in a future update.' })}
+            >
               <MessageSquare className="h-5 w-5" />
             </Button>
             <ThemeToggle />

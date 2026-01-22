@@ -23,8 +23,10 @@ import {
   Users,
   Sliders,
   Menu,
+  MessageSquare,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -166,6 +168,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden sm:flex"
+              onClick={() => toast.info('Messages coming soon!', { description: 'Direct messaging will be available in a future update.' })}
+            >
+              <MessageSquare className="h-5 w-5" />
+            </Button>
             <Link to="/portal/notifications">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
