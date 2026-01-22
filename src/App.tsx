@@ -19,6 +19,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import ClientManagement from "./pages/admin/ClientManagement";
 import WebhookLogs from "./pages/admin/WebhookLogs";
 import AdminNotifications from "./pages/admin/Notifications";
+import AdminSettings from "./pages/admin/Settings";
 
 // Client Portal Pages
 import ClientDashboard from "./pages/portal/Dashboard";
@@ -76,6 +77,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminNotifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminSettings />
                   </ProtectedRoute>
                 }
               />

@@ -1,19 +1,26 @@
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, Building2, Instagram, Facebook, MessageSquare } from 'lucide-react';
+import { Check, Zap, Crown, Building2, Instagram, Facebook, MessageSquare, Mail } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 
+const TikTokIcon = () => (
+  <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+  </svg>
+);
+
 const plans = [
   {
     name: 'Starter',
     icon: Zap,
-    price: '₦49,000',
+    price: '₦25,000',
     period: '/month',
-    description: 'Perfect for beginners getting started with social media automation.',
-    channels: '1 channel (Instagram or Facebook or WhatsApp or TikTok)',
+    description: 'Perfect for small businesses getting started with automation.',
+    channels: '2 channels (WhatsApp + 1 other: IG, FB, or TikTok)',
     automations: '1–3 automations',
+    contactLimit: '500 Contacts',
     features: [
       'Comment → DM automation',
       'Lead capture & storage',
@@ -23,43 +30,44 @@ const plans = [
     ],
     cta: 'Get Started',
     popular: false,
-    channelCount: 1,
+    channelCount: 2,
   },
   {
     name: 'Professional',
     icon: Crown,
-    price: '₦99,000',
+    price: '₦50,000',
     period: '/month',
     description: 'For growing businesses that need more power and flexibility.',
-    channels: '2 channels (WhatsApp + IG or FB or TikTok)',
+    channels: '3 channels (WhatsApp + 2 others)',
     automations: '5–10 automations',
+    contactLimit: '2,500 Contacts',
     features: [
       'Everything in Starter',
+      'Transactional emails (receipts)',
       'Broadcast messages',
       'Message templates',
-      'Full analytics (leads, responses, redirect to WhatsApp, flow stats)',
-      'Advanced reporting',
+      'Full analytics + flow stats',
       'Priority support',
     ],
     cta: 'Get Started',
     popular: true,
-    channelCount: 2,
+    channelCount: 3,
   },
   {
     name: 'Enterprise',
     icon: Building2,
-    price: '₦199,000',
+    price: '₦120,000',
     period: '/month',
     description: 'For established businesses ready to scale across all platforms.',
     channels: '4 channels (IG + FB + WhatsApp + TikTok)',
     automations: 'Unlimited automations',
+    contactLimit: '10,000+ Contacts',
     features: [
       'Everything in Professional',
       'Multi-channel management',
       'AI-powered replies',
       'Custom reporting',
       'Advanced analytics + downloadable reports',
-      'Priority support',
       'Dedicated account manager',
     ],
     cta: 'Get Started',
@@ -159,22 +167,20 @@ export function Pricing() {
                   <div className="mb-6 space-y-3 p-4 rounded-xl bg-secondary/50">
                     <div className="flex items-center gap-2 text-sm">
                       <div className="flex -space-x-1">
+                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
+                          <MessageSquare className="h-3 w-3 text-white" />
+                        </div>
                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-card">
                           <Instagram className="h-3 w-3 text-white" />
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center border-2 border-card">
-                          <Facebook className="h-3 w-3 text-white" />
-                        </div>
                         {(plan.name === 'Professional' || plan.name === 'Enterprise') && (
-                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
-                            <MessageSquare className="h-3 w-3 text-white" />
+                          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center border-2 border-card">
+                            <Facebook className="h-3 w-3 text-white" />
                           </div>
                         )}
                         {plan.name === 'Enterprise' && (
-                          <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center border-2 border-card">
-                            <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                            </svg>
+                          <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center border-2 border-card">
+                            <TikTokIcon />
                           </div>
                         )}
                       </div>
@@ -183,6 +189,16 @@ export function Pricing() {
                     <div className="text-sm font-medium text-foreground">
                       {plan.automations}
                     </div>
+                    <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                      <span className="h-2 w-2 rounded-full bg-primary" />
+                      {plan.contactLimit}
+                    </div>
+                    {plan.name === 'Professional' && (
+                      <div className="flex items-center gap-2 text-sm text-accent">
+                        <Mail className="h-4 w-4" />
+                        <span>Transactional Email Included</span>
+                      </div>
+                    )}
                   </div>
 
                   <ul className="space-y-3 flex-1 mb-6">

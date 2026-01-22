@@ -40,11 +40,14 @@ import {
   Users,
   Plus,
   CheckCircle,
-  XCircle
+  XCircle,
+  FileText
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { mockClients, Client } from '@/lib/mockData';
+import { ClientDetailsDialog } from '@/components/admin/ClientDetailsDialog';
+import { AddClientWizard } from '@/components/admin/AddClientWizard';
 
 export default function ClientManagement() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,8 +55,8 @@ export default function ClientManagement() {
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [leadLimitDialog, setLeadLimitDialog] = useState<Client | null>(null);
   const [newLeadLimit, setNewLeadLimit] = useState('');
-  const [addClientDialog, setAddClientDialog] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '' });
+  const [addClientWizardOpen, setAddClientWizardOpen] = useState(false);
+  const [viewDetailsClient, setViewDetailsClient] = useState<Client | null>(null);
 
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -95,36 +98,8 @@ export default function ClientManagement() {
     });
   };
 
-  const handleAddClient = () => {
-    if (newClient.name && newClient.email && newClient.company) {
-      const client: Client = {
-        id: `client_${Date.now()}`,
-        name: newClient.name,
-        email: newClient.email,
-        company: newClient.company,
-        phone: newClient.phone || '+234 000 000 0000',
-        plan: 'Starter',
-        status: 'active',
-        leadsUsed: 0,
-        leadLimit: 500,
-        revenue: 0,
-        apiKey: 'ak_live_' + Math.random().toString(36).substring(2, 30),
-        joinedDate: new Date().toISOString().split('T')[0],
-        platforms: {
-          whatsapp: true,
-          instagram: false,
-          facebook: false,
-          tiktok: false,
-        },
-        notificationNumber: newClient.phone || '+234 000 000 0000',
-        automations: [],
-        planExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      };
-      setClients(prev => [client, ...prev]);
-      toast.success('Client added successfully');
-      setAddClientDialog(false);
-      setNewClient({ name: '', email: '', company: '', phone: '' });
-    }
+  const handleClientAdded = (newClient: Client) => {
+    setClients(prev => [newClient, ...prev]);
   };
 
   return (
@@ -138,7 +113,7 @@ export default function ClientManagement() {
           </div>
           <Button 
             className="gradient-primary text-primary-foreground gap-2 w-fit"
-            onClick={() => setAddClientDialog(true)}
+            onClick={() => setAddClientWizardOpen(true)}
           >
             <Plus className="h-4 w-4" />
             Add Client
@@ -190,6 +165,10 @@ export default function ClientManagement() {
                       <DropdownMenuContent align="end" className="w-48 bg-popover">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setViewDetailsClient(client)}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditClient(client)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Client
@@ -212,7 +191,7 @@ export default function ClientManagement() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => handleSuspend(client.id)}
-                          className={client.status === 'active' ? 'text-destructive' : 'text-green-600'}
+                          className={client.status === 'active' ? 'text-destructive' : 'text-accent'}
                         >
                           <Ban className="h-4 w-4 mr-2" />
                           {client.status === 'active' ? 'Suspend Account' : 'Activate Account'}
@@ -248,8 +227,8 @@ export default function ClientManagement() {
                       <Badge 
                         variant="secondary" 
                         className={`text-xs ${client.status === 'active' 
-                          ? 'bg-green-500/10 text-green-600 dark:text-green-400' 
-                          : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                          ? 'bg-accent/10 text-accent' 
+                          : 'bg-destructive/10 text-destructive'
                         }`}
                       >
                         {client.status === 'active' ? (
@@ -327,8 +306,8 @@ export default function ClientManagement() {
                         <Badge 
                           variant="secondary" 
                           className={client.status === 'active' 
-                            ? 'bg-green-500/10 text-green-600 dark:text-green-400' 
-                            : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                            ? 'bg-accent/10 text-accent' 
+                            : 'bg-destructive/10 text-destructive'
                           }
                         >
                           {client.status === 'active' ? (
@@ -348,6 +327,10 @@ export default function ClientManagement() {
                           <DropdownMenuContent align="end" className="w-48 bg-popover">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setViewDetailsClient(client)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setEditClient(client)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Client
@@ -370,7 +353,7 @@ export default function ClientManagement() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => handleSuspend(client.id)}
-                              className={client.status === 'active' ? 'text-destructive' : 'text-green-600'}
+                              className={client.status === 'active' ? 'text-destructive' : 'text-accent'}
                             >
                               <Ban className="h-4 w-4 mr-2" />
                               {client.status === 'active' ? 'Suspend Account' : 'Activate Account'}
@@ -408,6 +391,7 @@ export default function ClientManagement() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('500')}>500</Button>
                 <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('1000')}>1,000</Button>
+                <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('2500')}>2,500</Button>
                 <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('5000')}>5,000</Button>
                 <Button variant="outline" size="sm" onClick={() => setNewLeadLimit('10000')}>10,000</Button>
               </div>
@@ -456,62 +440,19 @@ export default function ClientManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* Add Client Dialog */}
-        <Dialog open={addClientDialog} onOpenChange={setAddClientDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Client</DialogTitle>
-              <DialogDescription>
-                Create a new client account with basic information
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input 
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  placeholder="Full name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Company *</Label>
-                <Input 
-                  value={newClient.company}
-                  onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
-                  placeholder="Company name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input 
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input 
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                  placeholder="+234 000 000 0000"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddClientDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={handleAddClient} 
-                className="gradient-primary text-primary-foreground"
-                disabled={!newClient.name || !newClient.email || !newClient.company}
-              >
-                Add Client
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Add Client Wizard */}
+        <AddClientWizard
+          open={addClientWizardOpen}
+          onOpenChange={setAddClientWizardOpen}
+          onClientAdded={handleClientAdded}
+        />
+
+        {/* View Details Dialog */}
+        <ClientDetailsDialog
+          open={!!viewDetailsClient}
+          onOpenChange={() => setViewDetailsClient(null)}
+          client={viewDetailsClient}
+        />
       </div>
     </AdminLayout>
   );

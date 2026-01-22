@@ -7,6 +7,7 @@ export interface PlanDetails {
   price: string;
   maxChannels: number;
   maxAutomations: number | 'unlimited';
+  maxContacts: number;
   features: string[];
   description: string;
 }
@@ -14,25 +15,28 @@ export interface PlanDetails {
 export const planDetails: Record<PlanType, PlanDetails> = {
   starter: {
     name: 'Starter',
-    price: '₦49,000',
-    maxChannels: 1,
+    price: '₦25,000',
+    maxChannels: 2,
     maxAutomations: 3,
+    maxContacts: 500,
     features: ['Comment → DM automation', 'Lead capture', 'Basic analytics', 'Dashboard view'],
-    description: '1 channel (IG, FB, WhatsApp, or TikTok)',
+    description: '2 channels (WhatsApp + 1 other from IG, FB, or TikTok)',
   },
   professional: {
     name: 'Professional',
-    price: '₦99,000',
-    maxChannels: 2,
+    price: '₦50,000',
+    maxChannels: 3,
     maxAutomations: 10,
-    features: ['Broadcast messages', 'Message templates', 'Full analytics', 'Priority support'],
-    description: '2 channels (WhatsApp + IG, FB, or TikTok)',
+    maxContacts: 2500,
+    features: ['Transactional Email', 'Broadcast messages', 'Message templates', 'Full analytics', 'Priority support'],
+    description: '3 channels (WhatsApp + 2 others)',
   },
   enterprise: {
     name: 'Enterprise',
-    price: '₦199,000',
+    price: '₦120,000',
     maxChannels: 4,
     maxAutomations: 'unlimited',
+    maxContacts: 10000,
     features: ['AI-powered replies', 'Custom reporting', 'Dedicated account manager', 'Advanced analytics'],
     description: 'All 4 channels (IG, FB, WhatsApp, TikTok)',
   },
