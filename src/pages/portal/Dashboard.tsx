@@ -36,7 +36,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AutomationManager } from '@/components/portal/AutomationManager';
 import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
 import { ChannelSettingsDialog } from '@/components/portal/ChannelSettingsDialog';
-import { ChannelType, PlanType, planDetails, ChannelConnection, mockManyChatOAuth, mockTikTokOAuth } from '@/lib/onboardingTypes';
+import { ChannelType, PlanType, planDetails, ChannelConnection, mockManyChatOAuth, mockTikTokOAuth, businessCategories } from '@/lib/businessTypes';
 import { toast } from 'sonner';
 import {
   Dialog,

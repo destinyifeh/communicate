@@ -6,13 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
   Instagram, Facebook, MessageSquare, Mail, CreditCard,
-  ArrowRight, CheckCircle2, Globe, Phone, Building, Sparkles,
-  Target, Plus, X, Trash2
+  ArrowRight, CheckCircle2, Globe, Building, Sparkles,
+  X, Unlink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -21,29 +20,30 @@ import {
   planDetails, 
   ChannelType, 
   ChannelConnection, 
-  BusinessDetails,
   countries,
   mockManyChatOAuth,
   mockTikTokOAuth,
-  automationGoals,
-  AutomationGoalType,
-  ConfiguredAutomation,
-  FAQItem,
-  generateId
-} from '@/lib/onboardingTypes';
+  BusinessCategoryType,
+  businessCategories,
+  ConfiguredBusinessAutomation,
+  getDefaultConfig,
+  generateId,
+} from '@/lib/businessTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FAQEditor } from '@/components/portal/FAQEditor';
+import { AutomationBuilder } from '@/components/automation/AutomationBuilder';
+import { BusinessCategorySelector } from '@/components/automation/BusinessCategorySelector';
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 const stepTitles = {
   1: 'Create Account',
   2: 'Verify Email',
   3: 'Business Details',
-  4: 'Select Plan',
-  5: 'Payment',
-  6: 'Connect Channels',
-  7: 'Setup Automations',
+  4: 'Choose Business Type',
+  5: 'Select Plan',
+  6: 'Payment',
+  7: 'Connect Channels',
+  8: 'Setup Automations',
 };
 
 const TikTokIcon = () => (
@@ -58,6 +58,14 @@ const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; co
   whatsapp: { icon: <MessageSquare className="h-5 w-5" />, name: 'WhatsApp', color: 'from-green-500 to-green-400' },
   tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'from-gray-900 to-gray-700 dark:from-white dark:to-gray-200' },
 };
+
+interface BusinessDetails {
+  name: string;
+  email: string;
+  whatsappNumber: string;
+  phoneNumber?: string;
+  country: string;
+}
 
 export default function Signup() {
   const [searchParams] = useSearchParams();
@@ -82,14 +90,17 @@ export default function Signup() {
     phoneNumber: '',
     country: '',
   });
+
+  // Step 4: Business Type
+  const [selectedBusinessType, setSelectedBusinessType] = useState<BusinessCategoryType | null>(null);
   
-  // Step 4: Plan Selection
+  // Step 5: Plan Selection
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('starter');
   
-  // Step 5: Payment
+  // Step 6: Payment
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   
-  // Step 6: Channel Connections
+  // Step 7: Channel Connections
   const [channels, setChannels] = useState<ChannelConnection[]>([
     { type: 'instagram', connected: false },
     { type: 'facebook', connected: false },
@@ -97,12 +108,8 @@ export default function Signup() {
     { type: 'tiktok', connected: false },
   ]);
 
-  // Step 7: Automation Setup
-  const [selectedGoal, setSelectedGoal] = useState<AutomationGoalType | null>(null);
-  const [goalConfig, setGoalConfig] = useState('');
-  const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredAutomation[]>([]);
-  const [selectedChannelForAutomation, setSelectedChannelForAutomation] = useState<ChannelType | null>(null);
-  const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
+  // Step 8: Automation Setup
+  const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
 
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -150,24 +157,26 @@ export default function Signup() {
       }
       setStep(4);
     } else if (step === 4) {
+      if (!selectedBusinessType) {
+        toast.error('Please select a business type');
+        return;
+      }
       setStep(5);
     } else if (step === 5) {
+      setStep(6);
+    } else if (step === 6) {
       setIsLoading(true);
       await new Promise(resolve => setTimeout(resolve, 2000));
       setPaymentCompleted(true);
       setIsLoading(false);
       toast.success('Payment successful!');
-      setStep(6);
-    } else if (step === 6) {
+      setStep(7);
+    } else if (step === 7) {
       if (connectedChannelsCount === 0) {
         toast.error('Please connect at least one channel');
         return;
       }
-      // Set default channel for automation
-      if (connectedChannelsList.length > 0) {
-        setSelectedChannelForAutomation(connectedChannelsList[0].type);
-      }
-      setStep(7);
+      setStep(8);
     }
   };
 
@@ -199,7 +208,7 @@ export default function Signup() {
         ));
         toast.success(`${channelInfo[channelType].name} connected successfully!`);
       }
-    } catch (error) {
+    } catch {
       toast.error(`Failed to connect ${channelInfo[channelType].name}`);
     } finally {
       setConnectingChannel(null);
@@ -217,70 +226,25 @@ export default function Signup() {
     toast.success(`${channelInfo[channelType].name} disconnected`);
   };
 
-  const isAutomationDuplicate = (goalId: AutomationGoalType, channel: ChannelType): boolean => {
-    return configuredAutomations.some(a => a.goalId === goalId && a.channel === channel);
-  };
-
-  const handleSelectGoal = (goalId: AutomationGoalType) => {
-    if (selectedChannelForAutomation && isAutomationDuplicate(goalId, selectedChannelForAutomation)) {
-      const goal = automationGoals.find(g => g.id === goalId);
-      toast.error(`"${goal?.name}" is already added for this channel`);
-      return;
-    }
-    setSelectedGoal(goalId);
-    setGoalConfig('');
-    setFaqItems([]);
-  };
-
-  const handleRemoveAutomation = (index: number) => {
-    setConfiguredAutomations(prev => prev.filter((_, i) => i !== index));
-    toast.success('Automation removed');
-  };
-
-  const handleAddAutomation = () => {
-    if (!selectedGoal || !selectedChannelForAutomation) {
-      toast.error('Please select a goal and channel');
-      return;
-    }
-
-    // Validate based on goal type
-    if (selectedGoal === 'faq_bot') {
-      if (faqItems.length === 0) {
-        toast.error('Please add at least one FAQ');
-        return;
-      }
-    } else if (!goalConfig) {
-      toast.error('Please provide configuration');
-      return;
-    }
-
-    if (configuredAutomations.length >= maxAutomations) {
-      toast.error(`You've reached the maximum automations for your ${currentPlan.name} plan`);
-      return;
-    }
-
-    if (isAutomationDuplicate(selectedGoal, selectedChannelForAutomation)) {
-      toast.error('This automation is already added for this channel');
-      return;
-    }
-
-    const goal = automationGoals.find(g => g.id === selectedGoal);
-    if (!goal) return;
-
-    const newAutomation: ConfiguredAutomation = {
-      goalId: selectedGoal,
-      goalName: goal.name,
-      config: selectedGoal === 'faq_bot' ? `${faqItems.length} FAQ(s) configured` : goalConfig,
-      faqItems: selectedGoal === 'faq_bot' ? faqItems : undefined,
-      channel: selectedChannelForAutomation,
+  const handleAddAutomation = (automation: {
+    category: BusinessCategoryType;
+    channel: ChannelType;
+    config: any;
+  }) => {
+    const categoryInfo = businessCategories.find(c => c.id === automation.category);
+    
+    const newAutomation: ConfiguredBusinessAutomation = {
+      id: generateId(),
+      businessCategory: automation.category,
+      categoryName: categoryInfo?.name || '',
+      channel: automation.channel,
+      automation: automation.config,
       status: 'active',
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     setConfiguredAutomations(prev => [...prev, newAutomation]);
-    setSelectedGoal(null);
-    setGoalConfig('');
-    setFaqItems([]);
     toast.success('Automation configured successfully!');
   };
 
@@ -293,13 +257,13 @@ export default function Signup() {
     setIsLoading(true);
     try {
       await signup(email, password, businessDetails.name, 'client');
-      // In a real app, save automations to backend here
       localStorage.setItem('configured_automations', JSON.stringify(configuredAutomations));
       localStorage.setItem('connected_channels', JSON.stringify(channels.filter(c => c.connected)));
       localStorage.setItem('selected_plan', selectedPlan);
+      localStorage.setItem('business_type', selectedBusinessType || '');
       toast.success('Welcome to AutomateFlow!');
       navigate('/portal');
-    } catch (error) {
+    } catch {
       toast.error('Failed to complete setup');
     } finally {
       setIsLoading(false);
@@ -313,8 +277,6 @@ export default function Signup() {
       case 'enterprise': return Building2;
     }
   };
-
-  const currentGoal = automationGoals.find(g => g.id === selectedGoal);
 
   return (
     <div className="min-h-screen flex">
@@ -353,10 +315,11 @@ export default function Signup() {
               {step === 1 && 'Create your account to get started with automation.'}
               {step === 2 && 'We sent a verification code to your email.'}
               {step === 3 && 'Tell us about your business.'}
-              {step === 4 && 'Choose the plan that fits your needs.'}
-              {step === 5 && 'Complete your subscription to unlock features.'}
-              {step === 6 && 'Connect your social channels to start automating.'}
-              {step === 7 && 'Set up your first automation to start capturing leads.'}
+              {step === 4 && 'What type of automation do you need?'}
+              {step === 5 && 'Choose the plan that fits your needs.'}
+              {step === 6 && 'Complete your subscription to unlock features.'}
+              {step === 7 && 'Connect your social channels to start automating.'}
+              {step === 8 && 'Set up your automation to start capturing leads.'}
             </motion.p>
           </div>
 
@@ -432,7 +395,6 @@ export default function Signup() {
                         placeholder="name@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        required
                         className="h-11"
                       />
                     </div>
@@ -445,7 +407,6 @@ export default function Signup() {
                           placeholder="••••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          required
                           className="h-11 pr-10"
                         />
                         <button
@@ -514,24 +475,13 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep(1)}
-                        className="flex-1 h-11"
-                      >
+                      <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-11">
                         Back
                       </Button>
-                      <Button 
-                        onClick={handleNextStep}
-                        className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
-                      >
+                      <Button onClick={handleNextStep} className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90">
                         Verify
                       </Button>
                     </div>
-
-                    <Button variant="ghost" className="w-full text-sm">
-                      Resend code
-                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -552,9 +502,7 @@ export default function Signup() {
                       <Building className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-2xl font-bold">Business Details</CardTitle>
-                    <CardDescription>
-                      Tell us about your business
-                    </CardDescription>
+                    <CardDescription>Tell us about your business</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -620,17 +568,10 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep(2)}
-                        className="flex-1 h-11"
-                      >
+                      <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-11">
                         Back
                       </Button>
-                      <Button 
-                        onClick={handleNextStep}
-                        className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
-                      >
+                      <Button onClick={handleNextStep} className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90">
                         Continue <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
@@ -639,10 +580,45 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 4: Select Plan */}
+            {/* Step 4: Business Type Selection */}
             {step === 4 && (
               <motion.div 
                 key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full max-w-2xl"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold mb-2">What Do You Want to Automate?</h2>
+                  <p className="text-muted-foreground">Choose the primary type of automation for your business</p>
+                </div>
+
+                <BusinessCategorySelector
+                  selectedCategory={selectedBusinessType}
+                  onSelect={setSelectedBusinessType}
+                  currentPlan={selectedPlan}
+                />
+
+                <div className="flex gap-3 max-w-md mx-auto mt-8">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
+                    Back
+                  </Button>
+                  <Button 
+                    onClick={handleNextStep}
+                    disabled={!selectedBusinessType}
+                    className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
+                  >
+                    Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 5: Select Plan */}
+            {step === 5 && (
+              <motion.div 
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -656,17 +632,23 @@ export default function Signup() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   {(Object.entries(planDetails) as [PlanType, typeof planDetails.starter][]).map(([key, plan]) => {
                     const PlanIcon = getPlanIcon(key);
+                    const isRecommended = plan.supportedCategories.includes(selectedBusinessType!);
                     return (
                       <button
                         key={key}
                         type="button"
                         onClick={() => setSelectedPlan(key)}
-                        className={`p-5 rounded-xl border-2 text-left transition-all ${
+                        className={`relative p-5 rounded-xl border-2 text-left transition-all ${
                           selectedPlan === key
                             ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
                             : 'border-border hover:border-primary/50'
                         }`}
                       >
+                        {isRecommended && selectedPlan !== key && (
+                          <Badge className="absolute -top-2 right-2 bg-accent text-accent-foreground text-xs">
+                            Recommended
+                          </Badge>
+                        )}
                         <div className={`h-11 w-11 rounded-lg flex items-center justify-center mb-3 ${
                           selectedPlan === key ? 'gradient-primary' : 'bg-secondary'
                         }`}>
@@ -694,27 +676,20 @@ export default function Signup() {
                 </div>
 
                 <div className="flex gap-3 max-w-md mx-auto">
-                  <Button 
-                    variant="outline"
-                    onClick={() => setStep(3)}
-                    className="flex-1 h-12"
-                  >
+                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-12">
                     Back
                   </Button>
-                  <Button 
-                    onClick={handleNextStep}
-                    className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                  >
+                  <Button onClick={handleNextStep} className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90">
                     Continue with {currentPlan.name} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </motion.div>
             )}
 
-            {/* Step 5: Payment */}
-            {step === 5 && (
+            {/* Step 6: Payment */}
+            {step === 6 && (
               <motion.div 
-                key="step5"
+                key="step6"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -726,9 +701,7 @@ export default function Signup() {
                       <CreditCard className="h-6 w-6 text-accent" />
                     </div>
                     <CardTitle className="text-2xl font-bold">Complete Payment</CardTitle>
-                    <CardDescription>
-                      Subscribe to the {currentPlan.name} plan
-                    </CardDescription>
+                    <CardDescription>Subscribe to the {currentPlan.name} plan</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="p-4 rounded-xl bg-secondary/50 space-y-3">
@@ -752,16 +725,6 @@ export default function Signup() {
                           <div className="text-xs text-muted-foreground">/month</div>
                         </div>
                       </div>
-                      <div className="border-t border-border pt-3 mt-3">
-                        <div className="flex justify-between text-sm">
-                          <span>Channels included</span>
-                          <span className="font-medium">{currentPlan.maxChannels}</span>
-                        </div>
-                        <div className="flex justify-between text-sm mt-1">
-                          <span>Automations</span>
-                          <span className="font-medium">{currentPlan.maxAutomations === 'unlimited' ? 'Unlimited' : currentPlan.maxAutomations}</span>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -782,11 +745,7 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep(4)}
-                        className="flex-1 h-11"
-                      >
+                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
@@ -795,10 +754,7 @@ export default function Signup() {
                         className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
                       >
                         {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
                         ) : (
                           <>Pay {currentPlan.price}</>
                         )}
@@ -813,10 +769,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 6: Connect Channels */}
-            {step === 6 && (
+            {/* Step 7: Connect Channels */}
+            {step === 7 && (
               <motion.div 
-                key="step6"
+                key="step7"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -832,80 +788,67 @@ export default function Signup() {
                       Connect up to {maxChannels} channel{maxChannels > 1 ? 's' : ''} with your {currentPlan.name} plan
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-3 rounded-lg bg-secondary/50 flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Channels connected</span>
-                      <span className="font-semibold">{connectedChannelsCount} / {maxChannels}</span>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                      <span className="text-sm">Connected Channels</span>
+                      <Badge variant="secondary">{connectedChannelsCount} / {maxChannels}</Badge>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {channels.map((channel) => {
                         const info = channelInfo[channel.type];
-                        const isConnecting = connectingChannel === channel.type;
-                        const canConnect = connectedChannelsCount < maxChannels || channel.connected;
-                        
                         return (
-                          <div 
+                          <div
                             key={channel.type}
                             className={`p-4 rounded-xl border-2 transition-all ${
-                              channel.connected 
-                                ? 'border-accent/50 bg-accent/5' 
-                                : canConnect 
-                                  ? 'border-border hover:border-primary/50' 
-                                  : 'border-border opacity-50'
+                              channel.connected
+                                ? 'border-accent bg-accent/5'
+                                : 'border-border'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
-                                  {info.icon}
-                                </div>
-                                <div>
-                                  <div className="font-medium">{info.name}</div>
-                                  {channel.connected && channel.accountName && (
-                                    <div className="text-sm text-muted-foreground">{channel.accountName}</div>
-                                  )}
-                                </div>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
+                                {info.icon}
                               </div>
-                              {channel.connected ? (
-                                <div className="flex items-center gap-2 text-accent">
-                                  <CheckCircle2 className="h-5 w-5" />
-                                  <span className="text-sm font-medium">Connected</span>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleConnectChannel(channel.type)}
-                                  disabled={isConnecting || !canConnect}
-                                  className="gap-2"
-                                >
-                                  {isConnecting ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                      Connecting...
-                                    </>
-                                  ) : (
-                                    'Connect'
-                                  )}
-                                </Button>
+                              {channel.connected && (
+                                <CheckCircle2 className="h-5 w-5 text-accent" />
                               )}
                             </div>
+                            <div className="font-medium text-sm mb-1">{info.name}</div>
+                            {channel.connected ? (
+                              <div className="space-y-2">
+                                <p className="text-xs text-accent">{channel.accountName}</p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full h-8 text-xs text-destructive hover:text-destructive"
+                                  onClick={() => handleDisconnectChannel(channel.type)}
+                                >
+                                  <Unlink className="h-3 w-3 mr-1" /> Disconnect
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-2 h-8 text-xs"
+                                disabled={connectedChannelsCount >= maxChannels || connectingChannel === channel.type}
+                                onClick={() => handleConnectChannel(channel.type)}
+                              >
+                                {connectingChannel === channel.type ? (
+                                  <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Connecting...</>
+                                ) : (
+                                  'Connect'
+                                )}
+                              </Button>
+                            )}
                           </div>
                         );
                       })}
                     </div>
 
-                    <p className="text-xs text-center text-muted-foreground">
-                      Channels are connected via ManyChat/TikTok OAuth for secure access
-                    </p>
-
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep(5)}
-                        className="flex-1 h-11"
-                      >
+                      <Button variant="outline" onClick={() => setStep(6)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
@@ -921,46 +864,47 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 7: Setup Automations */}
-            {step === 7 && (
+            {/* Step 8: Setup Automations */}
+            {step === 8 && (
               <motion.div 
-                key="step7"
+                key="step8"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-2xl"
+                className="w-full max-w-3xl"
               >
                 <Card className="border-border/50 shadow-large">
                   <CardHeader className="space-y-1 text-center">
-                    <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2">
-                      <Target className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Setup Your Automations</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Setup Your Automation</CardTitle>
                     <CardDescription>
-                      What do you want to automate first? Configure up to {maxAutomations === 999 ? 'unlimited' : maxAutomations} automations.
+                      Configure your {businessCategories.find(c => c.id === selectedBusinessType)?.name} automation
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Configured Automations */}
-                    {configuredAutomations.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-sm text-muted-foreground">Configured Automations ({configuredAutomations.length})</h3>
-                        </div>
-                        <div className="space-y-2">
-                          {configuredAutomations.map((automation, index) => (
+                  <CardContent>
+                    {configuredAutomations.length === 0 ? (
+                      <AutomationBuilder
+                        currentPlan={selectedPlan}
+                        connectedChannels={connectedChannelsList.map(c => c.type)}
+                        onComplete={handleAddAutomation}
+                        onCancel={() => setStep(7)}
+                      />
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="space-y-3">
+                          <h3 className="font-medium">Configured Automations ({configuredAutomations.length})</h3>
+                          {configuredAutomations.map((automation) => (
                             <div 
-                              key={index}
-                              className="p-3 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-between"
+                              key={automation.id}
+                              className="p-4 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-between"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="text-lg">
-                                  {automationGoals.find(g => g.id === automation.goalId)?.icon}
+                                <div className="text-2xl">
+                                  {businessCategories.find(c => c.id === automation.businessCategory)?.icon}
                                 </div>
                                 <div>
-                                  <div className="font-medium text-sm">{automation.goalName}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {channelInfo[automation.channel].name} • {automation.config.substring(0, 30)}...
+                                  <div className="font-medium">{automation.categoryName}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {channelInfo[automation.channel as ChannelType].name}
                                   </div>
                                 </div>
                               </div>
@@ -968,178 +912,25 @@ export default function Signup() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
 
-                    {/* Add New Automation */}
-                    {configuredAutomations.length < maxAutomations && (
-                      <div className="space-y-4">
-                        <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                          <Plus className="h-4 w-4" />
-                          Add Automation
-                        </h3>
-
-                        {/* Channel Selection */}
-                        <div className="space-y-2">
-                          <Label>Select Channel</Label>
-                          <div className="flex gap-2 flex-wrap">
-                            {connectedChannelsList.map((channel) => {
-                              const info = channelInfo[channel.type];
-                              return (
-                                <button
-                                  key={channel.type}
-                                  type="button"
-                                  onClick={() => setSelectedChannelForAutomation(channel.type)}
-                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                                    selectedChannelForAutomation === channel.type
-                                      ? 'border-primary bg-primary/5'
-                                      : 'border-border hover:border-primary/50'
-                                  }`}
-                                >
-                                  <div className={`h-6 w-6 rounded bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
-                                    {info.icon}
-                                  </div>
-                                  <span className="text-sm font-medium">{info.name}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Automation Goals */}
-                        <div className="space-y-2">
-                          <Label>What do you want to automate?</Label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {automationGoals.map((goal) => {
-                              const isDuplicate = selectedChannelForAutomation && isAutomationDuplicate(goal.id, selectedChannelForAutomation);
-                              return (
-                                <button
-                                  key={goal.id}
-                                  type="button"
-                                  onClick={() => handleSelectGoal(goal.id)}
-                                  className={`p-4 rounded-xl border-2 text-left transition-all relative ${
-                                    selectedGoal === goal.id
-                                      ? 'border-primary bg-primary/5 shadow-md'
-                                      : isDuplicate
-                                        ? 'border-accent/50 bg-accent/5'
-                                        : 'border-border hover:border-primary/50'
-                                  }`}
-                                >
-                                  {isDuplicate && (
-                                    <Badge className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] px-1.5">
-                                      Added
-                                    </Badge>
-                                  )}
-                                  <div className="flex items-start gap-3">
-                                    <span className="text-2xl">{goal.icon}</span>
-                                    <div>
-                                      <div className="font-medium text-sm">{goal.name}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">{goal.description}</div>
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Follow-up Question */}
-                        {selectedGoal && currentGoal && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="space-y-3"
+                        <div className="flex gap-2 pt-4 border-t">
+                          <Button variant="outline" onClick={() => setStep(7)} className="flex-1 h-11">
+                            Back
+                          </Button>
+                          <Button 
+                            onClick={handleCompleteOnboarding}
+                            disabled={isLoading}
+                            className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
                           >
-                            <Label>{currentGoal.followUpQuestion}</Label>
-                            
-                            {/* FAQ Editor for faq_bot goal */}
-                            {selectedGoal === 'faq_bot' ? (
-                              <div className="space-y-3">
-                                <FAQEditor faqs={faqItems} onFaqsChange={setFaqItems} />
-                                <Button
-                                  onClick={handleAddAutomation}
-                                  disabled={faqItems.length === 0 || !selectedChannelForAutomation}
-                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
-                                >
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add FAQ Automation ({faqItems.length} Q&As)
-                                </Button>
-                              </div>
-                            ) : currentGoal.followUpType === 'textarea' ? (
-                              <>
-                                <Textarea
-                                  placeholder={currentGoal.followUpPlaceholder}
-                                  value={goalConfig}
-                                  onChange={(e) => setGoalConfig(e.target.value)}
-                                  rows={3}
-                                  className="resize-none"
-                                />
-                                <Button
-                                  onClick={handleAddAutomation}
-                                  disabled={!goalConfig || !selectedChannelForAutomation}
-                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
-                                >
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add This Automation
-                                </Button>
-                              </>
+                            {isLoading ? (
+                              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finishing Setup...</>
                             ) : (
-                              <>
-                                <Input
-                                  type={currentGoal.followUpType === 'phone' ? 'tel' : 'text'}
-                                  placeholder={currentGoal.followUpPlaceholder}
-                                  value={goalConfig}
-                                  onChange={(e) => setGoalConfig(e.target.value)}
-                                  className="h-11"
-                                />
-                                <Button
-                                  onClick={handleAddAutomation}
-                                  disabled={!goalConfig || !selectedChannelForAutomation}
-                                  className="w-full h-10 bg-accent text-accent-foreground hover:bg-accent/90"
-                                >
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add This Automation
-                                </Button>
-                              </>
+                              <>Complete Setup <CheckCircle2 className="ml-2 h-4 w-4" /></>
                             )}
-                          </motion.div>
-                        )}
+                          </Button>
+                        </div>
                       </div>
                     )}
-
-                    {/* Complete Setup */}
-                    <div className="pt-4 border-t border-border space-y-3">
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline"
-                          onClick={() => setStep(6)}
-                          className="flex-1 h-11"
-                        >
-                          Back
-                        </Button>
-                        <Button 
-                          onClick={handleCompleteOnboarding}
-                          disabled={isLoading || configuredAutomations.length === 0}
-                          className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Finishing Setup...
-                            </>
-                          ) : (
-                            <>
-                              Complete Setup <CheckCircle2 className="ml-2 h-4 w-4" />
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      {configuredAutomations.length === 0 && (
-                        <p className="text-xs text-center text-muted-foreground">
-                          Add at least one automation to complete setup
-                        </p>
-                      )}
-                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
