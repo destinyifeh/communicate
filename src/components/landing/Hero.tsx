@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Sparkles, MessageCircle, Instagram, Facebook } from 'lucide-react';
+import { ArrowRight, Play, Sparkles, MessageCircle, Instagram, Facebook, ShoppingCart, Calendar, HeadphonesIcon, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Hero() {
@@ -46,7 +46,7 @@ export function Hero() {
             className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm mb-8"
           >
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-foreground font-medium">AI-Powered Social Media Automation</span>
+            <span className="text-foreground font-medium">Multi-Channel Business Automation</span>
           </motion.div>
 
           <motion.h1
@@ -55,26 +55,47 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6"
           >
-            Turn Comments Into
+            Automate Your Business
             <br />
-            <span className="text-gradient">Customers. Automatically.</span>
+            <span className="text-gradient">Across Every Channel.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg sm:text-xl text-muted-foreground max-w-3xl mb-10"
+            className="text-lg sm:text-xl text-muted-foreground max-w-3xl mb-8"
           >
-            Automate your Instagram, Facebook, WhatsApp & TikTok DMs. Capture leads from comments, 
-            reply instantly, and convert followers into paying customers—all on autopilot.
+            From sales & orders to appointment bookings, customer support, and lead capture—automate 
+            everything on Instagram, Facebook, WhatsApp & TikTok.
           </motion.p>
+
+          {/* Business Types */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="flex flex-wrap justify-center items-center gap-3 mb-8"
+          >
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-sm font-medium">
+              <ShoppingCart className="h-4 w-4" /> Sales & Orders
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
+              <Calendar className="h-4 w-4" /> Appointments
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-medium">
+              <HeadphonesIcon className="h-4 w-4" /> Support
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-medium">
+              <UserPlus className="h-4 w-4" /> Lead Capture
+            </div>
+          </motion.div>
 
           {/* Platform icons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
             className="flex items-center gap-4 mb-10"
           >
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -90,8 +111,8 @@ export function Hero() {
               <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
                 <MessageCircle className="h-5 w-5 text-white" />
               </div>
-              <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
-                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center">
+                <svg className="h-5 w-5 text-background" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
                 </svg>
               </div>
@@ -101,12 +122,12 @@ export function Hero() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
             className="flex flex-col sm:flex-row gap-4"
           >
             <Link to="/signup">
               <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90 gap-2 px-8 h-14 text-base font-semibold shadow-lg">
-                Start Free Trial
+                Get Started
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -127,7 +148,7 @@ export function Hero() {
           >
             {[
               { value: '50K+', label: 'Leads Captured' },
-              { value: '10M+', label: 'DMs Automated' },
+              { value: '10M+', label: 'Messages Automated' },
               { value: '98%', label: 'Response Rate' },
               { value: '3x', label: 'More Conversions' },
             ].map((stat, index) => (

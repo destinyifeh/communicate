@@ -11,7 +11,7 @@ import {
   Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
   Instagram, Facebook, MessageSquare, Mail, CreditCard,
   ArrowRight, CheckCircle2, Globe, Building, Sparkles,
-  X, Unlink
+  Unlink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -26,24 +26,23 @@ import {
   BusinessCategoryType,
   businessCategories,
   ConfiguredBusinessAutomation,
-  getDefaultConfig,
   generateId,
+  AutomationConfig
 } from '@/lib/businessTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AutomationBuilder } from '@/components/automation/AutomationBuilder';
-import { BusinessCategorySelector } from '@/components/automation/BusinessCategorySelector';
+import { ChannelAutomationSetup } from '@/components/automation/ChannelAutomationSetup';
 
-const TOTAL_STEPS = 8;
+// Simplified to 7 steps - removed separate business type selection
+const TOTAL_STEPS = 7;
 
 const stepTitles = {
   1: 'Create Account',
   2: 'Verify Email',
   3: 'Business Details',
-  4: 'Choose Business Type',
-  5: 'Select Plan',
-  6: 'Payment',
-  7: 'Connect Channels',
-  8: 'Setup Automations',
+  4: 'Select Plan',
+  5: 'Payment',
+  6: 'Connect Channels',
+  7: 'Setup Automations',
 };
 
 const TikTokIcon = () => (
@@ -90,17 +89,14 @@ export default function Signup() {
     phoneNumber: '',
     country: '',
   });
-
-  // Step 4: Business Type
-  const [selectedBusinessType, setSelectedBusinessType] = useState<BusinessCategoryType | null>(null);
   
-  // Step 5: Plan Selection
+  // Step 4: Plan Selection
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('starter');
   
-  // Step 6: Payment
+  // Step 5: Payment
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   
-  // Step 7: Channel Connections
+  // Step 6: Channel Connections
   const [channels, setChannels] = useState<ChannelConnection[]>([
     { type: 'instagram', connected: false },
     { type: 'facebook', connected: false },
@@ -108,7 +104,7 @@ export default function Signup() {
     { type: 'tiktok', connected: false },
   ]);
 
-  // Step 8: Automation Setup
+  // Step 7: Automation Setup (per channel)
   const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
 
   const { signup } = useAuth();
@@ -125,7 +121,6 @@ export default function Signup() {
   const connectedChannelsCount = channels.filter(c => c.connected).length;
   const maxChannels = currentPlan.maxChannels;
   const connectedChannelsList = channels.filter(c => c.connected);
-  const maxAutomations = currentPlan.maxAutomations === 'unlimited' ? 999 : currentPlan.maxAutomations;
 
   const handleNextStep = async () => {
     if (step === 1) {
@@ -157,26 +152,20 @@ export default function Signup() {
       }
       setStep(4);
     } else if (step === 4) {
-      if (!selectedBusinessType) {
-        toast.error('Please select a business type');
-        return;
-      }
       setStep(5);
     } else if (step === 5) {
-      setStep(6);
-    } else if (step === 6) {
       setIsLoading(true);
       await new Promise(resolve => setTimeout(resolve, 2000));
       setPaymentCompleted(true);
       setIsLoading(false);
       toast.success('Payment successful!');
-      setStep(7);
-    } else if (step === 7) {
+      setStep(6);
+    } else if (step === 6) {
       if (connectedChannelsCount === 0) {
         toast.error('Please connect at least one channel');
         return;
       }
-      setStep(8);
+      setStep(7);
     }
   };
 
@@ -226,41 +215,33 @@ export default function Signup() {
     toast.success(`${channelInfo[channelType].name} disconnected`);
   };
 
-  const handleAddAutomation = (automation: {
-    category: BusinessCategoryType;
+  const handleAutomationsComplete = (automations: {
     channel: ChannelType;
-    config: any;
-  }) => {
-    const categoryInfo = businessCategories.find(c => c.id === automation.category);
-    
-    const newAutomation: ConfiguredBusinessAutomation = {
+    category: BusinessCategoryType;
+    config: AutomationConfig;
+  }[]) => {
+    const newAutomations: ConfiguredBusinessAutomation[] = automations.map(a => ({
       id: generateId(),
-      businessCategory: automation.category,
-      categoryName: categoryInfo?.name || '',
-      channel: automation.channel,
-      automation: automation.config,
+      businessCategory: a.category,
+      categoryName: businessCategories.find(c => c.id === a.category)?.name || '',
+      channel: a.channel,
+      automation: a.config,
       status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
-
-    setConfiguredAutomations(prev => [...prev, newAutomation]);
-    toast.success('Automation configured successfully!');
+    }));
+    
+    setConfiguredAutomations(newAutomations);
+    handleCompleteOnboarding(newAutomations);
   };
 
-  const handleCompleteOnboarding = async () => {
-    if (configuredAutomations.length === 0) {
-      toast.error('Please set up at least one automation');
-      return;
-    }
-    
+  const handleCompleteOnboarding = async (automations: ConfiguredBusinessAutomation[]) => {
     setIsLoading(true);
     try {
       await signup(email, password, businessDetails.name, 'client');
-      localStorage.setItem('configured_automations', JSON.stringify(configuredAutomations));
+      localStorage.setItem('configured_automations', JSON.stringify(automations));
       localStorage.setItem('connected_channels', JSON.stringify(channels.filter(c => c.connected)));
       localStorage.setItem('selected_plan', selectedPlan);
-      localStorage.setItem('business_type', selectedBusinessType || '');
       toast.success('Welcome to AutomateFlow!');
       navigate('/portal');
     } catch {
@@ -315,11 +296,10 @@ export default function Signup() {
               {step === 1 && 'Create your account to get started with automation.'}
               {step === 2 && 'We sent a verification code to your email.'}
               {step === 3 && 'Tell us about your business.'}
-              {step === 4 && 'What type of automation do you need?'}
-              {step === 5 && 'Choose the plan that fits your needs.'}
-              {step === 6 && 'Complete your subscription to unlock features.'}
-              {step === 7 && 'Connect your social channels to start automating.'}
-              {step === 8 && 'Set up your automation to start capturing leads.'}
+              {step === 4 && 'Choose the plan that fits your needs.'}
+              {step === 5 && 'Complete your subscription to unlock features.'}
+              {step === 6 && 'Connect your social channels to start automating.'}
+              {step === 7 && 'Set up automations for each connected channel.'}
             </motion.p>
           </div>
 
@@ -580,45 +560,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 4: Business Type Selection */}
+            {/* Step 4: Select Plan */}
             {step === 4 && (
               <motion.div 
                 key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-2xl"
-              >
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">What Do You Want to Automate?</h2>
-                  <p className="text-muted-foreground">Choose the primary type of automation for your business</p>
-                </div>
-
-                <BusinessCategorySelector
-                  selectedCategory={selectedBusinessType}
-                  onSelect={setSelectedBusinessType}
-                  currentPlan={selectedPlan}
-                />
-
-                <div className="flex gap-3 max-w-md mx-auto mt-8">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
-                    Back
-                  </Button>
-                  <Button 
-                    onClick={handleNextStep}
-                    disabled={!selectedBusinessType}
-                    className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                  >
-                    Continue <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 5: Select Plan */}
-            {step === 5 && (
-              <motion.div 
-                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -632,7 +577,6 @@ export default function Signup() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   {(Object.entries(planDetails) as [PlanType, typeof planDetails.starter][]).map(([key, plan]) => {
                     const PlanIcon = getPlanIcon(key);
-                    const isRecommended = plan.supportedCategories.includes(selectedBusinessType!);
                     return (
                       <button
                         key={key}
@@ -644,9 +588,9 @@ export default function Signup() {
                             : 'border-border hover:border-primary/50'
                         }`}
                       >
-                        {isRecommended && selectedPlan !== key && (
+                        {key === 'professional' && selectedPlan !== key && (
                           <Badge className="absolute -top-2 right-2 bg-accent text-accent-foreground text-xs">
-                            Recommended
+                            Popular
                           </Badge>
                         )}
                         <div className={`h-11 w-11 rounded-lg flex items-center justify-center mb-3 ${
@@ -676,7 +620,7 @@ export default function Signup() {
                 </div>
 
                 <div className="flex gap-3 max-w-md mx-auto">
-                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-12">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
                     Back
                   </Button>
                   <Button onClick={handleNextStep} className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90">
@@ -686,10 +630,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 6: Payment */}
-            {step === 6 && (
+            {/* Step 5: Payment */}
+            {step === 5 && (
               <motion.div 
-                key="step6"
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -745,7 +689,7 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
+                      <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
@@ -769,10 +713,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 7: Connect Channels */}
-            {step === 7 && (
+            {/* Step 6: Connect Channels */}
+            {step === 6 && (
               <motion.div 
-                key="step7"
+                key="step6"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -848,7 +792,7 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(6)} className="flex-1 h-11">
+                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
@@ -864,10 +808,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 8: Setup Automations */}
-            {step === 8 && (
+            {/* Step 7: Setup Automations for Each Channel */}
+            {step === 7 && (
               <motion.div 
-                key="step8"
+                key="step7"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -875,62 +819,19 @@ export default function Signup() {
               >
                 <Card className="border-border/50 shadow-large">
                   <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold">Setup Your Automation</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Setup Your Automations</CardTitle>
                     <CardDescription>
-                      Configure your {businessCategories.find(c => c.id === selectedBusinessType)?.name} automation
+                      Configure automations for each of your connected channels
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {configuredAutomations.length === 0 ? (
-                      <AutomationBuilder
-                        currentPlan={selectedPlan}
-                        connectedChannels={connectedChannelsList.map(c => c.type)}
-                        onComplete={handleAddAutomation}
-                        onCancel={() => setStep(7)}
-                      />
-                    ) : (
-                      <div className="space-y-6">
-                        <div className="space-y-3">
-                          <h3 className="font-medium">Configured Automations ({configuredAutomations.length})</h3>
-                          {configuredAutomations.map((automation) => (
-                            <div 
-                              key={automation.id}
-                              className="p-4 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-between"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="text-2xl">
-                                  {businessCategories.find(c => c.id === automation.businessCategory)?.icon}
-                                </div>
-                                <div>
-                                  <div className="font-medium">{automation.categoryName}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {channelInfo[automation.channel as ChannelType].name}
-                                  </div>
-                                </div>
-                              </div>
-                              <CheckCircle2 className="h-5 w-5 text-accent" />
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="flex gap-2 pt-4 border-t">
-                          <Button variant="outline" onClick={() => setStep(7)} className="flex-1 h-11">
-                            Back
-                          </Button>
-                          <Button 
-                            onClick={handleCompleteOnboarding}
-                            disabled={isLoading}
-                            className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                          >
-                            {isLoading ? (
-                              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finishing Setup...</>
-                            ) : (
-                              <>Complete Setup <CheckCircle2 className="ml-2 h-4 w-4" /></>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <ChannelAutomationSetup
+                      currentPlan={selectedPlan}
+                      connectedChannels={connectedChannelsList.map(c => c.type)}
+                      existingAutomations={[]}
+                      onComplete={handleAutomationsComplete}
+                      onBack={() => setStep(6)}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
