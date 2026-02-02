@@ -8,12 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Users, 
   DollarSign, 
-  TrendingUp, 
-  Bot,
-  MessageSquare,
+  TrendingUp,
   ShoppingCart,
   UserPlus,
-  Activity,
   Instagram,
   Facebook,
   Zap,
@@ -21,40 +18,19 @@ import {
   ArrowUpRight,
   Sparkles,
   Plus,
-  Settings,
-  Play,
-  Pause,
-  MoreVertical,
-  Loader2,
   Calendar,
-  CreditCard
+  CreditCard,
+  MessageSquare,
+  HeadphonesIcon,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AutomationManager } from '@/components/portal/AutomationManager';
 import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
-import { ChannelSettingsDialog } from '@/components/portal/ChannelSettingsDialog';
-import { ChannelType, PlanType, planDetails, ChannelConnection, mockManyChatOAuth, mockTikTokOAuth, businessCategories } from '@/lib/businessTypes';
+import { ChannelType, PlanType, planDetails, businessCategories, ConfiguredBusinessAutomation } from '@/lib/businessTypes';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -76,18 +52,18 @@ const channelColors: Record<string, string> = {
   tiktok: 'bg-foreground',
 };
 
-const platformIcons: Record<string, string> = {
-  whatsapp: '💬',
-  instagram: '📸',
-  facebook: '👤',
-  tiktok: '🎵',
+const categoryIcons: Record<string, React.ReactNode> = {
+  sales_orders: <ShoppingCart className="h-4 w-4" />,
+  appointments_bookings: <Calendar className="h-4 w-4" />,
+  enquiries_support: <HeadphonesIcon className="h-4 w-4" />,
+  lead_capture: <UserPlus className="h-4 w-4" />,
 };
 
-const activityIcons: Record<string, typeof UserPlus> = {
-  lead: UserPlus,
-  sale: ShoppingCart,
-  message: MessageSquare,
-  bot: Bot,
+const categoryColors: Record<string, string> = {
+  sales_orders: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  appointments_bookings: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  enquiries_support: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  lead_capture: 'bg-green-500/10 text-green-600 dark:text-green-400',
 };
 
 const chartData = generateChartData();
@@ -95,185 +71,101 @@ const chartData = generateChartData();
 export default function ClientDashboard() {
   const navigate = useNavigate();
   
-  // Load data from localStorage (simulating API)
   const [currentPlan, setCurrentPlan] = useState<PlanType>('starter');
-  const [planExpiryDate, setPlanExpiryDate] = useState('2025-02-15');
-  const [connectedChannels, setConnectedChannels] = useState<Array<{
-    type: ChannelType;
-    name: string;
-    accountName: string;
-    connected: boolean;
-    leads: number;
-    automationsActive: number;
-    status: string;
-  }>>([]);
-  
+  const [planExpiryDate, setPlanExpiryDate] = useState('2026-03-15');
+  const [connectedChannels, setConnectedChannels] = useState<ChannelType[]>([]);
+  const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
-  const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
-  const [selectedChannel, setSelectedChannel] = useState<typeof connectedChannels[0] | null>(null);
-  const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
-  const [disconnectAlertOpen, setDisconnectAlertOpen] = useState(false);
-  const [channelToDisconnect, setChannelToDisconnect] = useState<ChannelType | null>(null);
-  const [connectingChannel, setConnectingChannel] = useState<ChannelType | null>(null);
 
   // Check if plan is expired
   const isExpired = new Date(planExpiryDate) < new Date();
   const daysUntilExpiry = Math.ceil((new Date(planExpiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
   useEffect(() => {
-    // Load plan from localStorage
+    // Load data from localStorage
     const savedPlan = localStorage.getItem('selected_plan') as PlanType;
-    if (savedPlan) {
-      setCurrentPlan(savedPlan);
-    }
+    if (savedPlan) setCurrentPlan(savedPlan);
 
-    // Load connected channels
     const savedChannels = localStorage.getItem('connected_channels');
     if (savedChannels) {
       const channels = JSON.parse(savedChannels);
-      // Enrich with mock data
-      const enrichedChannels = channels.map((ch: ChannelConnection) => ({
-        type: ch.type,
-        name: ch.type.charAt(0).toUpperCase() + ch.type.slice(1),
-        accountName: ch.accountName || `@${ch.type}_account`,
-        connected: true,
-        leads: Math.floor(Math.random() * 500) + 100,
-        automationsActive: Math.floor(Math.random() * 5) + 1,
-        status: 'active',
-      }));
-      setConnectedChannels(enrichedChannels);
+      setConnectedChannels(channels.map((c: any) => c.type));
+    }
+
+    const savedAutomations = localStorage.getItem('configured_automations');
+    if (savedAutomations) {
+      setConfiguredAutomations(JSON.parse(savedAutomations));
     }
   }, []);
 
   const plan = planDetails[currentPlan];
   const maxChannels = plan.maxChannels;
   const maxAutomations = plan.maxAutomations === 'unlimited' ? 999 : plan.maxAutomations;
-  const automationsCount = connectedChannels.reduce((acc, ch) => acc + ch.automationsActive, 0);
-  const totalLeads = connectedChannels.reduce((acc, ch) => acc + ch.leads, 0);
+  const automationsCount = configuredAutomations.length;
 
   const planIcon = currentPlan === 'starter' ? Zap : currentPlan === 'professional' ? Crown : Sparkles;
   const PlanIcon = planIcon;
 
-  // Available channels that can be added
-  const availableChannels: ChannelType[] = (['instagram', 'facebook', 'whatsapp', 'tiktok'] as ChannelType[])
-    .filter(ch => !connectedChannels.some(c => c.type === ch));
+  // Group automations by channel
+  const automationsByChannel = configuredAutomations.reduce((acc, automation) => {
+    const channel = automation.channel as ChannelType;
+    if (!acc[channel]) acc[channel] = [];
+    acc[channel].push(automation);
+    return acc;
+  }, {} as Record<ChannelType, ConfiguredBusinessAutomation[]>);
 
-  const handlePlanChange = (newPlan: PlanType) => {
-    setCurrentPlan(newPlan);
-    // Check if connected channels exceed new plan limit
-    const newMax = planDetails[newPlan].maxChannels;
-    if (connectedChannels.length > newMax) {
-      toast.warning(`Note: You have more channels than allowed in ${planDetails[newPlan].name}. Some features may be limited.`);
-    }
-  };
+  // Group automations by category
+  const automationsByCategory = configuredAutomations.reduce((acc, automation) => {
+    if (!acc[automation.businessCategory]) acc[automation.businessCategory] = [];
+    acc[automation.businessCategory].push(automation);
+    return acc;
+  }, {} as Record<string, ConfiguredBusinessAutomation[]>);
 
-  const handleConnectChannel = async (channelType: ChannelType) => {
-    if (connectedChannels.length >= maxChannels) {
-      toast.error('Channel limit reached. Upgrade to add more channels.');
-      setAddChannelDialogOpen(false);
-      setUpgradeDialogOpen(true);
-      return;
-    }
-
-    setConnectingChannel(channelType);
-
-    try {
-      const response = channelType === 'tiktok'
-        ? await mockTikTokOAuth()
-        : await mockManyChatOAuth(channelType);
-
-      if (response.success) {
-        const newChannel = {
-          type: channelType,
-          name: channelType.charAt(0).toUpperCase() + channelType.slice(1),
-          accountName: response.accountName,
-          connected: true,
-          leads: 0,
-          automationsActive: 0,
-          status: 'active',
-        };
-
-        const updatedChannels = [...connectedChannels, newChannel];
-        setConnectedChannels(updatedChannels);
-        
-        // Save to localStorage
-        const savedChannels = updatedChannels.map(ch => ({
-          type: ch.type,
-          connected: true,
-          accountName: ch.accountName,
-        }));
-        localStorage.setItem('connected_channels', JSON.stringify(savedChannels));
-
-        toast.success(`${newChannel.name} connected successfully!`);
-        setAddChannelDialogOpen(false);
-      }
-    } catch (error) {
-      toast.error(`Failed to connect ${channelType}`);
-    } finally {
-      setConnectingChannel(null);
-    }
-  };
-
-  const handleDisconnectChannel = (channelType: ChannelType) => {
-    const updatedChannels = connectedChannels.filter(ch => ch.type !== channelType);
-    setConnectedChannels(updatedChannels);
-    
-    // Update localStorage
-    const savedChannels = updatedChannels.map(ch => ({
-      type: ch.type,
-      connected: true,
-      accountName: ch.accountName,
-    }));
-    localStorage.setItem('connected_channels', JSON.stringify(savedChannels));
-    
-    toast.success(`Channel disconnected successfully`);
-    setDisconnectAlertOpen(false);
-    setChannelToDisconnect(null);
-  };
-
-  const handleAddChannelClick = () => {
-    if (connectedChannels.length >= maxChannels) {
-      toast.error(`You've reached your channel limit (${maxChannels}). Please upgrade to add more.`);
-      setUpgradeDialogOpen(true);
-    } else {
-      setAddChannelDialogOpen(true);
-    }
-  };
+  // Mock stats based on automation types
+  const totalLeads = 847;
+  const totalSales = 156;
+  const appointmentsBooked = 45;
+  const supportTickets = 23;
 
   const stats = [
     { 
       label: 'Total Leads', 
       value: totalLeads.toLocaleString(), 
       change: '+23%',
-      icon: Users,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
-    { 
-      label: 'Confirmed Sales', 
-      value: '₦2.4M', 
-      change: '+18%',
-      icon: DollarSign,
-      color: 'text-accent',
-      bgColor: 'bg-accent/10',
-    },
-    { 
-      label: 'Conversion Rate', 
-      value: '12.4%', 
-      change: '+2.1%',
-      icon: TrendingUp,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-500/10',
-    },
-    { 
-      label: 'Automations', 
-      value: `${automationsCount} Active`, 
-      status: 'online',
-      icon: Bot,
+      icon: UserPlus,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-500/10',
     },
+    { 
+      label: 'Sales/Orders', 
+      value: totalSales.toString(), 
+      change: '+18%',
+      icon: ShoppingCart,
+      color: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-500/10',
+    },
+    { 
+      label: 'Appointments', 
+      value: appointmentsBooked.toString(), 
+      change: '+12%',
+      icon: Calendar,
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-500/10',
+    },
+    { 
+      label: 'Support Tickets', 
+      value: supportTickets.toString(), 
+      change: '-5%',
+      icon: HeadphonesIcon,
+      color: 'text-purple-600 dark:text-purple-400',
+      bgColor: 'bg-purple-500/10',
+    },
   ];
+
+  const handlePlanChange = (newPlan: PlanType) => {
+    setCurrentPlan(newPlan);
+    localStorage.setItem('selected_plan', newPlan);
+  };
 
   return (
     <ClientLayout>
@@ -301,7 +193,7 @@ export default function ClientDashboard() {
                       {connectedChannels.length} of {maxChannels} channels • {automationsCount} of {maxAutomations === 999 ? '∞' : maxAutomations} automations
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                      <Clock className="h-3 w-3" />
                       {isExpired ? (
                         <span className="text-destructive">Plan expired on {new Date(planExpiryDate).toLocaleDateString()}</span>
                       ) : (
@@ -315,18 +207,13 @@ export default function ClientDashboard() {
                   <div className="flex -space-x-2">
                     {connectedChannels.map((channel) => (
                       <div
-                        key={channel.type}
-                        className={`h-9 w-9 rounded-full ${channelColors[channel.type]} flex items-center justify-center text-primary-foreground border-2 border-card`}
-                        title={channel.name}
+                        key={channel}
+                        className={`h-9 w-9 rounded-full ${channelColors[channel]} flex items-center justify-center text-primary-foreground border-2 border-card`}
+                        title={channel}
                       >
-                        {channelIcons[channel.type]}
+                        {channelIcons[channel]}
                       </div>
                     ))}
-                    {connectedChannels.length < maxChannels && (
-                      <div className="h-9 w-9 rounded-full bg-secondary border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">+{maxChannels - connectedChannels.length}</span>
-                      </div>
-                    )}
                   </div>
                   {isExpired ? (
                     <Button 
@@ -384,17 +271,9 @@ export default function ClientDashboard() {
                     <div className={`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
                       <stat.icon className={`h-6 w-6 ${stat.color}`} />
                     </div>
-                    {stat.change && (
-                      <Badge variant="secondary" className="bg-accent/10 text-accent">
-                        {stat.change}
-                      </Badge>
-                    )}
-                    {stat.status === 'online' && (
-                      <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                        Online
-                      </Badge>
-                    )}
+                    <Badge variant="secondary" className={stat.change.startsWith('+') ? "bg-accent/10 text-accent" : "bg-destructive/10 text-destructive"}>
+                      {stat.change}
+                    </Badge>
                   </div>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -404,136 +283,22 @@ export default function ClientDashboard() {
           ))}
         </div>
 
-        {/* Connected Channels Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Connected Channels</CardTitle>
-                <CardDescription>Leads and automation status per channel</CardDescription>
-              </div>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2"
-                onClick={handleAddChannelClick}
-              >
-                <Plus className="h-4 w-4" />
-                Add Channel
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {connectedChannels.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No channels connected yet.</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 gap-2"
-                    onClick={handleAddChannelClick}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Connect Your First Channel
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {connectedChannels.map((channel) => (
-                    <div 
-                      key={channel.type}
-                      className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-11 w-11 rounded-lg ${channelColors[channel.type]} flex items-center justify-center text-primary-foreground`}>
-                            {channelIcons[channel.type]}
-                          </div>
-                          <div>
-                            <div className="font-medium">{channel.name}</div>
-                            <div className="text-sm text-muted-foreground">{channel.accountName}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                            Active
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                setSelectedChannel(channel);
-                                setChannelSettingsOpen(true);
-                              }}>
-                                <Settings className="h-4 w-4 mr-2" /> Settings
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="text-destructive"
-                                onClick={() => {
-                                  setChannelToDisconnect(channel.type);
-                                  setDisconnectAlertOpen(true);
-                                }}
-                              >
-                                Disconnect
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 rounded-lg bg-secondary/50">
-                          <div className="text-2xl font-bold">{channel.leads.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Total Leads</div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-secondary/50">
-                          <div className="text-2xl font-bold">{channel.automationsActive}</div>
-                          <div className="text-xs text-muted-foreground">Automations</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Automation Manager */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <AutomationManager 
-            maxAutomations={maxAutomations} 
-            connectedChannels={connectedChannels.map(c => c.type)} 
-            onUpgradeNeeded={() => setUpgradeDialogOpen(true)}
-          />
-        </motion.div>
-
-        {/* Chart and Activity */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Leads vs Sales Chart */}
+          {/* Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
             className="lg:col-span-2"
           >
             <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>Leads vs Sales</CardTitle>
-                <CardDescription>Performance over the last 30 days</CardDescription>
+                <CardTitle>Performance Overview</CardTitle>
+                <CardDescription>Leads vs Conversions over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
+                <div className="h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <defs>
@@ -546,13 +311,11 @@ export default function ClientDashboard() {
                           <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis 
-                        dataKey="date" 
+                        dataKey="name" 
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                        interval="preserveStartEnd"
                       />
                       <YAxis 
                         axisLine={false}
@@ -564,7 +327,6 @@ export default function ClientDashboard() {
                           backgroundColor: 'hsl(var(--card))',
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px',
-                          boxShadow: 'var(--shadow-medium)'
                         }}
                       />
                       <Area 
@@ -572,18 +334,16 @@ export default function ClientDashboard() {
                         dataKey="leads" 
                         stroke="hsl(var(--primary))" 
                         fillOpacity={1} 
-                        fill="url(#colorLeads)" 
+                        fill="url(#colorLeads)"
                         strokeWidth={2}
-                        name="Leads"
                       />
                       <Area 
                         type="monotone" 
                         dataKey="sales" 
                         stroke="hsl(var(--accent))" 
                         fillOpacity={1} 
-                        fill="url(#colorSales)" 
+                        fill="url(#colorSales)"
                         strokeWidth={2}
-                        name="Sales"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -592,51 +352,152 @@ export default function ClientDashboard() {
             </Card>
           </motion.div>
 
-          {/* Recent Activity */}
+          {/* Active Automations by Category */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
           >
             <Card className="border-border/50 h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Recent Activity
-                </CardTitle>
-                <CardDescription>Real-time platform pings</CardDescription>
+                <CardTitle className="text-lg">Active Automations</CardTitle>
+                <CardDescription>By business type</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-[280px] overflow-y-auto pr-2">
-                  {mockActivities.map((activity, index) => {
-                    const Icon = activityIcons[activity.type];
-                    return (
-                      <motion.div
-                        key={activity.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 + index * 0.05 }}
-                        className="flex items-start gap-3 pb-3 border-b border-border/50 last:border-0 last:pb-0"
-                      >
-                        <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="space-y-3">
+                {Object.entries(automationsByCategory).map(([category, automations]) => {
+                  const categoryInfo = businessCategories.find(c => c.id === category);
+                  return (
+                    <div 
+                      key={category}
+                      className="p-3 rounded-lg bg-secondary/50 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${categoryColors[category]}`}>
+                          {categoryIcons[category]}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm truncate">
-                            {platformIcons[activity.platform]} {activity.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
+                        <div>
+                          <div className="font-medium text-sm">{categoryInfo?.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {automations.length} automation{automations.length > 1 ? 's' : ''}
+                          </div>
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                      </div>
+                      <Badge variant="secondary" className="bg-accent/10 text-accent">
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                      </Badge>
+                    </div>
+                  );
+                })}
+
+                {configuredAutomations.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm">No automations configured yet.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => navigate('/portal/automations')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Automation
+                    </Button>
+                  </div>
+                )}
+
+                {configuredAutomations.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-2"
+                    onClick={() => navigate('/portal/automations')}
+                  >
+                    Manage Automations
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Channel Performance */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle>Channel Performance</CardTitle>
+              <CardDescription>Automations and metrics per connected channel</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {connectedChannels.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No channels connected yet.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 gap-2"
+                    onClick={() => navigate('/portal/automations')}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Connect Channels
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {connectedChannels.map((channel) => {
+                    const channelAutomations = automationsByChannel[channel] || [];
+                    const mockLeads = Math.floor(Math.random() * 300) + 100;
+                    
+                    return (
+                      <div 
+                        key={channel}
+                        className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
+                      >
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className={`h-12 w-12 rounded-xl ${channelColors[channel]} flex items-center justify-center text-white`}>
+                            {channelIcons[channel]}
+                          </div>
+                          <div>
+                            <div className="font-semibold capitalize">{channel}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {channelAutomations.length} automation{channelAutomations.length !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Leads</span>
+                            <span className="font-medium">{mockLeads}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Responses</span>
+                            <span className="font-medium">{Math.floor(mockLeads * 0.95)}</span>
+                          </div>
+                        </div>
+
+                        {channelAutomations.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-border">
+                            <div className="text-xs text-muted-foreground mb-2">Active:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {channelAutomations.map((auto, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {businessCategories.find(c => c.id === auto.businessCategory)?.icon}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -644,137 +505,51 @@ export default function ClientDashboard() {
         >
           <Card className="border-border/50">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Manage your automations and channels</CardDescription>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest automation triggers</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 flex-col gap-2"
-                  onClick={() => {
-                    const automationSection = document.querySelector('[data-automation-manager]');
-                    if (automationSection) {
-                      automationSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  <Bot className="h-5 w-5 text-primary" />
-                  <span className="text-sm">Create Automation</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 flex-col gap-2"
-                  onClick={handleAddChannelClick}
-                >
-                  <MessageSquare className="h-5 w-5 text-green-500" />
-                  <span className="text-sm">Connect Channel</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 flex-col gap-2"
-                  onClick={() => navigate('/portal/leads')}
-                >
-                  <Users className="h-5 w-5 text-accent" />
-                  <span className="text-sm">View Leads</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 flex-col gap-2"
-                  onClick={() => setUpgradeDialogOpen(true)}
-                >
-                  <TrendingUp className="h-5 w-5 text-yellow-500" />
-                  <span className="text-sm">Upgrade Plan</span>
-                </Button>
+              <div className="space-y-3">
+                {mockActivities.slice(0, 5).map((activity, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        activity.type === 'lead' ? 'bg-green-500/10 text-green-600' :
+                        activity.type === 'sale' ? 'bg-orange-500/10 text-orange-600' :
+                        'bg-blue-500/10 text-blue-600'
+                      }`}>
+                        {activity.type === 'lead' ? <UserPlus className="h-5 w-5" /> :
+                         activity.type === 'sale' ? <ShoppingCart className="h-5 w-5" /> :
+                         <MessageSquare className="h-5 w-5" />}
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm capitalize">{activity.platform}</div>
+                        <div className="text-xs text-muted-foreground">{activity.message}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{activity.time}</span>
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {activity.type}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Upgrade Dialog */}
-      <UpgradeDialog
-        open={upgradeDialogOpen}
+      <UpgradeDialog 
+        open={upgradeDialogOpen} 
         onOpenChange={setUpgradeDialogOpen}
         currentPlan={currentPlan}
         onPlanChange={handlePlanChange}
-        mode="both"
       />
-
-      {/* Channel Settings Dialog */}
-      {selectedChannel && (
-        <ChannelSettingsDialog
-          open={channelSettingsOpen}
-          onOpenChange={setChannelSettingsOpen}
-          channel={selectedChannel}
-          onDisconnect={() => {
-            setChannelToDisconnect(selectedChannel.type);
-            setChannelSettingsOpen(false);
-            setDisconnectAlertOpen(true);
-          }}
-        />
-      )}
-
-      {/* Add Channel Dialog */}
-      <Dialog open={addChannelDialogOpen} onOpenChange={setAddChannelDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connect a Channel</DialogTitle>
-            <DialogDescription>
-              Choose a channel to connect ({connectedChannels.length}/{maxChannels} used)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            {availableChannels.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <p>No more channels available to connect.</p>
-              </div>
-            ) : (
-              availableChannels.map((channelType) => (
-                <button
-                  key={channelType}
-                  onClick={() => handleConnectChannel(channelType)}
-                  disabled={connectingChannel !== null}
-                  className="w-full p-4 rounded-xl border-2 border-border hover:border-primary/50 transition-all flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg ${channelColors[channelType]} flex items-center justify-center text-primary-foreground`}>
-                      {channelIcons[channelType]}
-                    </div>
-                    <span className="font-medium capitalize">{channelType}</span>
-                  </div>
-                  {connectingChannel === channelType ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Plus className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Disconnect Alert */}
-      <AlertDialog open={disconnectAlertOpen} onOpenChange={setDisconnectAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect Channel?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will disconnect the channel and remove all associated automations. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => channelToDisconnect && handleDisconnectChannel(channelToDisconnect)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Disconnect
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </ClientLayout>
   );
 }
