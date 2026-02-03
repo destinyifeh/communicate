@@ -43,6 +43,91 @@ export const businessCategories: BusinessCategory[] = [
 ];
 
 // =====================================
+// BUSINESS KIND (TYPE OF BUSINESS)
+// =====================================
+export type BusinessKindType = 'vendor' | 'service_provider' | 'appointment_based' | 'lead_driven';
+
+export interface BusinessKind {
+  id: BusinessKindType;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  enabledAutomations: BusinessCategoryType[];
+}
+
+export const businessKinds: BusinessKind[] = [
+  {
+    id: 'vendor',
+    name: 'Vendor / Online Seller',
+    description: 'Sells physical or digital products',
+    icon: '🛒',
+    color: 'from-orange-500 to-amber-500',
+    enabledAutomations: ['sales_orders', 'lead_capture'],
+  },
+  {
+    id: 'service_provider',
+    name: 'Service Provider',
+    description: 'Offers services (freelancers, agencies, consultants)',
+    icon: '🧑‍💼',
+    color: 'from-purple-500 to-indigo-500',
+    enabledAutomations: ['lead_capture', 'enquiries_support'],
+  },
+  {
+    id: 'appointment_based',
+    name: 'Appointment-Based Business',
+    description: 'Clinics, salons, coaches, tutors',
+    icon: '📅',
+    color: 'from-blue-500 to-cyan-500',
+    enabledAutomations: ['appointments_bookings', 'enquiries_support'],
+  },
+  {
+    id: 'lead_driven',
+    name: 'Lead-Driven Business',
+    description: 'Realtors, marketers, schools, SaaS founders',
+    icon: '📥',
+    color: 'from-green-500 to-emerald-500',
+    enabledAutomations: ['lead_capture'],
+  },
+];
+
+// Business kind to channel automation mapping
+export const businessKindChannelMap: Record<BusinessKindType, Record<ChannelType, BusinessCategoryType[]>> = {
+  vendor: {
+    instagram: ['sales_orders', 'lead_capture'],
+    facebook: ['sales_orders'],
+    whatsapp: ['sales_orders', 'lead_capture'],
+    tiktok: ['lead_capture'],
+  },
+  service_provider: {
+    instagram: ['lead_capture'],
+    facebook: ['lead_capture'],
+    whatsapp: ['lead_capture', 'enquiries_support'],
+    tiktok: ['lead_capture'],
+  },
+  appointment_based: {
+    instagram: ['appointments_bookings', 'enquiries_support'],
+    facebook: ['appointments_bookings', 'enquiries_support'],
+    whatsapp: ['appointments_bookings', 'enquiries_support'],
+    tiktok: ['lead_capture'],
+  },
+  lead_driven: {
+    instagram: ['lead_capture'],
+    facebook: ['lead_capture'],
+    whatsapp: ['lead_capture'],
+    tiktok: ['lead_capture'],
+  },
+};
+
+// Get automations for a specific business kind and channel
+export const getAutomationsForBusinessKind = (
+  businessKind: BusinessKindType, 
+  channel: ChannelType
+): BusinessCategoryType[] => {
+  return businessKindChannelMap[businessKind]?.[channel] || [];
+};
+
+// =====================================
 // SALES / ORDERS AUTOMATION
 // =====================================
 export interface ProductItem {

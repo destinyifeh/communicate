@@ -10,8 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
   Instagram, Facebook, MessageSquare, Mail, CreditCard,
-  ArrowRight, CheckCircle2, Globe, Building, Sparkles,
-  Unlink
+  ArrowRight, CheckCircle2, Building, Sparkles,
+  Unlink, Settings, MoreVertical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -27,22 +27,33 @@ import {
   businessCategories,
   ConfiguredBusinessAutomation,
   generateId,
-  AutomationConfig
+  AutomationConfig,
+  BusinessKindType,
+  businessKinds,
+  getAutomationsForBusinessKind
 } from '@/lib/businessTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChannelAutomationSetup } from '@/components/automation/ChannelAutomationSetup';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-// Simplified to 7 steps - removed separate business type selection
-const TOTAL_STEPS = 7;
+// 8 steps with business kind selection
+const TOTAL_STEPS = 8;
 
 const stepTitles = {
   1: 'Create Account',
   2: 'Verify Email',
   3: 'Business Details',
-  4: 'Select Plan',
-  5: 'Payment',
-  6: 'Connect Channels',
-  7: 'Setup Automations',
+  4: 'Business Type',
+  5: 'Select Plan',
+  6: 'Payment',
+  7: 'Connect Channels',
+  8: 'Setup Automations',
 };
 
 const TikTokIcon = () => (
@@ -90,13 +101,16 @@ export default function Signup() {
     country: '',
   });
   
-  // Step 4: Plan Selection
+  // Step 4: Business Kind
+  const [selectedBusinessKind, setSelectedBusinessKind] = useState<BusinessKindType | null>(null);
+  
+  // Step 5: Plan Selection
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('starter');
   
-  // Step 5: Payment
+  // Step 6: Payment
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   
-  // Step 6: Channel Connections
+  // Step 7: Channel Connections
   const [channels, setChannels] = useState<ChannelConnection[]>([
     { type: 'instagram', connected: false },
     { type: 'facebook', connected: false },
@@ -104,7 +118,7 @@ export default function Signup() {
     { type: 'tiktok', connected: false },
   ]);
 
-  // Step 7: Automation Setup (per channel)
+  // Step 8: Automation Setup (per channel)
   const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
 
   const { signup } = useAuth();
@@ -152,20 +166,26 @@ export default function Signup() {
       }
       setStep(4);
     } else if (step === 4) {
+      if (!selectedBusinessKind) {
+        toast.error('Please select your business type');
+        return;
+      }
       setStep(5);
     } else if (step === 5) {
+      setStep(6);
+    } else if (step === 6) {
       setIsLoading(true);
       await new Promise(resolve => setTimeout(resolve, 2000));
       setPaymentCompleted(true);
       setIsLoading(false);
       toast.success('Payment successful!');
-      setStep(6);
-    } else if (step === 6) {
+      setStep(7);
+    } else if (step === 7) {
       if (connectedChannelsCount === 0) {
         toast.error('Please connect at least one channel');
         return;
       }
-      setStep(7);
+      setStep(8);
     }
   };
 
@@ -242,6 +262,7 @@ export default function Signup() {
       localStorage.setItem('configured_automations', JSON.stringify(automations));
       localStorage.setItem('connected_channels', JSON.stringify(channels.filter(c => c.connected)));
       localStorage.setItem('selected_plan', selectedPlan);
+      localStorage.setItem('business_kind', selectedBusinessKind || '');
       toast.success('Welcome to AutomateFlow!');
       navigate('/portal');
     } catch {
@@ -258,6 +279,11 @@ export default function Signup() {
       case 'enterprise': return Building2;
     }
   };
+
+  // Get enabled automations for the selected business kind
+  const enabledAutomations = selectedBusinessKind 
+    ? businessKinds.find(b => b.id === selectedBusinessKind)?.enabledAutomations || []
+    : [];
 
   return (
     <div className="min-h-screen flex">
@@ -296,10 +322,11 @@ export default function Signup() {
               {step === 1 && 'Create your account to get started with automation.'}
               {step === 2 && 'We sent a verification code to your email.'}
               {step === 3 && 'Tell us about your business.'}
-              {step === 4 && 'Choose the plan that fits your needs.'}
-              {step === 5 && 'Complete your subscription to unlock features.'}
-              {step === 6 && 'Connect your social channels to start automating.'}
-              {step === 7 && 'Set up automations for each connected channel.'}
+              {step === 4 && 'What type of business do you run?'}
+              {step === 5 && 'Choose the plan that fits your needs.'}
+              {step === 6 && 'Complete your subscription to unlock features.'}
+              {step === 7 && 'Connect your social channels to start automating.'}
+              {step === 8 && 'Set up automations for each connected channel.'}
             </motion.p>
           </div>
 
@@ -560,10 +587,89 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 4: Select Plan */}
+            {/* Step 4: Business Kind */}
             {step === 4 && (
               <motion.div 
                 key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full max-w-2xl"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold mb-2">What Type of Business Do You Run?</h2>
+                  <p className="text-muted-foreground">We'll enable the right automations for your business type</p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  {businessKinds.map((kind, index) => (
+                    <motion.button
+                      key={kind.id}
+                      type="button"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => setSelectedBusinessKind(kind.id)}
+                      className={`relative p-6 rounded-xl border-2 text-left transition-all ${
+                        selectedBusinessKind === kind.id
+                          ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
+                          : 'border-border hover:border-primary/50 hover:shadow-md'
+                      }`}
+                    >
+                      <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${kind.color} flex items-center justify-center mb-4 text-2xl`}>
+                        {kind.icon}
+                      </div>
+                      
+                      <h3 className="font-semibold text-lg mb-1">{kind.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{kind.description}</p>
+                      
+                      <div className="flex flex-wrap gap-1.5">
+                        {kind.enabledAutomations.map(automationId => {
+                          const category = businessCategories.find(c => c.id === automationId);
+                          return (
+                            <Badge 
+                              key={automationId} 
+                              variant="secondary" 
+                              className="text-xs bg-accent/10 text-accent"
+                            >
+                              {category?.icon} {category?.name}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                      
+                      {selectedBusinessKind === kind.id && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center"
+                        >
+                          <Check className="h-4 w-4 text-primary-foreground" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 max-w-md mx-auto">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
+                    Back
+                  </Button>
+                  <Button 
+                    onClick={handleNextStep} 
+                    disabled={!selectedBusinessKind}
+                    className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
+                  >
+                    Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 5: Select Plan */}
+            {step === 5 && (
+              <motion.div 
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -620,7 +726,7 @@ export default function Signup() {
                 </div>
 
                 <div className="flex gap-3 max-w-md mx-auto">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
+                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-12">
                     Back
                   </Button>
                   <Button onClick={handleNextStep} className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90">
@@ -630,10 +736,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 5: Payment */}
-            {step === 5 && (
+            {/* Step 6: Payment */}
+            {step === 6 && (
               <motion.div 
-                key="step5"
+                key="step6"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -689,7 +795,7 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-11">
+                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
@@ -713,10 +819,10 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 6: Connect Channels */}
-            {step === 6 && (
+            {/* Step 7: Connect Channels */}
+            {step === 7 && (
               <motion.div 
-                key="step6"
+                key="step7"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -741,6 +847,10 @@ export default function Signup() {
                     <div className="grid grid-cols-2 gap-3">
                       {channels.map((channel) => {
                         const info = channelInfo[channel.type];
+                        const automationsForChannel = selectedBusinessKind 
+                          ? getAutomationsForBusinessKind(selectedBusinessKind, channel.type)
+                          : [];
+                        
                         return (
                           <div
                             key={channel.type}
@@ -755,21 +865,47 @@ export default function Signup() {
                                 {info.icon}
                               </div>
                               {channel.connected && (
-                                <CheckCircle2 className="h-5 w-5 text-accent" />
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem className="text-xs">
+                                      <Settings className="h-3 w-3 mr-2" />
+                                      Channel Settings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      className="text-xs text-destructive"
+                                      onClick={() => handleDisconnectChannel(channel.type)}
+                                    >
+                                      <Unlink className="h-3 w-3 mr-2" />
+                                      Disconnect
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               )}
                             </div>
                             <div className="font-medium text-sm mb-1">{info.name}</div>
+                            
+                            {/* Show available automations for this channel */}
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {automationsForChannel.map(catId => {
+                                const cat = businessCategories.find(c => c.id === catId);
+                                return (
+                                  <span key={catId} className="text-xs">{cat?.icon}</span>
+                                );
+                              })}
+                            </div>
+                            
                             {channel.connected ? (
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 <p className="text-xs text-accent">{channel.accountName}</p>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full h-8 text-xs text-destructive hover:text-destructive"
-                                  onClick={() => handleDisconnectChannel(channel.type)}
-                                >
-                                  <Unlink className="h-3 w-3 mr-1" /> Disconnect
-                                </Button>
+                                <Badge variant="secondary" className="text-xs bg-accent/10 text-accent">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                                </Badge>
                               </div>
                             ) : (
                               <Button
@@ -792,15 +928,15 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
+                      <Button variant="outline" onClick={() => setStep(6)} className="flex-1 h-11">
                         Back
                       </Button>
                       <Button 
                         onClick={handleNextStep}
                         disabled={connectedChannelsCount === 0}
-                        className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
+                        className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
                       >
-                        Continue to Automations <ArrowRight className="ml-2 h-4 w-4" />
+                        Setup Automations <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>
@@ -808,32 +944,22 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 7: Setup Automations for Each Channel */}
-            {step === 7 && (
+            {/* Step 8: Setup Automations */}
+            {step === 8 && (
               <motion.div 
-                key="step7"
+                key="step8"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full max-w-3xl"
               >
-                <Card className="border-border/50 shadow-large">
-                  <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold">Setup Your Automations</CardTitle>
-                    <CardDescription>
-                      Configure automations for each of your connected channels
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChannelAutomationSetup
-                      currentPlan={selectedPlan}
-                      connectedChannels={connectedChannelsList.map(c => c.type)}
-                      existingAutomations={[]}
-                      onComplete={handleAutomationsComplete}
-                      onBack={() => setStep(6)}
-                    />
-                  </CardContent>
-                </Card>
+                <ChannelAutomationSetup
+                  connectedChannels={connectedChannelsList}
+                  currentPlan={selectedPlan}
+                  businessKind={selectedBusinessKind}
+                  onComplete={handleAutomationsComplete}
+                  onBack={() => setStep(7)}
+                />
               </motion.div>
             )}
           </AnimatePresence>
