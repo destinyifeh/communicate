@@ -49,15 +49,15 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="relative bg-[hsl(222,25%,8%)] text-[hsl(210,20%,95%)] overflow-hidden">
+    <footer className="relative bg-card dark:bg-[hsl(222,25%,8%)] text-foreground dark:text-[hsl(210,20%,95%)] border-t border-border overflow-hidden">
       {/* Gradient overlay */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-accent/20 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 dark:bg-primary/20 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-accent/10 dark:bg-accent/20 rounded-full blur-[100px]" />
       </div>
 
       {/* Newsletter Section */}
-      <div className="relative border-b border-background/10">
+      <div className="relative border-b border-border dark:border-white/10">
         <div className="container mx-auto px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ export function Footer() {
                 <h3 className="text-2xl md:text-3xl font-bold mb-3">
                   Stay ahead of the curve
                 </h3>
-                <p className="text-background/70">
+                <p className="text-muted-foreground">
                   Get automation tips, industry insights, and exclusive offers delivered to your inbox.
                 </p>
               </div>
@@ -78,7 +78,7 @@ export function Footer() {
                 <Input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="bg-background/10 border-background/20 text-background placeholder:text-background/50 focus:border-primary"
+                  className="bg-secondary border-border"
                 />
                 <Button className="gradient-primary text-primary-foreground shrink-0">
                   Subscribe
@@ -101,22 +101,22 @@ export function Footer() {
               </div>
               <span className="text-xl font-bold">AutomateFlow</span>
             </Link>
-            <p className="text-background/70 mb-6 max-w-xs">
+            <p className="text-muted-foreground mb-6 max-w-xs">
               Empowering businesses across Africa with intelligent social media automation. 
               Convert conversations into customers, automatically.
             </p>
             
             {/* Contact Info */}
             <div className="space-y-3 text-sm">
-              <a href="mailto:hello@automateflow.com" className="flex items-center gap-2 text-background/70 hover:text-background transition-colors">
+              <a href="mailto:hello@automateflow.com" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Mail className="h-4 w-4" />
                 hello@automateflow.com
               </a>
-              <a href="tel:+2348000000000" className="flex items-center gap-2 text-background/70 hover:text-background transition-colors">
+              <a href="tel:+2348000000000" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Phone className="h-4 w-4" />
                 +234 800 000 0000
               </a>
-              <div className="flex items-start gap-2 text-background/70">
+              <div className="flex items-start gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4 mt-0.5" />
                 <span>Lagos, Nigeria</span>
               </div>
@@ -125,11 +125,11 @@ export function Footer() {
 
           {/* Product Links */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/50">Product</h4>
+            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground/70">Product</h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <a href={link.href} className="text-background/70 hover:text-background transition-colors text-sm">
+                  <a href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.name}
                   </a>
                 </li>
@@ -139,11 +139,11 @@ export function Footer() {
 
           {/* Company Links */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/50">Company</h4>
+            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground/70">Company</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <a href={link.href} className="text-background/70 hover:text-background transition-colors text-sm">
+                  <a href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.name}
                   </a>
                 </li>
@@ -153,11 +153,11 @@ export function Footer() {
 
           {/* Resources Links */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/50">Resources</h4>
+            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground/70">Resources</h4>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.name}>
-                  <a href={link.href} className="text-background/70 hover:text-background transition-colors text-sm">
+                  <a href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.name}
                   </a>
                 </li>
@@ -167,11 +167,11 @@ export function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/50">Legal</h4>
+            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground/70">Legal</h4>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
-                  <a href={link.href} className="text-background/70 hover:text-background transition-colors text-sm">
+                  <a href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.name}
                   </a>
                 </li>
@@ -182,10 +182,10 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="relative border-t border-background/10">
+      <div className="relative border-t border-border dark:border-white/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-background/50">
+            <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} AutomateFlow. All rights reserved.
             </p>
             
@@ -195,7 +195,7 @@ export function Footer() {
                 <a
                   key={social.name}
                   href={social.href}
-                  className="h-10 w-10 rounded-full bg-background/10 flex items-center justify-center text-background/70 hover:bg-primary hover:text-primary-foreground transition-all"
+                  className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all"
                   title={social.name}
                 >
                   {social.icon}

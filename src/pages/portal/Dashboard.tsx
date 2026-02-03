@@ -23,14 +23,24 @@ import {
   MessageSquare,
   HeadphonesIcon,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Settings,
+  MoreVertical,
+  Unlink
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
 import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
-import { ChannelType, PlanType, planDetails, businessCategories, ConfiguredBusinessAutomation } from '@/lib/businessTypes';
+import { ChannelType, PlanType, planDetails, businessCategories, ConfiguredBusinessAutomation, BusinessKindType, businessKinds } from '@/lib/businessTypes';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -74,7 +84,9 @@ export default function ClientDashboard() {
   const [currentPlan, setCurrentPlan] = useState<PlanType>('starter');
   const [planExpiryDate, setPlanExpiryDate] = useState('2026-03-15');
   const [connectedChannels, setConnectedChannels] = useState<ChannelType[]>([]);
+  const [connectedChannelData, setConnectedChannelData] = useState<any[]>([]);
   const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
+  const [businessKind, setBusinessKind] = useState<BusinessKindType | null>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
 
   // Check if plan is expired
@@ -89,6 +101,7 @@ export default function ClientDashboard() {
     const savedChannels = localStorage.getItem('connected_channels');
     if (savedChannels) {
       const channels = JSON.parse(savedChannels);
+      setConnectedChannelData(channels);
       setConnectedChannels(channels.map((c: any) => c.type));
     }
 
@@ -96,6 +109,9 @@ export default function ClientDashboard() {
     if (savedAutomations) {
       setConfiguredAutomations(JSON.parse(savedAutomations));
     }
+
+    const savedBusinessKind = localStorage.getItem('business_kind') as BusinessKindType;
+    if (savedBusinessKind) setBusinessKind(savedBusinessKind);
   }, []);
 
   const plan = planDetails[currentPlan];
@@ -167,6 +183,22 @@ export default function ClientDashboard() {
     localStorage.setItem('selected_plan', newPlan);
   };
 
+  const handleDisconnectChannel = (channel: ChannelType) => {
+    const updatedChannels = connectedChannelData.filter((c: any) => c.type !== channel);
+    setConnectedChannelData(updatedChannels);
+    setConnectedChannels(updatedChannels.map((c: any) => c.type));
+    localStorage.setItem('connected_channels', JSON.stringify(updatedChannels));
+    
+    // Remove automations for this channel
+    const updatedAutomations = configuredAutomations.filter(a => a.channel !== channel);
+    setConfiguredAutomations(updatedAutomations);
+    localStorage.setItem('configured_automations', JSON.stringify(updatedAutomations));
+    
+    toast.success(`${channel} disconnected successfully`);
+  };
+
+  const businessKindInfo = businessKind ? businessKinds.find(b => b.id === businessKind) : null;
+
   return (
     <ClientLayout>
       <div className="space-y-6">
@@ -188,6 +220,11 @@ export default function ClientDashboard() {
                       <Badge variant="secondary" className={isExpired ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}>
                         {isExpired ? 'Expired' : 'Active'}
                       </Badge>
+                      {businessKindInfo && (
+                        <Badge variant="outline" className="gap-1">
+                          {businessKindInfo.icon} {businessKindInfo.name}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {connectedChannels.length} of {maxChannels} channels • {automationsCount} of {maxAutomations === 999 ? '∞' : maxAutomations} automations
@@ -446,6 +483,7 @@ export default function ClientDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {connectedChannels.map((channel) => {
                     const channelAutomations = automationsByChannel[channel] || [];
+                    const channelData = connectedChannelData.find((c: any) => c.type === channel);
                     const mockLeads = Math.floor(Math.random() * 300) + 100;
                     
                     return (
@@ -453,16 +491,39 @@ export default function ClientDashboard() {
                         key={channel}
                         className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
                       >
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className={`h-12 w-12 rounded-xl ${channelColors[channel]} flex items-center justify-center text-white`}>
-                            {channelIcons[channel]}
-                          </div>
-                          <div>
-                            <div className="font-semibold capitalize">{channel}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {channelAutomations.length} automation{channelAutomations.length !== 1 ? 's' : ''}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-12 w-12 rounded-xl ${channelColors[channel]} flex items-center justify-center text-white`}>
+                              {channelIcons[channel]}
+                            </div>
+                            <div>
+                              <div className="font-semibold capitalize">{channel}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {channelData?.accountName || 'Connected'}
+                              </div>
                             </div>
                           </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="text-sm">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Channel Settings
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-sm text-destructive"
+                                onClick={() => handleDisconnectChannel(channel)}
+                              >
+                                <Unlink className="h-4 w-4 mr-2" />
+                                Disconnect Channel
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                         
                         <div className="space-y-2">

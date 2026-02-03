@@ -1,7 +1,7 @@
 import { Header } from '@/components/landing/Header';
 import { Hero } from '@/components/landing/Hero';
 import { Features } from '@/components/landing/Features';
-import { Services } from '@/components/landing/Services';
+import { BusinessTypes } from '@/components/landing/BusinessTypes';
 import { Pricing } from '@/components/landing/Pricing';
 import { Testimonials } from '@/components/landing/Testimonials';
 import { Footer } from '@/components/landing/Footer';
@@ -13,7 +13,7 @@ export default function Landing() {
       <main>
         <Hero />
         <Features />
-        <Services />
+        <BusinessTypes />
         <Pricing />
         <Testimonials />
       </main>

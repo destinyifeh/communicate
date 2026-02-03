@@ -6,10 +6,12 @@ import {
   getDefaultConfig,
   PlanType,
   ChannelType,
-  planDetails
+  ChannelConnection,
+  planDetails,
+  BusinessKindType,
+  getAutomationsForBusinessKind
 } from '@/lib/businessTypes';
 import { 
-  getAvailableAutomations, 
   channelAutomationDescriptions 
 } from '@/lib/channelAutomationMap';
 import { AppointmentSetup } from './AppointmentSetup';
@@ -54,8 +56,9 @@ interface ChannelAutomation {
 
 interface ChannelAutomationSetupProps {
   currentPlan: PlanType;
-  connectedChannels: ChannelType[];
-  existingAutomations: ChannelAutomation[];
+  connectedChannels: ChannelConnection[];
+  businessKind?: BusinessKindType | null;
+  existingAutomations?: ChannelAutomation[];
   onComplete: (automations: {
     channel: ChannelType;
     category: BusinessCategoryType;
@@ -67,10 +70,14 @@ interface ChannelAutomationSetupProps {
 export function ChannelAutomationSetup({
   currentPlan,
   connectedChannels,
-  existingAutomations,
+  businessKind,
+  existingAutomations = [],
   onComplete,
   onBack
 }: ChannelAutomationSetupProps) {
+  // Convert ChannelConnection[] to ChannelType[]
+  const channelTypes = connectedChannels.map(c => c.type);
+  
   const [currentChannelIndex, setCurrentChannelIndex] = useState(0);
   const [step, setStep] = useState<'select' | 'configure'>('select');
   const [channelAutomations, setChannelAutomations] = useState<ChannelAutomation[]>(
@@ -79,14 +86,16 @@ export function ChannelAutomationSetup({
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategoryType | null>(null);
   const [currentConfig, setCurrentConfig] = useState<AutomationConfig | null>(null);
 
-  const currentChannel = connectedChannels[currentChannelIndex];
+  const currentChannel = channelTypes[currentChannelIndex];
   const plan = planDetails[currentPlan];
   const maxAutomations = plan.maxAutomations === 'unlimited' ? 999 : plan.maxAutomations;
   const currentAutomationCount = channelAutomations.filter(a => a.configured).length;
   const canAddMore = currentAutomationCount < maxAutomations;
 
-  // Get available automations for current channel
-  const availableAutomations = getAvailableAutomations(currentChannel);
+  // Get available automations for current channel based on business kind
+  const availableAutomations = businessKind 
+    ? getAutomationsForBusinessKind(businessKind, currentChannel)
+    : [];
   const channelDescriptions = channelAutomationDescriptions[currentChannel];
 
   // Check if category is already configured for this channel
@@ -129,7 +138,7 @@ export function ChannelAutomationSetup({
   };
 
   const handleNextChannel = () => {
-    if (currentChannelIndex < connectedChannels.length - 1) {
+    if (currentChannelIndex < channelTypes.length - 1) {
       setCurrentChannelIndex(prev => prev + 1);
       setStep('select');
       setSelectedCategory(null);
@@ -178,7 +187,7 @@ export function ChannelAutomationSetup({
           <div>
             <h2 className="text-xl font-bold">{channelInfo[currentChannel].name} Automation</h2>
             <p className="text-sm text-muted-foreground">
-              Channel {currentChannelIndex + 1} of {connectedChannels.length}
+              Channel {currentChannelIndex + 1} of {channelTypes.length}
             </p>
           </div>
         </div>
@@ -192,7 +201,7 @@ export function ChannelAutomationSetup({
 
       {/* Channel Navigation */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {connectedChannels.map((channel, index) => {
+        {channelTypes.map((channel, index) => {
           const configCount = channelAutomations.filter(
             a => a.channel === channel && a.configured
           ).length;
@@ -341,12 +350,12 @@ export function ChannelAutomationSetup({
               </div>
               
               <div className="flex gap-2">
-                {currentChannelIndex < connectedChannels.length - 1 ? (
+                {currentChannelIndex < channelTypes.length - 1 ? (
                   <Button onClick={handleNextChannel}>
                     Next Channel <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={handleComplete}
                     disabled={currentAutomationCount === 0}
                     className="gradient-primary text-primary-foreground"
