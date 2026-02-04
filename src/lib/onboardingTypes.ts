@@ -1,4 +1,6 @@
 // Onboarding types and mock data for ManyChat integration
+// NOTE: Main plan and business types are in businessTypes.ts
+// This file is kept for legacy compatibility
 
 export type PlanType = 'starter' | 'professional' | 'enterprise';
 
@@ -12,24 +14,37 @@ export interface PlanDetails {
   description: string;
 }
 
+// Updated plans: Starter (1 channel), Professional (2 channels), Enterprise (all 4)
 export const planDetails: Record<PlanType, PlanDetails> = {
   starter: {
     name: 'Starter',
     price: '₦25,000',
-    maxChannels: 2,
-    maxAutomations: 3,
+    maxChannels: 1,
+    maxAutomations: 2,
     maxContacts: 500,
-    features: ['Comment → DM automation', 'Lead capture', 'Basic analytics', 'Dashboard view'],
-    description: '2 channels (WhatsApp + 1 other from IG, FB, or TikTok)',
+    features: [
+      '1 Social Channel',
+      'Lead Capture Automation',
+      'Basic FAQ Bot',
+      'Dashboard Analytics',
+      'Email Support',
+    ],
+    description: '1 channel of your choice',
   },
   professional: {
     name: 'Professional',
     price: '₦50,000',
-    maxChannels: 3,
-    maxAutomations: 10,
+    maxChannels: 2,
+    maxAutomations: 8,
     maxContacts: 2500,
-    features: ['Transactional Email', 'Broadcast messages', 'Message templates', 'Full analytics', 'Priority support'],
-    description: '3 channels (WhatsApp + 2 others)',
+    features: [
+      '2 Social Channels',
+      'All Automation Types',
+      'Appointment Booking',
+      'Transactional Email',
+      'Priority Support',
+    ],
+    description: '2 channels of your choice',
   },
   enterprise: {
     name: 'Enterprise',
@@ -37,8 +52,14 @@ export const planDetails: Record<PlanType, PlanDetails> = {
     maxChannels: 4,
     maxAutomations: 'unlimited',
     maxContacts: 10000,
-    features: ['AI-powered replies', 'Custom reporting', 'Dedicated account manager', 'Advanced analytics'],
-    description: 'All 4 channels (IG, FB, WhatsApp, TikTok)',
+    features: [
+      'All 4 Social Channels',
+      'Unlimited Automations',
+      'AI-Powered Responses',
+      'Dedicated Account Manager',
+      'Custom Integrations',
+    ],
+    description: 'All channels (IG, FB, WhatsApp, TikTok)',
   },
 };
 

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, 
-  DollarSign, 
   TrendingUp,
   ShoppingCart,
   UserPlus,
@@ -26,13 +25,16 @@ import {
   CheckCircle2,
   Settings,
   MoreVertical,
-  Unlink
+  Unlink,
+  RefreshCw,
+  Link2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { generateChartData, mockActivities } from '@/lib/mockData';
 import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
-import { ChannelType, PlanType, planDetails, businessCategories, ConfiguredBusinessAutomation, BusinessKindType, businessKinds } from '@/lib/businessTypes';
+import { ChannelSettingsDialog } from '@/components/portal/ChannelSettingsDialog';
+import { ChannelType, PlanType, planDetails, businessCategories, ConfiguredBusinessAutomation, BusinessKindType, businessKinds, mockManyChatOAuth, mockTikTokOAuth } from '@/lib/businessTypes';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -88,6 +90,9 @@ export default function ClientDashboard() {
   const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
   const [businessKind, setBusinessKind] = useState<BusinessKindType | null>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [selectedChannelForSettings, setSelectedChannelForSettings] = useState<any>(null);
+  const [connectingChannel, setConnectingChannel] = useState<ChannelType | null>(null);
 
   // Check if plan is expired
   const isExpired = new Date(planExpiryDate) < new Date();
@@ -137,46 +142,45 @@ export default function ClientDashboard() {
     return acc;
   }, {} as Record<string, ConfiguredBusinessAutomation[]>);
 
-  // Mock stats based on automation types
-  const totalLeads = 847;
-  const totalSales = 156;
-  const appointmentsBooked = 45;
-  const supportTickets = 23;
+  // Get business-kind specific stats
+  const businessKindInfo = businessKind ? businessKinds.find(b => b.id === businessKind) : null;
+  const enabledCategories = businessKindInfo?.enabledAutomations || [];
 
-  const stats = [
-    { 
-      label: 'Total Leads', 
-      value: totalLeads.toLocaleString(), 
-      change: '+23%',
-      icon: UserPlus,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-500/10',
-    },
-    { 
-      label: 'Sales/Orders', 
-      value: totalSales.toString(), 
-      change: '+18%',
-      icon: ShoppingCart,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-500/10',
-    },
-    { 
-      label: 'Appointments', 
-      value: appointmentsBooked.toString(), 
-      change: '+12%',
-      icon: Calendar,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-500/10',
-    },
-    { 
-      label: 'Support Tickets', 
-      value: supportTickets.toString(), 
-      change: '-5%',
-      icon: HeadphonesIcon,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-500/10',
-    },
-  ];
+  // Mock stats based on business type
+  const getStats = () => {
+    if (businessKind === 'vendor') {
+      return [
+        { label: 'Total Leads', value: '847', change: '+23%', icon: UserPlus, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-500/10' },
+        { label: 'Orders', value: '156', change: '+18%', icon: ShoppingCart, color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-500/10' },
+        { label: 'Revenue', value: '₦2.4M', change: '+15%', icon: TrendingUp, color: 'text-primary', bgColor: 'bg-primary/10' },
+        { label: 'Active Customers', value: '312', change: '+8%', icon: Users, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-500/10' },
+      ];
+    } else if (businessKind === 'appointment_based') {
+      return [
+        { label: 'Appointments', value: '89', change: '+12%', icon: Calendar, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-500/10' },
+        { label: 'Completed', value: '72', change: '+10%', icon: CheckCircle2, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-500/10' },
+        { label: 'Support Tickets', value: '23', change: '-5%', icon: HeadphonesIcon, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-500/10' },
+        { label: 'Clients', value: '156', change: '+14%', icon: Users, color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-500/10' },
+      ];
+    } else if (businessKind === 'service_provider') {
+      return [
+        { label: 'Total Leads', value: '523', change: '+28%', icon: UserPlus, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-500/10' },
+        { label: 'Support Tickets', value: '45', change: '+8%', icon: HeadphonesIcon, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-500/10' },
+        { label: 'Response Rate', value: '98%', change: '+2%', icon: MessageSquare, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-500/10' },
+        { label: 'Active Clients', value: '89', change: '+12%', icon: Users, color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-500/10' },
+      ];
+    } else {
+      // Lead-driven
+      return [
+        { label: 'Total Leads', value: '1,247', change: '+35%', icon: UserPlus, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-500/10' },
+        { label: 'Qualified', value: '423', change: '+22%', icon: CheckCircle2, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-500/10' },
+        { label: 'Conversion Rate', value: '34%', change: '+5%', icon: TrendingUp, color: 'text-primary', bgColor: 'bg-primary/10' },
+        { label: 'Follow-ups Sent', value: '892', change: '+18%', icon: MessageSquare, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-500/10' },
+      ];
+    }
+  };
+
+  const stats = getStats();
 
   const handlePlanChange = (newPlan: PlanType) => {
     setCurrentPlan(newPlan);
@@ -195,9 +199,62 @@ export default function ClientDashboard() {
     localStorage.setItem('configured_automations', JSON.stringify(updatedAutomations));
     
     toast.success(`${channel} disconnected successfully`);
+    setSettingsDialogOpen(false);
   };
 
-  const businessKindInfo = businessKind ? businessKinds.find(b => b.id === businessKind) : null;
+  const handleConnectChannel = async (channelType: ChannelType) => {
+    if (connectedChannels.length >= maxChannels) {
+      toast.error(`Your ${plan.name} plan allows only ${maxChannels} channel(s). Upgrade to add more.`);
+      setUpgradeDialogOpen(true);
+      return;
+    }
+    
+    setConnectingChannel(channelType);
+    
+    try {
+      const response = channelType === 'tiktok' 
+        ? await mockTikTokOAuth() 
+        : await mockManyChatOAuth(channelType);
+      
+      if (response.success) {
+        const newChannel = { 
+          type: channelType, 
+          connected: true, 
+          workspaceId: response.workspaceId,
+          accessToken: response.accessToken,
+          accountName: response.accountName,
+          connectedAt: new Date().toISOString(),
+        };
+        
+        const updatedChannels = [...connectedChannelData, newChannel];
+        setConnectedChannelData(updatedChannels);
+        setConnectedChannels(updatedChannels.map((c: any) => c.type));
+        localStorage.setItem('connected_channels', JSON.stringify(updatedChannels));
+        
+        toast.success(`${channelType} connected successfully! Configure automations in Settings.`);
+      }
+    } catch {
+      toast.error(`Failed to connect ${channelType}`);
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
+  const openChannelSettings = (channel: ChannelType) => {
+    const channelData = connectedChannelData.find((c: any) => c.type === channel);
+    const channelAutomations = automationsByChannel[channel] || [];
+    setSelectedChannelForSettings({
+      type: channel,
+      accountName: channelData?.accountName || 'Connected',
+      leads: Math.floor(Math.random() * 300) + 100,
+      automationsActive: channelAutomations.length,
+    });
+    setSettingsDialogOpen(true);
+  };
+
+  // Available channels to connect
+  const allChannels: ChannelType[] = ['instagram', 'facebook', 'whatsapp', 'tiktok'];
+  const availableToConnect = allChannels.filter(c => !connectedChannels.includes(c));
 
   return (
     <ClientLayout>
@@ -332,7 +389,11 @@ export default function ClientDashboard() {
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>Performance Overview</CardTitle>
-                <CardDescription>Leads vs Conversions over time</CardDescription>
+                <CardDescription>
+                  {businessKind === 'vendor' ? 'Leads vs Orders' : 
+                   businessKind === 'appointment_based' ? 'Bookings vs Completed' :
+                   'Leads vs Conversions'} over time
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[280px]">
@@ -462,22 +523,65 @@ export default function ClientDashboard() {
           transition={{ delay: 0.5 }}
         >
           <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>Channel Performance</CardTitle>
-              <CardDescription>Automations and metrics per connected channel</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Connected Channels</CardTitle>
+                <CardDescription>Manage your connected platforms</CardDescription>
+              </div>
+              {availableToConnect.length > 0 && connectedChannels.length < maxChannels && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Connect Channel
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-card border border-border z-50">
+                    {availableToConnect.map((channel) => (
+                      <DropdownMenuItem
+                        key={channel}
+                        onClick={() => handleConnectChannel(channel)}
+                        disabled={connectingChannel === channel}
+                        className="cursor-pointer"
+                      >
+                        <div className={`h-6 w-6 rounded ${channelColors[channel]} flex items-center justify-center text-white mr-2`}>
+                          {channelIcons[channel]}
+                        </div>
+                        <span className="capitalize">{channel}</span>
+                        {connectingChannel === channel && (
+                          <RefreshCw className="h-3 w-3 ml-auto animate-spin" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </CardHeader>
             <CardContent>
               {connectedChannels.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No channels connected yet.</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 gap-2"
-                    onClick={() => navigate('/portal/automations')}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Connect Channels
-                  </Button>
+                  <Link2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p className="mb-4">No channels connected yet.</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {allChannels.slice(0, maxChannels).map((channel) => (
+                      <Button
+                        key={channel}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => handleConnectChannel(channel)}
+                        disabled={connectingChannel === channel}
+                      >
+                        <div className={`h-5 w-5 rounded ${channelColors[channel]} flex items-center justify-center text-white`}>
+                          {channelIcons[channel]}
+                        </div>
+                        <span className="capitalize">{channel}</span>
+                        {connectingChannel === channel && (
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                        )}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -487,69 +591,74 @@ export default function ClientDashboard() {
                     const mockLeads = Math.floor(Math.random() * 300) + 100;
                     
                     return (
-                      <div 
+                      <Card 
                         key={channel}
-                        className="p-4 rounded-xl border border-border bg-card hover:shadow-medium transition-shadow"
+                        className="border-border/50 overflow-hidden"
                       >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`h-12 w-12 rounded-xl ${channelColors[channel]} flex items-center justify-center text-white`}>
-                              {channelIcons[channel]}
-                            </div>
-                            <div>
-                              <div className="font-semibold capitalize">{channel}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {channelData?.accountName || 'Connected'}
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className={`h-11 w-11 rounded-xl ${channelColors[channel]} flex items-center justify-center text-white shrink-0`}>
+                                {channelIcons[channel]}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold capitalize">{channel}</div>
+                                <div className="text-xs text-muted-foreground truncate" title={channelData?.accountName}>
+                                  {channelData?.accountName || 'Connected'}
+                                </div>
                               </div>
                             </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-card border border-border z-50">
+                                <DropdownMenuItem 
+                                  className="text-sm cursor-pointer"
+                                  onClick={() => openChannelSettings(channel)}
+                                >
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Channel Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-sm text-destructive cursor-pointer"
+                                  onClick={() => handleDisconnectChannel(channel)}
+                                >
+                                  <Unlink className="h-4 w-4 mr-2" />
+                                  Disconnect Channel
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-sm">
-                                <Settings className="h-4 w-4 mr-2" />
-                                Channel Settings
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-sm text-destructive"
-                                onClick={() => handleDisconnectChannel(channel)}
-                              >
-                                <Unlink className="h-4 w-4 mr-2" />
-                                Disconnect Channel
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Leads</span>
-                            <span className="font-medium">{mockLeads}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Responses</span>
-                            <span className="font-medium">{Math.floor(mockLeads * 0.95)}</span>
-                          </div>
-                        </div>
-
-                        {channelAutomations.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-border">
-                            <div className="text-xs text-muted-foreground mb-2">Active:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {channelAutomations.map((auto, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {businessCategories.find(c => c.id === auto.businessCategory)?.icon}
-                                </Badge>
-                              ))}
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Leads</span>
+                              <span className="font-medium">{mockLeads}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Responses</span>
+                              <span className="font-medium">{Math.floor(mockLeads * 0.95)}</span>
                             </div>
                           </div>
-                        )}
-                      </div>
+
+                          {channelAutomations.length > 0 && (
+                            <div className="mt-4 pt-3 border-t border-border">
+                              <div className="text-xs text-muted-foreground mb-2">Active:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {channelAutomations.map((auto, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {businessCategories.find(c => c.id === auto.businessCategory)?.icon}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
@@ -611,6 +720,15 @@ export default function ClientDashboard() {
         currentPlan={currentPlan}
         onPlanChange={handlePlanChange}
       />
+
+      {selectedChannelForSettings && (
+        <ChannelSettingsDialog
+          open={settingsDialogOpen}
+          onOpenChange={setSettingsDialogOpen}
+          channel={selectedChannelForSettings}
+          onDisconnect={() => handleDisconnectChannel(selectedChannelForSettings.type)}
+        />
+      )}
     </ClientLayout>
   );
 }
