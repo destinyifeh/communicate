@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, Building2, Instagram, Facebook, MessageSquare, Mail, ShoppingCart, Calendar, HelpCircle, UserPlus } from 'lucide-react';
+import { Check, Zap, Crown, Building2, Instagram, Facebook, MessageSquare, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,66 +11,56 @@ const TikTokIcon = () => (
   </svg>
 );
 
-const businessTypes = [
-  { icon: ShoppingCart, name: 'Sales / Orders', color: 'text-orange-500' },
-  { icon: Calendar, name: 'Appointments', color: 'text-blue-500' },
-  { icon: HelpCircle, name: 'Enquiries', color: 'text-purple-500' },
-  { icon: UserPlus, name: 'Lead Capture', color: 'text-green-500' },
-];
-
 const plans = [
   {
     name: 'Starter',
     icon: Zap,
     price: '₦25,000',
     period: '/month',
-    description: 'Perfect for small businesses getting started with automation.',
-    channels: '2 channels (WhatsApp + 1 other: IG, FB, or TikTok)',
-    automations: '1–3 automations',
-    contactLimit: '500 Contacts',
-    supportedTypes: ['Lead Capture', 'Enquiries'],
+    description: 'Perfect for small businesses just getting started.',
+    channelCount: 1,
+    channelText: '1 channel of your choice',
+    automations: '2 automations',
+    contacts: '500 contacts',
     features: [
       'Lead capture automation',
-      'FAQ bot & support',
+      'Basic FAQ bot',
       'Dashboard analytics',
-      'Basic reporting',
       'Email support',
     ],
     cta: 'Get Started',
     popular: false,
-    channelCount: 2,
   },
   {
     name: 'Professional',
     icon: Crown,
     price: '₦50,000',
     period: '/month',
-    description: 'For growing businesses that need more power and flexibility.',
-    channels: '3 channels (WhatsApp + 2 others)',
-    automations: '5–10 automations',
-    contactLimit: '2,500 Contacts',
-    supportedTypes: ['Lead Capture', 'Enquiries', 'Appointments', 'Sales / Orders'],
+    description: 'For growing businesses that need more power.',
+    channelCount: 2,
+    channelText: '2 channels of your choice',
+    automations: '8 automations',
+    contacts: '2,500 contacts',
     features: [
       'Everything in Starter',
-      'Appointment booking system',
+      'Appointment booking',
       'Sales & order automation',
       'Transactional emails',
       'Priority support',
     ],
     cta: 'Get Started',
     popular: true,
-    channelCount: 3,
   },
   {
     name: 'Enterprise',
     icon: Building2,
     price: '₦120,000',
     period: '/month',
-    description: 'For established businesses ready to scale across all platforms.',
-    channels: '4 channels (IG + FB + WhatsApp + TikTok)',
+    description: 'For established businesses ready to scale.',
+    channelCount: 4,
+    channelText: 'All 4 channels included',
     automations: 'Unlimited automations',
-    contactLimit: '10,000+ Contacts',
-    supportedTypes: ['Lead Capture', 'Enquiries', 'Appointments', 'Sales / Orders'],
+    contacts: '10,000+ contacts',
     features: [
       'Everything in Professional',
       'AI-powered responses',
@@ -80,7 +70,6 @@ const plans = [
     ],
     cta: 'Get Started',
     popular: false,
-    channelCount: 4,
   },
 ];
 
@@ -127,8 +116,7 @@ export function Pricing() {
             <span className="text-gradient">pricing plans</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your business needs. All plans include our core automation platform 
-            with lead capture and analytics.
+            Choose the plan that fits your business needs. Scale up anytime as you grow.
           </p>
         </motion.div>
 
@@ -171,65 +159,46 @@ export function Pricing() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
-                  {/* Business Types Supported */}
-                  <div className="mb-4 p-3 rounded-lg bg-secondary/30">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">Supported Automations</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {businessTypes.map((type) => {
-                        const isSupported = plan.supportedTypes.includes(type.name);
-                        return (
-                          <div
-                            key={type.name}
-                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                              isSupported 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'bg-muted/50 text-muted-foreground/50'
-                            }`}
-                          >
-                            <type.icon className="h-3 w-3" />
-                            <span>{type.name}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Channels & Automations */}
+                  {/* Plan Highlights */}
                   <div className="mb-6 space-y-3 p-4 rounded-xl bg-secondary/50">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="flex -space-x-1">
-                        <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center border-2 border-card">
-                          <MessageSquare className="h-3 w-3 text-accent-foreground" />
-                        </div>
-                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card">
-                          <Instagram className="h-3 w-3 text-primary-foreground" />
-                        </div>
-                        {(plan.name === 'Professional' || plan.name === 'Enterprise') && (
-                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card">
-                            <Facebook className="h-3 w-3 text-primary-foreground" />
+                    {/* Channels */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-1.5">
+                        {plan.channelCount >= 1 && (
+                          <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
+                            <MessageSquare className="h-3.5 w-3.5 text-white" />
                           </div>
                         )}
-                        {plan.name === 'Enterprise' && (
-                          <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center border-2 border-card">
+                        {plan.channelCount >= 2 && (
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-card">
+                            <Instagram className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        )}
+                        {plan.channelCount >= 3 && (
+                          <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center border-2 border-card">
+                            <Facebook className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        )}
+                        {plan.channelCount >= 4 && (
+                          <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center border-2 border-card">
                             <TikTokIcon />
                           </div>
                         )}
                       </div>
-                      <span className="text-muted-foreground">{plan.channels}</span>
+                      <span className="text-sm text-muted-foreground">{plan.channelText}</span>
                     </div>
-                    <div className="text-sm font-medium text-foreground">
-                      {plan.automations}
+                    
+                    {/* Automations */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Zap className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{plan.automations}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                      {plan.contactLimit}
+                    
+                    {/* Contacts */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{plan.contacts}</span>
                     </div>
-                    {plan.name === 'Professional' && (
-                      <div className="flex items-center gap-2 text-sm text-accent">
-                        <Mail className="h-4 w-4" />
-                        <span>Transactional Email Included</span>
-                      </div>
-                    )}
                   </div>
 
                   <ul className="space-y-3 flex-1 mb-6">

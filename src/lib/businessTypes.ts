@@ -379,7 +379,7 @@ export const getDefaultConfig = (category: BusinessCategoryType): AutomationConf
 };
 
 // =====================================
-// PLAN TYPES (Updated)
+// PLAN TYPES (Updated - Starter: 1 channel, Professional: 2 channels, Enterprise: all)
 // =====================================
 export type PlanType = 'starter' | 'professional' | 'enterprise';
 
@@ -400,35 +400,37 @@ export const planDetails: Record<PlanType, PlanDetails> = {
     name: 'Starter',
     price: '₦25,000',
     priceValue: 25000,
-    maxChannels: 2,
-    maxAutomations: 3,
+    maxChannels: 1,
+    maxAutomations: 2,
     maxContacts: 500,
     features: [
-      '2 Social Channels (WhatsApp + 1 other)',
+      '1 Social Channel (WhatsApp OR IG/FB/TikTok)',
       'Lead Capture Automation',
       'Basic FAQ Bot',
       'Dashboard Analytics',
       '500 Contacts Limit',
+      'Email Support',
     ],
-    description: 'WhatsApp + 1 other from IG, FB, or TikTok',
+    description: '1 channel of your choice',
     supportedCategories: ['lead_capture', 'enquiries_support'],
   },
   professional: {
     name: 'Professional',
     price: '₦50,000',
     priceValue: 50000,
-    maxChannels: 3,
-    maxAutomations: 10,
+    maxChannels: 2,
+    maxAutomations: 8,
     maxContacts: 2500,
     features: [
-      '3 Social Channels (WhatsApp + 2 others)',
+      '2 Social Channels',
       'All Automation Types',
       'Appointment Booking',
+      'Sales & Order Automation',
       'Transactional Email',
       '2,500 Contacts Limit',
       'Priority Support',
     ],
-    description: 'WhatsApp + 2 others',
+    description: '2 channels of your choice',
     supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders'],
   },
   enterprise: {
@@ -446,8 +448,9 @@ export const planDetails: Record<PlanType, PlanDetails> = {
       '10,000+ Contacts',
       'Dedicated Account Manager',
       'Custom Integrations',
+      'White-label Options',
     ],
-    description: 'All 4 channels (IG, FB, WhatsApp, TikTok)',
+    description: 'All channels (IG, FB, WhatsApp, TikTok)',
     supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders'],
   },
 };
@@ -500,8 +503,8 @@ export const mockTikTokOAuth = async (): Promise<ManyChatOAuthResponse> => {
   await new Promise(resolve => setTimeout(resolve, 2000));
   return {
     success: true,
-    workspaceId: `tt_ws_${Math.random().toString(36).substring(7)}`,
-    accessToken: `tt_at_${Math.random().toString(36).substring(7)}`,
+    workspaceId: `ws_tiktok_${Math.random().toString(36).substring(7)}`,
+    accessToken: `at_tiktok_${Math.random().toString(36).substring(7)}`,
     accountName: `@demo_tiktok_account`,
   };
 };
