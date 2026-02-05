@@ -172,6 +172,14 @@ export function ChannelAutomationSetup({
     a => a.channel === currentChannel && a.configured
   ).length;
 
+  // Only count available automations for progress tracking
+  const totalAvailableAutomations = channelTypes.reduce((total, channel) => {
+    const available = businessKind 
+      ? getAutomationsForBusinessKind(businessKind, channel)
+      : [];
+    return total + available.length;
+  }, 0);
+
   const categoryInfo = selectedCategory 
     ? businessCategories.find(c => c.id === selectedCategory) 
     : null;
@@ -194,7 +202,7 @@ export function ChannelAutomationSetup({
         
         <div className="flex items-center gap-2">
           <Badge variant="secondary">
-            {currentAutomationCount} / {maxAutomations === 999 ? '∞' : maxAutomations} automations
+            {currentAutomationCount} / {totalAvailableAutomations} automations
           </Badge>
         </div>
       </div>

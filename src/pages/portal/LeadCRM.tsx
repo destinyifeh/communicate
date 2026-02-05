@@ -13,13 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { 
   Search, 
   MessageSquare,
@@ -37,6 +30,8 @@ import {
 import { motion } from 'framer-motion';
 import { mockLeads, Lead } from '@/lib/mockData';
 import { BusinessKindType, businessKinds } from '@/lib/businessTypes';
+import { ConversationThread } from '@/components/portal/ConversationThread';
+import { StatusUpdateMenu, LeadStatus, OrderStatus, AppointmentStatus, TicketStatus } from '@/components/portal/StatusUpdateMenu';
 
 const platformIcons: Record<string, { icon: string; color: string }> = {
   whatsapp: { icon: '💬', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
@@ -45,33 +40,59 @@ const platformIcons: Record<string, { icon: string; color: string }> = {
   tiktok: { icon: '🎵', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
 };
 
-const statusStyles: Record<string, string> = {
-  new: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  interested: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  paid: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  pending: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-  confirmed: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  cancelled: 'bg-red-500/10 text-red-600 dark:text-red-400',
-  open: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  resolved: 'bg-green-500/10 text-green-600 dark:text-green-400',
-};
+// Mock data for different business types with state
+interface OrderItem {
+  id: string;
+  name: string;
+  phone: string;
+  product: string;
+  amount: string;
+  status: OrderStatus;
+  platform: string;
+  date: string;
+}
 
-// Mock data for different business types
-const mockAppointments = [
+interface AppointmentItem {
+  id: string;
+  name: string;
+  phone: string;
+  service: string;
+  date: string;
+  time: string;
+  status: AppointmentStatus;
+  platform: string;
+}
+
+interface TicketItem {
+  id: string;
+  name: string;
+  phone: string;
+  subject: string;
+  category: string;
+  status: TicketStatus;
+  platform: string;
+  date: string;
+}
+
+interface LeadItem extends Omit<Lead, 'status'> {
+  status: LeadStatus;
+}
+
+const initialAppointments: AppointmentItem[] = [
   { id: '1', name: 'Sarah Johnson', phone: '+234 803 123 4567', service: 'Consultation', date: '2026-02-05', time: '10:00 AM', status: 'confirmed', platform: 'whatsapp' },
   { id: '2', name: 'Michael Chen', phone: '+234 805 234 5678', service: 'Haircut', date: '2026-02-05', time: '2:00 PM', status: 'pending', platform: 'instagram' },
   { id: '3', name: 'Emily Brown', phone: '+234 807 345 6789', service: 'Coaching Session', date: '2026-02-06', time: '11:00 AM', status: 'confirmed', platform: 'whatsapp' },
   { id: '4', name: 'David Wilson', phone: '+234 809 456 7890', service: 'Dental Checkup', date: '2026-02-04', time: '3:00 PM', status: 'cancelled', platform: 'facebook' },
 ];
 
-const mockOrders = [
+const initialOrders: OrderItem[] = [
   { id: '1', name: 'Amaka Okonkwo', phone: '+234 803 123 4567', product: 'Luxury Watch', amount: '₦250,000', status: 'paid', platform: 'instagram', date: '2026-02-03' },
   { id: '2', name: 'Chidi Eze', phone: '+234 805 234 5678', product: 'Designer Bag', amount: '₦180,000', status: 'pending', platform: 'whatsapp', date: '2026-02-04' },
   { id: '3', name: 'Fatima Ibrahim', phone: '+234 807 345 6789', product: 'Gold Necklace', amount: '₦120,000', status: 'paid', platform: 'facebook', date: '2026-02-04' },
   { id: '4', name: 'Kemi Adeleke', phone: '+234 809 456 7890', product: 'Sneakers', amount: '₦45,000', status: 'new', platform: 'tiktok', date: '2026-02-05' },
 ];
 
-const mockTickets = [
+const initialTickets: TicketItem[] = [
   { id: '1', name: 'John Doe', phone: '+234 803 123 4567', subject: 'Payment Issue', category: 'Billing', status: 'open', platform: 'whatsapp', date: '2026-02-04' },
   { id: '2', name: 'Jane Smith', phone: '+234 805 234 5678', subject: 'Service Question', category: 'General', status: 'resolved', platform: 'instagram', date: '2026-02-03' },
   { id: '3', name: 'Mike Brown', phone: '+234 807 345 6789', subject: 'Technical Problem', category: 'Technical', status: 'open', platform: 'facebook', date: '2026-02-04' },
@@ -80,15 +101,29 @@ const mockTickets = [
 export default function LeadCRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [businessKind, setBusinessKind] = useState<BusinessKindType | null>(null);
   const [activeTab, setActiveTab] = useState('leads');
+
+  // Stateful data
+  const [leads, setLeads] = useState<LeadItem[]>(mockLeads.map(l => ({ ...l, status: l.status as LeadStatus })));
+  const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
+  const [appointments, setAppointments] = useState<AppointmentItem[]>(initialAppointments);
+  const [tickets, setTickets] = useState<TicketItem[]>(initialTickets);
+
+  // Conversation thread state
+  const [conversationOpen, setConversationOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<{
+    id: string;
+    name: string;
+    phone: string;
+    platform: string;
+    status?: string;
+  } | null>(null);
 
   useEffect(() => {
     const savedBusinessKind = localStorage.getItem('business_kind') as BusinessKindType;
     if (savedBusinessKind) {
       setBusinessKind(savedBusinessKind);
-      // Set default tab based on business type
       if (savedBusinessKind === 'appointment_based') {
         setActiveTab('appointments');
       } else if (savedBusinessKind === 'vendor') {
@@ -101,14 +136,13 @@ export default function LeadCRM() {
 
   const businessKindInfo = businessKind ? businessKinds.find(b => b.id === businessKind) : null;
 
-  const filteredLeads = mockLeads.filter(lead => {
+  const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          lead.phone.includes(searchQuery);
     const matchesStatus = !statusFilter || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Get tabs based on business type
   const getTabs = () => {
     if (businessKind === 'vendor') {
       return [
@@ -126,7 +160,6 @@ export default function LeadCRM() {
         { id: 'tickets', label: 'Support', icon: HeadphonesIcon },
       ];
     } else {
-      // Lead-driven
       return [
         { id: 'leads', label: 'Leads', icon: UserPlus },
       ];
@@ -140,6 +173,28 @@ export default function LeadCRM() {
     if (businessKind === 'appointment_based') return 'Appointments & Support';
     if (businessKind === 'service_provider') return 'Leads & Support';
     return 'Lead CRM';
+  };
+
+  const openConversation = (contact: { id: string; name: string; phone: string; platform: string; status?: string }) => {
+    setSelectedContact(contact);
+    setConversationOpen(true);
+  };
+
+  // Status update handlers
+  const handleLeadStatusChange = (id: string, newStatus: LeadStatus) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
+  };
+
+  const handleOrderStatusChange = (id: string, newStatus: OrderStatus) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  };
+
+  const handleAppointmentStatusChange = (id: string, newStatus: AppointmentStatus) => {
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+  };
+
+  const handleTicketStatusChange = (id: string, newStatus: TicketStatus) => {
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
   };
 
   return (
@@ -175,7 +230,6 @@ export default function LeadCRM() {
 
           {/* Leads Tab */}
           <TabsContent value="leads" className="space-y-4">
-            {/* Filters */}
             <Card className="border-border/50">
               <CardContent className="p-3 md:p-4">
                 <div className="flex flex-col gap-3 md:gap-4">
@@ -198,35 +252,33 @@ export default function LeadCRM() {
               </CardContent>
             </Card>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold">{mockLeads.length}</div>
+                  <div className="text-2xl font-bold">{leads.length}</div>
                   <div className="text-xs text-muted-foreground">Total Leads</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">{mockLeads.filter(l => l.status === 'new').length}</div>
+                  <div className="text-2xl font-bold text-blue-600">{leads.filter(l => l.status === 'new').length}</div>
                   <div className="text-xs text-muted-foreground">New</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-yellow-600">{mockLeads.filter(l => l.status === 'interested').length}</div>
+                  <div className="text-2xl font-bold text-yellow-600">{leads.filter(l => l.status === 'interested').length}</div>
                   <div className="text-xs text-muted-foreground">Interested</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{mockLeads.filter(l => l.status === 'paid').length}</div>
+                  <div className="text-2xl font-bold text-green-600">{leads.filter(l => l.status === 'paid').length}</div>
                   <div className="text-xs text-muted-foreground">Converted</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Leads Table */}
             <Card className="border-border/50">
               <CardContent className="p-0">
                 <Table>
@@ -262,9 +314,12 @@ export default function LeadCRM() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className={statusStyles[lead.status]}>
-                            {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                          </Badge>
+                          <StatusUpdateMenu
+                            type="lead"
+                            currentStatus={lead.status}
+                            onStatusChange={(newStatus) => handleLeadStatusChange(lead.id, newStatus as LeadStatus)}
+                            compact
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-muted-foreground">
@@ -277,10 +332,16 @@ export default function LeadCRM() {
                             variant="outline"
                             size="sm"
                             className="gap-1"
-                            onClick={() => setSelectedLead(lead)}
+                            onClick={() => openConversation({
+                              id: lead.id,
+                              name: lead.name,
+                              phone: lead.phone,
+                              platform: lead.platform,
+                              status: lead.status,
+                            })}
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
-                            View Chat
+                            Chat
                           </Button>
                         </TableCell>
                       </motion.tr>
@@ -303,19 +364,19 @@ export default function LeadCRM() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold">{mockOrders.length}</div>
+                  <div className="text-2xl font-bold">{orders.length}</div>
                   <div className="text-xs text-muted-foreground">Total Orders</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{mockOrders.filter(o => o.status === 'paid').length}</div>
+                  <div className="text-2xl font-bold text-green-600">{orders.filter(o => o.status === 'paid').length}</div>
                   <div className="text-xs text-muted-foreground">Paid</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-orange-600">{mockOrders.filter(o => o.status === 'pending').length}</div>
+                  <div className="text-2xl font-bold text-orange-600">{orders.filter(o => o.status === 'pending').length}</div>
                   <div className="text-xs text-muted-foreground">Pending</div>
                 </CardContent>
               </Card>
@@ -337,11 +398,11 @@ export default function LeadCRM() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Platform</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockOrders.map((order, index) => (
+                    {orders.map((order, index) => (
                       <motion.tr
                         key={order.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -363,12 +424,30 @@ export default function LeadCRM() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className={statusStyles[order.status]}>
-                            {order.status === 'paid' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
+                          <StatusUpdateMenu
+                            type="order"
+                            currentStatus={order.status}
+                            onStatusChange={(newStatus) => handleOrderStatusChange(order.id, newStatus as OrderStatus)}
+                            compact
+                          />
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{order.date}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openConversation({
+                              id: order.id,
+                              name: order.name,
+                              phone: order.phone,
+                              platform: order.platform,
+                              status: order.status,
+                            })}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Chat
+                          </Button>
+                        </TableCell>
                       </motion.tr>
                     ))}
                   </TableBody>
@@ -382,25 +461,25 @@ export default function LeadCRM() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold">{mockAppointments.length}</div>
+                  <div className="text-2xl font-bold">{appointments.length}</div>
                   <div className="text-xs text-muted-foreground">Total</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{mockAppointments.filter(a => a.status === 'confirmed').length}</div>
+                  <div className="text-2xl font-bold text-green-600">{appointments.filter(a => a.status === 'confirmed').length}</div>
                   <div className="text-xs text-muted-foreground">Confirmed</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-orange-600">{mockAppointments.filter(a => a.status === 'pending').length}</div>
+                  <div className="text-2xl font-bold text-orange-600">{appointments.filter(a => a.status === 'pending').length}</div>
                   <div className="text-xs text-muted-foreground">Pending</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-red-600">{mockAppointments.filter(a => a.status === 'cancelled').length}</div>
+                  <div className="text-2xl font-bold text-red-600">{appointments.filter(a => a.status === 'cancelled').length}</div>
                   <div className="text-xs text-muted-foreground">Cancelled</div>
                 </CardContent>
               </Card>
@@ -416,10 +495,11 @@ export default function LeadCRM() {
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Platform</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockAppointments.map((apt, index) => (
+                    {appointments.map((apt, index) => (
                       <motion.tr
                         key={apt.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -446,12 +526,29 @@ export default function LeadCRM() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className={statusStyles[apt.status]}>
-                            {apt.status === 'confirmed' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                            {apt.status === 'cancelled' && <XCircle className="h-3 w-3 mr-1" />}
-                            {apt.status === 'pending' && <AlertCircle className="h-3 w-3 mr-1" />}
-                            {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                          </Badge>
+                          <StatusUpdateMenu
+                            type="appointment"
+                            currentStatus={apt.status}
+                            onStatusChange={(newStatus) => handleAppointmentStatusChange(apt.id, newStatus as AppointmentStatus)}
+                            compact
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openConversation({
+                              id: apt.id,
+                              name: apt.name,
+                              phone: apt.phone,
+                              platform: apt.platform,
+                              status: apt.status,
+                            })}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Chat
+                          </Button>
                         </TableCell>
                       </motion.tr>
                     ))}
@@ -466,19 +563,19 @@ export default function LeadCRM() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold">{mockTickets.length}</div>
+                  <div className="text-2xl font-bold">{tickets.length}</div>
                   <div className="text-xs text-muted-foreground">Total Tickets</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">{mockTickets.filter(t => t.status === 'open').length}</div>
+                  <div className="text-2xl font-bold text-blue-600">{tickets.filter(t => t.status === 'open').length}</div>
                   <div className="text-xs text-muted-foreground">Open</div>
                 </CardContent>
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{mockTickets.filter(t => t.status === 'resolved').length}</div>
+                  <div className="text-2xl font-bold text-green-600">{tickets.filter(t => t.status === 'resolved').length}</div>
                   <div className="text-xs text-muted-foreground">Resolved</div>
                 </CardContent>
               </Card>
@@ -494,11 +591,11 @@ export default function LeadCRM() {
                       <TableHead>Category</TableHead>
                       <TableHead>Platform</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockTickets.map((ticket, index) => (
+                    {tickets.map((ticket, index) => (
                       <motion.tr
                         key={ticket.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -522,13 +619,30 @@ export default function LeadCRM() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className={statusStyles[ticket.status]}>
-                            {ticket.status === 'resolved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                            {ticket.status === 'open' && <AlertCircle className="h-3 w-3 mr-1" />}
-                            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                          </Badge>
+                          <StatusUpdateMenu
+                            type="ticket"
+                            currentStatus={ticket.status}
+                            onStatusChange={(newStatus) => handleTicketStatusChange(ticket.id, newStatus as TicketStatus)}
+                            compact
+                          />
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{ticket.date}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openConversation({
+                              id: ticket.id,
+                              name: ticket.name,
+                              phone: ticket.phone,
+                              platform: ticket.platform,
+                              status: ticket.status,
+                            })}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Chat
+                          </Button>
+                        </TableCell>
                       </motion.tr>
                     ))}
                   </TableBody>
@@ -538,46 +652,13 @@ export default function LeadCRM() {
           </TabsContent>
         </Tabs>
 
-        {/* Chat Dialog */}
-        <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
-          <DialogContent className="max-w-[95vw] sm:max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <span>{platformIcons[selectedLead?.platform || 'whatsapp'].icon}</span>
-                Chat with {selectedLead?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Conversation history from {selectedLead?.platform}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto p-3 md:p-4 bg-secondary/30 rounded-lg">
-              {selectedLead?.messages.map((message, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg px-3 md:px-4 py-2 ${
-                      message.sender === 'bot'
-                        ? 'bg-secondary text-foreground'
-                        : 'gradient-primary text-primary-foreground'
-                    }`}
-                  >
-                    <p className="text-sm">{message.text}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.sender === 'bot' ? 'text-muted-foreground' : 'text-primary-foreground/70'
-                    }`}>
-                      {message.time}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Conversation Thread Dialog */}
+        <ConversationThread
+          open={conversationOpen}
+          onOpenChange={setConversationOpen}
+          contact={selectedContact}
+          businessKind={businessKind}
+        />
       </div>
     </ClientLayout>
   );
