@@ -231,7 +231,13 @@ export default function ClientDashboard() {
         setConnectedChannels(updatedChannels.map((c: any) => c.type));
         localStorage.setItem('connected_channels', JSON.stringify(updatedChannels));
         
-        toast.success(`${channelType} connected successfully! Configure automations in Settings.`);
+        // Check if there are orphaned automations for this channel that need reactivating
+        const existingAutomations = configuredAutomations.filter(a => a.channel === channelType);
+        if (existingAutomations.length > 0) {
+          toast.success(`${channelType} reconnected! ${existingAutomations.length} automation(s) restored.`);
+        } else {
+          toast.success(`${channelType} connected! Go to Automation Settings to configure automations.`);
+        }
       }
     } catch {
       toast.error(`Failed to connect ${channelType}`);
