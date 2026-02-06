@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Send, 
@@ -18,11 +17,14 @@ import {
   Phone,
   Calendar,
   ShoppingCart,
-  Bell
+  Bell,
+  Mail,
+  X,
+  File
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { BusinessKindType } from '@/lib/businessTypes';
+import { BusinessKindType, ChannelType } from '@/lib/businessTypes';
 
 interface Message {
   id: string;
@@ -52,6 +54,7 @@ interface ConversationThreadProps {
     id: string;
     name: string;
     phone: string;
+    email?: string;
     platform: string;
     lastMessageTime?: Date;
     status?: string;
@@ -220,24 +223,36 @@ export function ConversationThread({
   const [messages, setMessages] = useState<Message[]>(generateMockMessages());
   const [newMessage, setNewMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'templates'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'templates' | 'email'>('chat');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const templates = getTemplatesForBusiness(businessKind || null);
 
-  // Calculate if within 24-hour window
+  // Check if platform is WhatsApp (only WhatsApp has 24-hour window restriction)
+  const isWhatsApp = contact?.platform === 'whatsapp';
+  const isEmail = contact?.platform === 'email';
+
+  // Calculate if within 24-hour window (only for WhatsApp)
   const lastCustomerMessage = [...messages]
     .reverse()
     .find(m => m.sender === 'customer');
   
-  const isWithin24Hours = lastCustomerMessage
-    ? (Date.now() - lastCustomerMessage.timestamp.getTime()) < 24 * 60 * 60 * 1000
-    : false;
+  const isWithin24Hours = isWhatsApp
+    ? (lastCustomerMessage
+        ? (Date.now() - lastCustomerMessage.timestamp.getTime()) < 24 * 60 * 60 * 1000
+        : false)
+    : true; // Non-WhatsApp channels always allow free-form messaging
 
-  const hoursRemaining = lastCustomerMessage
+  const hoursRemaining = lastCustomerMessage && isWhatsApp
     ? Math.max(0, 24 - Math.floor((Date.now() - lastCustomerMessage.timestamp.getTime()) / (60 * 60 * 1000)))
-    : 0;
+    : 24;
+
+  // Can send messages freely (WhatsApp needs 24hr window, others always can)
+  const canSendFreeMessage = !isWhatsApp || isWithin24Hours;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -248,7 +263,7 @@ export function ConversationThread({
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
-    if (!isWithin24Hours) {
+    if (isWhatsApp && !isWithin24Hours) {
       toast.error('24-hour window expired. Please use a message template.');
       setActiveTab('templates');
       return;
@@ -262,8 +277,18 @@ export function ConversationThread({
       status: 'sent',
     };
 
+    // Add attachments info to message if any
+    if (attachedFiles.length > 0) {
+      message.attachment = {
+        type: attachedFiles[0].type.startsWith('image/') ? 'image' : 'file',
+        name: attachedFiles[0].name,
+        url: URL.createObjectURL(attachedFiles[0]),
+      };
+    }
+
     setMessages(prev => [...prev, message]);
     setNewMessage('');
+    setAttachedFiles([]);
     toast.success('Message sent');
   };
 
@@ -285,12 +310,32 @@ export function ConversationThread({
     toast.success('Template message sent');
   };
 
-  const handleFileUpload = () => {
-    if (!isWithin24Hours) {
-      toast.error('24-hour window expired. Cannot send attachments.');
+  const handleSendEmail = () => {
+    if (!emailSubject.trim() || !newMessage.trim()) {
+      toast.error('Please fill in subject and message');
       return;
     }
-    fileInputRef.current?.click();
+
+    toast.success(`Email sent to ${contact?.email || contact?.phone}`);
+    setEmailSubject('');
+    setNewMessage('');
+    setAttachedFiles([]);
+    setActiveTab('chat');
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'file' | 'image') => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+      setAttachedFiles(prev => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} file(s) attached`);
+    }
+    // Reset input
+    if (e.target) e.target.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const formatTime = (date: Date) => {
@@ -311,12 +356,15 @@ export function ConversationThread({
 
   if (!contact) return null;
 
-  const platformEmoji = {
+  const platformEmoji: Record<string, string> = {
     whatsapp: '💬',
     instagram: '📸',
     facebook: '👤',
     tiktok: '🎵',
-  }[contact.platform] || '💬';
+    email: '📧',
+  };
+
+  const platformIcon = platformEmoji[contact.platform] || '💬';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -326,52 +374,75 @@ export function ConversationThread({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
-                {platformEmoji}
+                {platformIcon}
               </div>
               <div>
                 <DialogTitle className="text-base">{contact.name}</DialogTitle>
                 <DialogDescription className="text-xs flex items-center gap-2">
-                  <Phone className="h-3 w-3" /> {contact.phone}
+                  {contact.email ? (
+                    <>
+                      <Mail className="h-3 w-3" /> {contact.email}
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="h-3 w-3" /> {contact.phone}
+                    </>
+                  )}
                 </DialogDescription>
               </div>
             </div>
             
-            {/* 24-hour window indicator */}
-            <div className="flex items-center gap-2">
-              {isWithin24Hours ? (
-                <Badge variant="secondary" className="bg-green-500/10 text-green-600 gap-1">
-                  <Clock className="h-3 w-3" />
-                  {hoursRemaining}h left
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  Use Template
-                </Badge>
-              )}
-            </div>
+            {/* 24-hour window indicator - Only for WhatsApp */}
+            {isWhatsApp && (
+              <div className="flex items-center gap-2">
+                {isWithin24Hours ? (
+                  <Badge variant="secondary" className="bg-green-500/10 text-green-600 gap-1">
+                    <Clock className="h-3 w-3" />
+                    {hoursRemaining}h left
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Use Template
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {/* Email badge */}
+            {isEmail && (
+              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 gap-1">
+                <Mail className="h-3 w-3" />
+                Email
+              </Badge>
+            )}
           </div>
         </DialogHeader>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'templates')} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-4 mt-2 grid grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'templates' | 'email')} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="mx-4 mt-2 grid grid-cols-3">
             <TabsTrigger value="chat" className="gap-2">
               <MessageSquare className="h-4 w-4" /> Chat
             </TabsTrigger>
             <TabsTrigger value="templates" className="gap-2">
               <FileText className="h-4 w-4" /> Templates
             </TabsTrigger>
+            {contact.email && (
+              <TabsTrigger value="email" className="gap-2">
+                <Mail className="h-4 w-4" /> Email
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Chat Tab */}
           <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-0 p-0">
-            {/* 24-hour window warning */}
-            {!isWithin24Hours && (
+            {/* 24-hour window warning - Only for WhatsApp */}
+            {isWhatsApp && !isWithin24Hours && (
               <div className="mx-4 mt-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-orange-600">24-hour window expired</p>
+                  <p className="font-medium text-orange-600">WhatsApp 24-hour window expired</p>
                   <p className="text-muted-foreground">You can only send approved message templates. Switch to the Templates tab to continue the conversation.</p>
                 </div>
               </div>
@@ -409,6 +480,16 @@ export function ConversationThread({
                             <span className="text-xs opacity-70 block mb-1">🤖 Bot</span>
                           )}
                           <p className="text-sm">{message.text}</p>
+                          {message.attachment && (
+                            <div className="mt-2 p-2 bg-background/20 rounded-lg flex items-center gap-2">
+                              {message.attachment.type === 'image' ? (
+                                <ImageIcon className="h-4 w-4" />
+                              ) : (
+                                <File className="h-4 w-4" />
+                              )}
+                              <span className="text-xs truncate">{message.attachment.name}</span>
+                            </div>
+                          )}
                           <div className={`text-xs mt-1 flex items-center gap-1 ${
                             message.sender === 'customer' ? 'text-muted-foreground' : 'opacity-70'
                           }`}>
@@ -429,6 +510,28 @@ export function ConversationThread({
               </div>
             </ScrollArea>
 
+            {/* Attached Files Preview */}
+            {attachedFiles.length > 0 && (
+              <div className="mx-4 mb-2 flex flex-wrap gap-2">
+                {attachedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-full text-xs">
+                    {file.type.startsWith('image/') ? (
+                      <ImageIcon className="h-3 w-3" />
+                    ) : (
+                      <File className="h-3 w-3" />
+                    )}
+                    <span className="max-w-[100px] truncate">{file.name}</span>
+                    <button 
+                      onClick={() => removeAttachment(index)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
             <div className="p-4 border-t bg-card">
               <div className="flex items-end gap-2">
@@ -436,19 +539,25 @@ export function ConversationThread({
                   ref={fileInputRef}
                   type="file"
                   className="hidden"
-                  accept="image/*,.pdf,.doc,.docx"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      toast.success(`File "${e.target.files[0].name}" attached`);
-                    }
-                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                  multiple
+                  onChange={(e) => handleFileSelect(e, 'file')}
+                />
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleFileSelect(e, 'image')}
                 />
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="shrink-0"
-                  onClick={handleFileUpload}
-                  disabled={!isWithin24Hours}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isWhatsApp && !canSendFreeMessage}
+                  title="Attach file"
                 >
                   <Paperclip className="h-5 w-5" />
                 </Button>
@@ -456,13 +565,18 @@ export function ConversationThread({
                   variant="ghost" 
                   size="icon" 
                   className="shrink-0"
-                  onClick={handleFileUpload}
-                  disabled={!isWithin24Hours}
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={isWhatsApp && !canSendFreeMessage}
+                  title="Attach image"
                 >
                   <ImageIcon className="h-5 w-5" />
                 </Button>
                 <Textarea
-                  placeholder={isWithin24Hours ? "Type a message..." : "Use a template to send a message"}
+                  placeholder={
+                    isWhatsApp && !canSendFreeMessage 
+                      ? "Use a template to send a message" 
+                      : "Type a message..."
+                  }
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -472,13 +586,13 @@ export function ConversationThread({
                     }
                   }}
                   className="min-h-[44px] max-h-32 resize-none"
-                  disabled={!isWithin24Hours}
+                  disabled={isWhatsApp && !canSendFreeMessage}
                 />
                 <Button 
                   size="icon" 
                   className="shrink-0 gradient-primary"
                   onClick={handleSendMessage}
-                  disabled={!isWithin24Hours || !newMessage.trim()}
+                  disabled={(isWhatsApp && !canSendFreeMessage) || (!newMessage.trim() && attachedFiles.length === 0)}
                 >
                   <Send className="h-5 w-5" />
                 </Button>
@@ -489,41 +603,116 @@ export function ConversationThread({
           {/* Templates Tab */}
           <TabsContent value="templates" className="flex-1 overflow-auto mt-0 p-4">
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-4">
-                Select an approved template to re-open the conversation. These templates are pre-approved by Meta for WhatsApp Business API.
-              </p>
-              
+              {isWhatsApp && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 mb-4">
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    <strong>WhatsApp Templates:</strong> These are pre-approved messages you can send anytime, even after the 24-hour window expires.
+                  </p>
+                </div>
+              )}
               {templates.map((template) => (
                 <motion.div
                   key={template.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-secondary/30 transition-all cursor-pointer"
+                  className="p-4 rounded-lg border border-border hover:bg-secondary/50 transition-colors cursor-pointer group"
                   onClick={() => handleSendTemplate(template)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       {template.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{template.name}</span>
                         <Badge variant="secondary" className="text-xs capitalize">
                           {template.category}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-xs text-muted-foreground line-clamp-2">
                         {template.content}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="shrink-0">
-                      Use
+                  </div>
+                  <div className="mt-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button size="sm" variant="outline" className="gap-1">
+                      <Send className="h-3 w-3" /> Use Template
                     </Button>
                   </div>
                 </motion.div>
               ))}
             </div>
           </TabsContent>
+
+          {/* Email Tab */}
+          {contact.email && (
+            <TabsContent value="email" className="flex-1 flex flex-col min-h-0 mt-0 p-4">
+              <div className="space-y-4 flex-1">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">To</label>
+                  <Input value={contact.email} disabled className="bg-secondary/50" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Subject</label>
+                  <Input 
+                    placeholder="Enter email subject" 
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-sm font-medium mb-1.5 block">Message</label>
+                  <Textarea 
+                    placeholder="Write your email message..." 
+                    className="min-h-[200px] resize-none"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                  />
+                </div>
+
+                {/* Email Attachments */}
+                {attachedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {attachedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-full text-xs">
+                        <File className="h-3 w-3" />
+                        <span className="max-w-[100px] truncate">{file.name}</span>
+                        <button 
+                          onClick={() => removeAttachment(index)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4 mr-2" /> Attach Files
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setActiveTab('chat')}>
+                  Cancel
+                </Button>
+                <Button 
+                  className="gradient-primary text-primary-foreground gap-2"
+                  onClick={handleSendEmail}
+                  disabled={!emailSubject.trim() || !newMessage.trim()}
+                >
+                  <Mail className="h-4 w-4" /> Send Email
+                </Button>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>

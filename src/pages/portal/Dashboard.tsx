@@ -27,7 +27,8 @@ import {
   MoreVertical,
   Unlink,
   RefreshCw,
-  Link2
+  Link2,
+  Mail
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
@@ -55,6 +56,7 @@ const channelIcons: Record<string, React.ReactNode> = {
   facebook: <Facebook className="h-4 w-4" />,
   whatsapp: <MessageSquare className="h-4 w-4" />,
   tiktok: <TikTokIcon />,
+  email: <Mail className="h-4 w-4" />,
 };
 
 const channelColors: Record<string, string> = {
@@ -62,6 +64,7 @@ const channelColors: Record<string, string> = {
   facebook: 'bg-blue-600',
   whatsapp: 'bg-green-500',
   tiktok: 'bg-foreground',
+  email: 'bg-red-500',
 };
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -69,6 +72,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   appointments_bookings: <Calendar className="h-4 w-4" />,
   enquiries_support: <HeadphonesIcon className="h-4 w-4" />,
   lead_capture: <UserPlus className="h-4 w-4" />,
+  email_marketing: <Mail className="h-4 w-4" />,
 };
 
 const categoryColors: Record<string, string> = {
@@ -76,6 +80,7 @@ const categoryColors: Record<string, string> = {
   appointments_bookings: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   enquiries_support: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   lead_capture: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  email_marketing: 'bg-red-500/10 text-red-600 dark:text-red-400',
 };
 
 const chartData = generateChartData();

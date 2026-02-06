@@ -24,9 +24,11 @@ import {
   Sliders,
   Menu,
   MessageSquare,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { SupportDialog } from '@/components/portal/SupportDialog';
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -38,7 +40,7 @@ const navItems = [
   { icon: Sliders, label: 'Automation Settings', href: '/portal/settings' },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, onSupportClick }: { onNavigate?: () => void; onSupportClick?: () => void }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,6 +48,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleSupportClick = () => {
+    if (onSupportClick) onSupportClick();
   };
 
   return (
@@ -90,7 +96,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <p className="text-xs text-sidebar-foreground/60 mb-3">
             Contact your dedicated account manager.
           </p>
-          <Button size="sm" variant="secondary" className="w-full text-xs">
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="w-full text-xs gap-2"
+            onClick={handleSupportClick}
+          >
+            <HeadphonesIcon className="h-3 w-3" />
             Get Support
           </Button>
         </div>
@@ -133,21 +145,30 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const location = useLocation();
+
+  const handleSupportClick = () => {
+    setSupportDialogOpen(true);
+    setMobileOpen(false);
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar hidden lg:block">
-        <SidebarContent />
+        <SidebarContent onSupportClick={handleSupportClick} />
       </aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-sidebar border-sidebar-border">
-          <SidebarContent onNavigate={() => setMobileOpen(false)} />
+          <SidebarContent onNavigate={() => setMobileOpen(false)} onSupportClick={handleSupportClick} />
         </SheetContent>
       </Sheet>
+
+      {/* Support Dialog */}
+      <SupportDialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen} />
 
       {/* Main content */}
       <div className="flex-1 lg:pl-64">

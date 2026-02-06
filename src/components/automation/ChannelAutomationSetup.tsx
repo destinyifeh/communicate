@@ -29,7 +29,8 @@ import {
   Facebook, 
   MessageSquare,
   Lock,
-  Sparkles
+  Sparkles,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -45,6 +46,7 @@ const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; co
   facebook: { icon: <Facebook className="h-5 w-5" />, name: 'Facebook', color: 'from-blue-600 to-blue-500' },
   whatsapp: { icon: <MessageSquare className="h-5 w-5" />, name: 'WhatsApp', color: 'from-green-500 to-green-400' },
   tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'from-gray-900 to-gray-700 dark:from-white dark:to-gray-200' },
+  email: { icon: <Mail className="h-5 w-5" />, name: 'Email', color: 'from-red-500 to-rose-500' },
 };
 
 interface ChannelAutomation {

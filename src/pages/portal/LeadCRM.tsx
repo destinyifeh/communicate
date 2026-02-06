@@ -38,6 +38,7 @@ const platformIcons: Record<string, { icon: string; color: string }> = {
   instagram: { icon: '📸', color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
   facebook: { icon: '👤', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
   tiktok: { icon: '🎵', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+  email: { icon: '📧', color: 'bg-red-500/10 text-red-600 dark:text-red-400' },
 };
 
 // Mock data for different business types with state
