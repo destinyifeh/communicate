@@ -9,6 +9,7 @@ export const channelAutomationMap: Record<ChannelType, BusinessCategoryType[]> =
   facebook: ['sales_orders', 'lead_capture', 'enquiries_support'],
   whatsapp: ['sales_orders', 'appointments_bookings', 'lead_capture', 'enquiries_support'],
   tiktok: ['lead_capture'],
+  email: ['email_marketing', 'lead_capture'],
 };
 
 // Get available automation types for a specific channel
@@ -98,6 +99,20 @@ export const channelAutomationDescriptions: Record<ChannelType, {
         type: 'lead_capture', 
         trigger: 'Lead form / comments', 
         action: 'Auto-reply → Notify admin → Add to CRM' 
+      },
+    ],
+  },
+  email: {
+    automations: [
+      { 
+        type: 'email_marketing', 
+        trigger: 'New lead / Order / Appointment', 
+        action: 'Automated emails → Follow-up sequence' 
+      },
+      { 
+        type: 'lead_capture', 
+        trigger: 'Form submission', 
+        action: 'Welcome email → Nurture sequence' 
       },
     ],
   },

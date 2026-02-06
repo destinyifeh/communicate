@@ -40,7 +40,8 @@ import {
   ShoppingCart,
   Calendar,
   HelpCircle,
-  UserPlus
+  UserPlus,
+  Mail
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -64,6 +65,7 @@ const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; co
   facebook: { icon: <Facebook className="h-4 w-4" />, name: 'Facebook', color: 'bg-primary' },
   whatsapp: { icon: <MessageSquare className="h-4 w-4" />, name: 'WhatsApp', color: 'bg-accent' },
   tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'bg-foreground' },
+  email: { icon: <Mail className="h-4 w-4" />, name: 'Email', color: 'bg-destructive' },
 };
 
 const categoryIcons: Record<BusinessCategoryType, React.ReactNode> = {
@@ -71,6 +73,7 @@ const categoryIcons: Record<BusinessCategoryType, React.ReactNode> = {
   appointments_bookings: <Calendar className="h-5 w-5" />,
   enquiries_support: <HelpCircle className="h-5 w-5" />,
   lead_capture: <UserPlus className="h-5 w-5" />,
+  email_marketing: <Mail className="h-5 w-5" />,
 };
 
 interface AutomationManagerProps {

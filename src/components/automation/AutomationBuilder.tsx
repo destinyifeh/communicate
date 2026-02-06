@@ -19,9 +19,10 @@ import { LeadCaptureSetup } from './LeadCaptureSetup';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Check, Instagram, Facebook, MessageSquare } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Instagram, Facebook, MessageSquare, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { EmailMarketingSetup } from './EmailMarketingSetup';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -34,6 +35,7 @@ const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; co
   facebook: { icon: <Facebook className="h-4 w-4" />, name: 'Facebook', color: 'from-blue-600 to-blue-500' },
   whatsapp: { icon: <MessageSquare className="h-4 w-4" />, name: 'WhatsApp', color: 'from-green-500 to-green-400' },
   tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'from-gray-900 to-gray-700' },
+  email: { icon: <Mail className="h-4 w-4" />, name: 'Email', color: 'from-red-500 to-rose-500' },
 };
 
 interface AutomationBuilderProps {
@@ -238,6 +240,13 @@ export function AutomationBuilder({
               <LeadCaptureSetup
                 config={config.config}
                 onChange={(newConfig) => setConfig({ type: 'lead_capture', config: newConfig })}
+              />
+            )}
+
+            {config.type === 'email_marketing' && (
+              <EmailMarketingSetup
+                config={config.config}
+                onChange={(newConfig) => setConfig({ type: 'email_marketing', config: newConfig })}
               />
             )}
 

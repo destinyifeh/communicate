@@ -1,7 +1,7 @@
 // Business Types and Automation Configurations
-// Supports: Sales/Orders, Appointments/Bookings, Enquiries/Support, Lead Capture
+// Supports: Sales/Orders, Appointments/Bookings, Enquiries/Support, Lead Capture, Email
 
-export type BusinessCategoryType = 'sales_orders' | 'appointments_bookings' | 'enquiries_support' | 'lead_capture';
+export type BusinessCategoryType = 'sales_orders' | 'appointments_bookings' | 'enquiries_support' | 'lead_capture' | 'email_marketing';
 
 export interface BusinessCategory {
   id: BusinessCategoryType;
@@ -40,6 +40,13 @@ export const businessCategories: BusinessCategory[] = [
     icon: '📥',
     color: 'from-green-500 to-emerald-500',
   },
+  {
+    id: 'email_marketing',
+    name: 'Email Automation',
+    description: 'Send automated emails for follow-ups, notifications, and marketing',
+    icon: '📧',
+    color: 'from-red-500 to-rose-500',
+  },
 ];
 
 // =====================================
@@ -63,7 +70,7 @@ export const businessKinds: BusinessKind[] = [
     description: 'Sells physical or digital products',
     icon: '🛒',
     color: 'from-orange-500 to-amber-500',
-    enabledAutomations: ['sales_orders', 'lead_capture'],
+    enabledAutomations: ['sales_orders', 'lead_capture', 'email_marketing'],
   },
   {
     id: 'service_provider',
@@ -71,7 +78,7 @@ export const businessKinds: BusinessKind[] = [
     description: 'Offers services (freelancers, agencies, consultants)',
     icon: '🧑‍💼',
     color: 'from-purple-500 to-indigo-500',
-    enabledAutomations: ['lead_capture', 'enquiries_support'],
+    enabledAutomations: ['lead_capture', 'enquiries_support', 'email_marketing'],
   },
   {
     id: 'appointment_based',
@@ -79,7 +86,7 @@ export const businessKinds: BusinessKind[] = [
     description: 'Clinics, salons, coaches, tutors',
     icon: '📅',
     color: 'from-blue-500 to-cyan-500',
-    enabledAutomations: ['appointments_bookings', 'enquiries_support'],
+    enabledAutomations: ['appointments_bookings', 'enquiries_support', 'email_marketing'],
   },
   {
     id: 'lead_driven',
@@ -87,9 +94,12 @@ export const businessKinds: BusinessKind[] = [
     description: 'Realtors, marketers, schools, SaaS founders',
     icon: '📥',
     color: 'from-green-500 to-emerald-500',
-    enabledAutomations: ['lead_capture'],
+    enabledAutomations: ['lead_capture', 'email_marketing'],
   },
 ];
+
+// Channel types including email
+export type ChannelType = 'instagram' | 'facebook' | 'whatsapp' | 'tiktok' | 'email';
 
 // Business kind to channel automation mapping
 export const businessKindChannelMap: Record<BusinessKindType, Record<ChannelType, BusinessCategoryType[]>> = {
@@ -98,24 +108,28 @@ export const businessKindChannelMap: Record<BusinessKindType, Record<ChannelType
     facebook: ['sales_orders'],
     whatsapp: ['sales_orders', 'lead_capture'],
     tiktok: ['lead_capture'],
+    email: ['email_marketing', 'lead_capture'],
   },
   service_provider: {
     instagram: ['lead_capture'],
     facebook: ['lead_capture'],
     whatsapp: ['lead_capture', 'enquiries_support'],
     tiktok: ['lead_capture'],
+    email: ['email_marketing', 'enquiries_support'],
   },
   appointment_based: {
     instagram: ['appointments_bookings', 'enquiries_support'],
     facebook: ['appointments_bookings', 'enquiries_support'],
     whatsapp: ['appointments_bookings', 'enquiries_support'],
     tiktok: ['lead_capture'],
+    email: ['email_marketing', 'appointments_bookings'],
   },
   lead_driven: {
     instagram: ['lead_capture'],
     facebook: ['lead_capture'],
     whatsapp: ['lead_capture'],
     tiktok: ['lead_capture'],
+    email: ['email_marketing', 'lead_capture'],
   },
 };
 
@@ -341,13 +355,55 @@ export const defaultLeadCaptureConfig: LeadCaptureConfig = {
 };
 
 // =====================================
+// EMAIL MARKETING AUTOMATION
+// =====================================
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  type: 'welcome' | 'followup' | 'reminder' | 'promotional' | 'transactional';
+}
+
+export interface EmailMarketingConfig {
+  senderName: string;
+  senderEmail: string;
+  replyToEmail: string;
+  welcomeEmailEnabled: boolean;
+  welcomeEmailDelay: number; // minutes
+  welcomeEmailTemplate?: EmailTemplate;
+  followUpSequence: {
+    template: EmailTemplate;
+    delayDays: number;
+  }[];
+  triggerEvents: ('lead_capture' | 'order_placed' | 'appointment_booked' | 'ticket_created')[];
+  trackOpens: boolean;
+  trackClicks: boolean;
+  unsubscribeEnabled: boolean;
+}
+
+export const defaultEmailMarketingConfig: EmailMarketingConfig = {
+  senderName: 'Your Business',
+  senderEmail: 'hello@yourbusiness.com',
+  replyToEmail: 'support@yourbusiness.com',
+  welcomeEmailEnabled: true,
+  welcomeEmailDelay: 0,
+  followUpSequence: [],
+  triggerEvents: ['lead_capture'],
+  trackOpens: true,
+  trackClicks: true,
+  unsubscribeEnabled: true,
+};
+
+// =====================================
 // COMBINED AUTOMATION TYPE
 // =====================================
 export type AutomationConfig = 
   | { type: 'sales_orders'; config: SalesOrderConfig }
   | { type: 'appointments_bookings'; config: AppointmentConfig }
   | { type: 'enquiries_support'; config: EnquirySupportConfig }
-  | { type: 'lead_capture'; config: LeadCaptureConfig };
+  | { type: 'lead_capture'; config: LeadCaptureConfig }
+  | { type: 'email_marketing'; config: EmailMarketingConfig };
 
 export interface ConfiguredBusinessAutomation {
   id: string;
@@ -375,6 +431,8 @@ export const getDefaultConfig = (category: BusinessCategoryType): AutomationConf
       return { type: 'enquiries_support', config: { ...defaultEnquiryConfig } };
     case 'lead_capture':
       return { type: 'lead_capture', config: { ...defaultLeadCaptureConfig } };
+    case 'email_marketing':
+      return { type: 'email_marketing', config: { ...defaultEmailMarketingConfig } };
   }
 };
 
@@ -426,22 +484,22 @@ export const planDetails: Record<PlanType, PlanDetails> = {
       'All Automation Types',
       'Appointment Booking',
       'Sales & Order Automation',
-      'Transactional Email',
+      'Email Automation',
       '2,500 Contacts Limit',
       'Priority Support',
     ],
     description: '2 channels of your choice',
-    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders'],
+    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders', 'email_marketing'],
   },
   enterprise: {
     name: 'Enterprise',
     price: '₦120,000',
     priceValue: 120000,
-    maxChannels: 4,
+    maxChannels: 5,
     maxAutomations: 'unlimited',
     maxContacts: 10000,
     features: [
-      'All 4 Social Channels',
+      'All 5 Channels (IG, FB, WhatsApp, TikTok, Email)',
       'Unlimited Automations',
       'AI-Powered Responses',
       'Advanced Analytics',
@@ -450,16 +508,14 @@ export const planDetails: Record<PlanType, PlanDetails> = {
       'Custom Integrations',
       'White-label Options',
     ],
-    description: 'All channels (IG, FB, WhatsApp, TikTok)',
-    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders'],
+    description: 'All channels (IG, FB, WhatsApp, TikTok, Email)',
+    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders', 'email_marketing'],
   },
 };
 
 // =====================================
-// CHANNEL TYPES
+// CHANNEL CONNECTION
 // =====================================
-export type ChannelType = 'instagram' | 'facebook' | 'whatsapp' | 'tiktok';
-
 export interface ChannelConnection {
   type: ChannelType;
   connected: boolean;
@@ -505,6 +561,16 @@ export const mockTikTokOAuth = async (): Promise<ManyChatOAuthResponse> => {
     success: true,
     workspaceId: `ws_tiktok_${Math.random().toString(36).substring(7)}`,
     accessToken: `at_tiktok_${Math.random().toString(36).substring(7)}`,
-    accountName: `@demo_tiktok_account`,
+    accountName: `@demo_tiktok_creator`,
+  };
+};
+
+export const mockEmailConnect = async (): Promise<ManyChatOAuthResponse> => {
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  return {
+    success: true,
+    workspaceId: `ws_email_${Math.random().toString(36).substring(7)}`,
+    accessToken: `at_email_${Math.random().toString(36).substring(7)}`,
+    accountName: `hello@yourbusiness.com`,
   };
 };

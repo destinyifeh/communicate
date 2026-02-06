@@ -23,12 +23,14 @@ import {
   Trash2,
   AlertTriangle,
   Instagram,
-  Facebook
+  Facebook,
+  Mail
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { PlanType, planDetails, ChannelType, ConfiguredBusinessAutomation, businessCategories, BusinessKindType, businessKinds, getAutomationsForBusinessKind } from '@/lib/businessTypes';
+import { PlanType, planDetails, ChannelType, ConfiguredBusinessAutomation, businessCategories, BusinessKindType, businessKinds, getAutomationsForBusinessKind, BusinessCategoryType } from '@/lib/businessTypes';
 import { UpgradeDialog } from '@/components/portal/UpgradeDialog';
+import { AutomationBuilder } from '@/components/automation/AutomationBuilder';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +39,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -49,6 +61,7 @@ const channelIcons: Record<ChannelType, React.ReactNode> = {
   facebook: <Facebook className="h-4 w-4" />,
   whatsapp: <MessageSquare className="h-4 w-4" />,
   tiktok: <TikTokIcon />,
+  email: <Mail className="h-4 w-4" />,
 };
 
 const channelColors: Record<ChannelType, string> = {
@@ -56,6 +69,7 @@ const channelColors: Record<ChannelType, string> = {
   facebook: 'bg-blue-600',
   whatsapp: 'bg-green-500',
   tiktok: 'bg-foreground',
+  email: 'bg-red-500',
 };
 
 export default function AutomationSettings() {
@@ -75,6 +89,7 @@ export default function AutomationSettings() {
 
   // Dialog state
   const [deleteAutomationId, setDeleteAutomationId] = useState<string | null>(null);
+  const [addAutomationDialogOpen, setAddAutomationDialogOpen] = useState(false);
 
   useEffect(() => {
     const savedPlan = localStorage.getItem('selected_plan') as PlanType;
@@ -152,6 +167,47 @@ export default function AutomationSettings() {
     localStorage.setItem('configured_automations', JSON.stringify(updated));
     const automation = updated.find(a => a.id === automationId);
     toast.success(`Automation ${automation?.status === 'active' ? 'activated' : 'paused'}`);
+  };
+
+  const handleAddAutomation = (automation: {
+    category: BusinessCategoryType;
+    channel: ChannelType;
+    config: any;
+  }) => {
+    const maxAutomations = planInfo.maxAutomations === 'unlimited' ? 999 : planInfo.maxAutomations;
+    if (configuredAutomations.length >= maxAutomations) {
+      toast.error('You have reached your automation limit');
+      setUpgradeDialogOpen(true);
+      return;
+    }
+
+    // Check for duplicates
+    const isDuplicate = configuredAutomations.some(
+      a => a.businessCategory === automation.category && a.channel === automation.channel
+    );
+    if (isDuplicate) {
+      toast.error('This automation already exists for this channel');
+      return;
+    }
+
+    const categoryInfo = businessCategories.find(c => c.id === automation.category);
+    
+    const newAutomation: ConfiguredBusinessAutomation = {
+      id: Math.random().toString(36).substring(2, 9),
+      businessCategory: automation.category,
+      categoryName: categoryInfo?.name || '',
+      channel: automation.channel,
+      automation: automation.config,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updated = [...configuredAutomations, newAutomation];
+    setConfiguredAutomations(updated);
+    localStorage.setItem('configured_automations', JSON.stringify(updated));
+    setAddAutomationDialogOpen(false);
+    toast.success('Automation added successfully!');
   };
 
   // Group automations by channel
@@ -306,7 +362,8 @@ export default function AutomationSettings() {
                 variant="outline" 
                 size="sm"
                 className="gap-2"
-                onClick={() => navigate('/portal')}
+                onClick={() => setAddAutomationDialogOpen(true)}
+                disabled={connectedChannels.length === 0}
               >
                 <Plus className="h-4 w-4" />
                 Add Automation
@@ -347,7 +404,7 @@ export default function AutomationSettings() {
                       {automations.length === 0 ? (
                         <div className="p-4 rounded-lg bg-secondary/30 border border-dashed border-border text-center">
                           <p className="text-sm text-muted-foreground mb-2">No automations configured</p>
-                          <Button variant="outline" size="sm" onClick={() => navigate('/portal')}>
+                          <Button variant="outline" size="sm" onClick={() => setAddAutomationDialogOpen(true)}>
                             <Plus className="h-3 w-3 mr-1" /> Add Automation
                           </Button>
                         </div>
@@ -543,6 +600,24 @@ export default function AutomationSettings() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Automation Dialog */}
+      <Dialog open={addAutomationDialogOpen} onOpenChange={setAddAutomationDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Automation</DialogTitle>
+            <DialogDescription>
+              Choose what you want to automate and configure it.
+            </DialogDescription>
+          </DialogHeader>
+          <AutomationBuilder
+            currentPlan={currentPlan}
+            connectedChannels={connectedChannels}
+            onComplete={handleAddAutomation}
+            onCancel={() => setAddAutomationDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </ClientLayout>
