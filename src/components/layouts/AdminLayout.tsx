@@ -1,9 +1,8 @@
-import { ReactNode, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+"use client";
+
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,68 +10,74 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
 import {
-  Zap,
+  Bell,
+  ChevronDown,
   LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Settings,
   Users,
   Webhook,
-  Settings,
-  LogOut,
-  ChevronDown,
-  Bell,
-  MessageSquare,
-  Menu,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useState } from "react";
+import { toast } from "sonner";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Command Center', href: '/admin' },
-  { icon: Users, label: 'Client Management', href: '/admin/clients' },
-  { icon: Webhook, label: 'Webhook Logs', href: '/admin/webhooks' },
-  { icon: Settings, label: 'Settings', href: '/admin/settings' },
+  { icon: LayoutDashboard, label: "Command Center", href: "/admin" },
+  { icon: Users, label: "Client Management", href: "/admin/clients" },
+  { icon: Webhook, label: "Webhook Logs", href: "/admin/webhooks" },
+  { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    router.push("/");
   };
 
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-sidebar-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-          <Zap className="h-4 w-4 text-primary-foreground" />
+      <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <Zap className="h-4 w-4 text-white" />
         </div>
-        <span className="font-semibold text-sidebar-foreground">AutomateFlow</span>
+        <span className="text-lg font-black tracking-tighter text-foreground">
+          Partner<span className="text-primary">Peak</span>
+        </span>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.href;
+            const isActive = pathname === item.href;
             return (
               <li key={item.href}>
                 <Link
-                  to={item.href}
+                  href={item.href}
                   onClick={onNavigate}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
@@ -91,11 +96,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent/50 transition-colors">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                  {user?.name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("") || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-sidebar-foreground">{user?.name}</p>
+                <p className="text-sm font-medium text-sidebar-foreground">
+                  {user?.name}
+                </p>
                 <p className="text-xs text-sidebar-foreground/60">Admin</p>
               </div>
               <ChevronDown className="h-4 w-4 text-sidebar-foreground/60" />
@@ -121,18 +131,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const location = useLocation();
+  const pathname = usePathname();
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar hidden lg:block">
+      <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card hidden lg:block shadow-xl">
         <SidebarContent />
       </aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-sidebar border-sidebar-border">
+        <SheetContent
+          side="left"
+          className="p-0 w-64 bg-sidebar border-sidebar-border"
+        >
           <SidebarContent onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
@@ -140,23 +153,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="flex-1 lg:pl-64">
         {/* Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur px-4 lg:px-6">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 lg:px-6">
           <div className="flex items-center gap-4">
             {/* Mobile menu trigger */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="lg:hidden"
               onClick={() => setMobileOpen(true)}
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-semibold">
-              {navItems.find(item => item.href === location.pathname)?.label || 'Command Center'}
+            <h1 className="text-lg font-black tracking-tight text-foreground">
+              {navItems.find((item) => item.href === pathname)?.label ||
+                "Command Center"}
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/admin/notifications">
+            <Link href="/admin/notifications">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
@@ -164,11 +178,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </span>
               </Button>
             </Link>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="hidden sm:flex"
-              onClick={() => toast.info('Messages coming soon!', { description: 'Direct messaging will be available in a future update.' })}
+              onClick={() =>
+                toast.info("Messages coming soon!", {
+                  description:
+                    "Direct messaging will be available in a future update.",
+                })
+              }
             >
               <MessageSquare className="h-5 w-5" />
             </Button>

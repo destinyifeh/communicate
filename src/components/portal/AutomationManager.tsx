@@ -1,58 +1,60 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { AutomationBuilder } from '@/components/automation/AutomationBuilder';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { 
-  Plus, 
-  Settings, 
-  Trash2, 
-  Play, 
-  Pause, 
-  MoreVertical,
-  Instagram,
-  Facebook,
-  MessageSquare,
-  AlertCircle,
-  ShoppingCart,
-  Calendar,
-  HelpCircle,
-  UserPlus,
-  Mail
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { 
-  ChannelType,
-  ConfiguredBusinessAutomation,
-  businessCategories,
-  BusinessCategoryType,
-  PlanType
+    AutomationConfig,
+    businessCategories,
+    BusinessCategoryType,
+    BusinessKindType,
+    ChannelType,
+    ConfiguredBusinessAutomation,
+    PlanType
 } from '@/lib/businessTypes';
-import { AutomationBuilder } from '@/components/automation/AutomationBuilder';
+import { motion } from 'framer-motion';
+import {
+    AlertCircle,
+    Calendar,
+    Facebook,
+    HelpCircle,
+    Instagram,
+    Mail,
+    MessageSquare,
+    MoreVertical,
+    Pause,
+    Pencil,
+    Play,
+    Plus,
+    ShoppingCart,
+    Trash2,
+    UserPlus,
+    Zap
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -81,20 +83,24 @@ interface AutomationManagerProps {
   connectedChannels: ChannelType[];
   currentPlan?: PlanType;
   onUpgradeNeeded?: () => void;
+  onUpdate?: (automations: ConfiguredBusinessAutomation[]) => void;
 }
 
 export function AutomationManager({ 
   maxAutomations, 
   connectedChannels, 
   currentPlan = 'starter',
-  onUpgradeNeeded 
+  onUpgradeNeeded,
+  onUpdate,
 }: AutomationManagerProps) {
   const [automations, setAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<ConfiguredBusinessAutomation | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [automationToDelete, setAutomationToDelete] = useState<string | null>(null);
   const [duplicateAlertOpen, setDuplicateAlertOpen] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState('');
+  const [businessKind, setBusinessKind] = useState<BusinessKindType | null>(null);
 
   useEffect(() => {
     // Load from localStorage
@@ -106,11 +112,19 @@ export function AutomationManager({
         setAutomations([]);
       }
     }
+    
+    const savedBusinessKind = localStorage.getItem('business_kind');
+    if (savedBusinessKind) {
+      setBusinessKind(savedBusinessKind as any);
+    }
   }, []);
 
   const saveAutomations = (newAutomations: ConfiguredBusinessAutomation[]) => {
-    setAutomations(newAutomations);
     localStorage.setItem('configured_automations', JSON.stringify(newAutomations));
+    setAutomations(newAutomations);
+    if (onUpdate) {
+      onUpdate(newAutomations);
+    }
   };
 
   // Check if automation already exists for channel + category combo
@@ -175,6 +189,28 @@ export function AutomationManager({
     toast.success('Automation deleted');
   };
 
+  const handleEditAutomation = (automation: {
+    category: BusinessCategoryType;
+    channel: ChannelType;
+    config: AutomationConfig;
+  }) => {
+    if (!editingAutomation) return;
+    const updated = automations.map(a =>
+      a.id === editingAutomation.id
+        ? {
+            ...a,
+            businessCategory: automation.category,
+            channel: automation.channel,
+            automation: automation.config,
+            updatedAt: new Date().toISOString(),
+          }
+        : a
+    );
+    saveAutomations(updated);
+    setEditingAutomation(null);
+    toast.success('Automation updated!');
+  };
+
   const handleAddClick = () => {
     if (automations.length >= maxAutomations) {
       toast.error('You have reached your automation limit');
@@ -190,7 +226,7 @@ export function AutomationManager({
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+              <Zap className="h-5 w-5" />
               Manage Automations
             </CardTitle>
             <CardDescription>
@@ -260,6 +296,9 @@ export function AutomationManager({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover">
+                            <DropdownMenuItem onClick={() => setEditingAutomation(automation)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleToggleStatus(automation.id)}>
                               {automation.status === 'active' ? (
                                 <><Pause className="h-4 w-4 mr-2" /> Pause</>
@@ -302,7 +341,34 @@ export function AutomationManager({
             connectedChannels={connectedChannels}
             onComplete={handleAddAutomation}
             onCancel={() => setIsAddDialogOpen(false)}
+            businessKind={businessKind}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Automation Dialog */}
+      <Dialog open={!!editingAutomation} onOpenChange={(open) => !open && setEditingAutomation(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Automation</DialogTitle>
+            <DialogDescription>
+              Update your automation configuration.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAutomation && (
+            <AutomationBuilder
+              currentPlan={currentPlan}
+              connectedChannels={connectedChannels}
+              onComplete={handleEditAutomation}
+              onCancel={() => setEditingAutomation(null)}
+              initialData={{
+                category: editingAutomation.businessCategory as BusinessCategoryType,
+                channel: editingAutomation.channel as ChannelType,
+                config: editingAutomation.automation as AutomationConfig,
+              }}
+              businessKind={businessKind}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

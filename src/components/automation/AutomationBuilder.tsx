@@ -1,28 +1,27 @@
-import { useState } from 'react';
-import { 
-  BusinessCategoryType, 
-  businessCategories,
-  AutomationConfig,
-  getDefaultConfig,
-  PlanType,
-  ChannelType,
-  defaultAppointmentConfig,
-  defaultSalesConfig,
-  defaultEnquiryConfig,
-  defaultLeadCaptureConfig
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    AutomationConfig,
+    businessCategories,
+    BusinessCategoryType,
+    businessKinds,
+    BusinessKindType,
+    ChannelType,
+    getAutomationsForBusinessKind,
+    getDefaultConfig,
+    PlanType
 } from '@/lib/businessTypes';
-import { BusinessCategorySelector } from './BusinessCategorySelector';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Check, Facebook, Instagram, Mail, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { AppointmentSetup } from './AppointmentSetup';
-import { SalesOrderSetup } from './SalesOrderSetup';
+import { BusinessCategorySelector } from './BusinessCategorySelector';
+import { EmailMarketingSetup } from './EmailMarketingSetup';
 import { EnquirySupportSetup } from './EnquirySupportSetup';
 import { LeadCaptureSetup } from './LeadCaptureSetup';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Check, Instagram, Facebook, MessageSquare, Mail } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
-import { EmailMarketingSetup } from './EmailMarketingSetup';
+import { SalesOrderSetup } from './SalesOrderSetup';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -47,18 +46,40 @@ interface AutomationBuilderProps {
     config: AutomationConfig;
   }) => void;
   onCancel: () => void;
+  initialData?: {
+    category: BusinessCategoryType;
+    channel: ChannelType;
+    config: AutomationConfig;
+  };
+  businessKind?: BusinessKindType | null;
 }
 
 export function AutomationBuilder({
   currentPlan,
   connectedChannels,
   onComplete,
-  onCancel
+  onCancel,
+  initialData,
+  businessKind,
 }: AutomationBuilderProps) {
-  const [step, setStep] = useState<'category' | 'channel' | 'configure'>('category');
-  const [selectedCategory, setSelectedCategory] = useState<BusinessCategoryType | null>(null);
-  const [selectedChannel, setSelectedChannel] = useState<ChannelType | null>(null);
-  const [config, setConfig] = useState<AutomationConfig | null>(null);
+  const [step, setStep] = useState<'category' | 'channel' | 'configure'>(
+    initialData ? 'configure' : 'category'
+  );
+  const [selectedCategory, setSelectedCategory] = useState<BusinessCategoryType | null>(
+    initialData?.category ?? null
+  );
+  const [selectedChannel, setSelectedChannel] = useState<ChannelType | null>(
+    initialData?.channel ?? null
+  );
+  const [config, setConfig] = useState<AutomationConfig | null>(
+    initialData?.config ?? null
+  );
+
+
+  // Get business kind info
+  const businessKindInfo = businessKind 
+    ? businessKinds.find(k => k.id === businessKind)
+    : null;
 
   const handleCategorySelect = (category: BusinessCategoryType) => {
     setSelectedCategory(category);
@@ -130,6 +151,7 @@ export function AutomationBuilder({
               selectedCategory={selectedCategory}
               onSelect={handleCategorySelect}
               currentPlan={currentPlan}
+              availableCategories={businessKindInfo?.enabledAutomations}
             />
 
             <div className="flex justify-between mt-6">
@@ -155,33 +177,44 @@ export function AutomationBuilder({
             exit={{ opacity: 0, x: -20 }}
           >
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {connectedChannels.map((channel) => (
-                <button
-                  key={channel}
-                  type="button"
-                  onClick={() => handleChannelSelect(channel)}
-                  className={`relative p-6 rounded-xl border-2 text-center transition-all ${
-                    selectedChannel === channel
-                      ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className={`h-14 w-14 mx-auto rounded-full bg-gradient-to-br ${channelInfo[channel].color} flex items-center justify-center mb-3 text-white`}>
-                    {channelInfo[channel].icon}
-                  </div>
-                  <div className="font-medium">{channelInfo[channel].name}</div>
-                  
-                  {selectedChannel === channel && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center"
-                    >
-                      <Check className="h-4 w-4 text-primary-foreground" />
-                    </motion.div>
-                  )}
-                </button>
-              ))}
+              {connectedChannels.map((channel) => {
+                const isSupported = !businessKind || !selectedCategory || getAutomationsForBusinessKind(businessKind, channel).includes(selectedCategory);
+                
+                return (
+                  <button
+                    key={channel}
+                    type="button"
+                    onClick={() => isSupported && handleChannelSelect(channel)}
+                    disabled={!isSupported}
+                    className={`relative p-6 rounded-xl border-2 text-center transition-all ${
+                      selectedChannel === channel
+                        ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
+                        : isSupported
+                        ? 'border-border hover:border-primary/50'
+                        : 'border-border/50 opacity-50 cursor-not-allowed bg-muted/20'
+                    }`}
+                  >
+                    <div className={`h-14 w-14 mx-auto rounded-full bg-gradient-to-br ${channelInfo[channel].color} flex items-center justify-center mb-3 text-white`}>
+                      {channelInfo[channel].icon}
+                    </div>
+                    <div className="font-medium">{channelInfo[channel].name}</div>
+                    
+                    {!isSupported && (
+                      <div className="text-xs text-muted-foreground mt-2">Not available</div>
+                    )}
+                    
+                    {selectedChannel === channel && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center"
+                      >
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </motion.div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {connectedChannels.length === 0 && (
@@ -219,6 +252,7 @@ export function AutomationBuilder({
               <AppointmentSetup
                 config={config.config}
                 onChange={(newConfig) => setConfig({ type: 'appointments_bookings', config: newConfig })}
+                onComplete={handleComplete}
               />
             )}
 
@@ -226,6 +260,7 @@ export function AutomationBuilder({
               <SalesOrderSetup
                 config={config.config}
                 onChange={(newConfig) => setConfig({ type: 'sales_orders', config: newConfig })}
+                onComplete={handleComplete}
               />
             )}
 
@@ -233,6 +268,7 @@ export function AutomationBuilder({
               <EnquirySupportSetup
                 config={config.config}
                 onChange={(newConfig) => setConfig({ type: 'enquiries_support', config: newConfig })}
+                onComplete={handleComplete}
               />
             )}
 
@@ -240,6 +276,7 @@ export function AutomationBuilder({
               <LeadCaptureSetup
                 config={config.config}
                 onChange={(newConfig) => setConfig({ type: 'lead_capture', config: newConfig })}
+                onComplete={handleComplete}
               />
             )}
 
@@ -258,7 +295,7 @@ export function AutomationBuilder({
                 className="gradient-primary text-primary-foreground"
                 onClick={handleComplete}
               >
-                Save Automation <Check className="ml-2 h-4 w-4" />
+                {initialData ? 'Update Automation' : 'Save Automation'} <Check className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </motion.div>

@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { EnquirySupportConfig, FAQItem, generateId } from '@/lib/businessTypes';
-import { HelpCircle, MessageSquare, Clock, Bell, Plus, Trash2, Edit2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell, Clock, Edit2, HelpCircle, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface EnquirySupportSetupProps {
   config: EnquirySupportConfig;
   onChange: (config: EnquirySupportConfig) => void;
+  onComplete: () => void;
 }
 
-export function EnquirySupportSetup({ config, onChange }: EnquirySupportSetupProps) {
+export function EnquirySupportSetup({ config, onChange, onComplete }: EnquirySupportSetupProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [editingFaq, setEditingFaq] = useState<string | null>(null);
   const totalSteps = 4;
@@ -376,7 +377,10 @@ export function EnquirySupportSetup({ config, onChange }: EnquirySupportSetupPro
             Next Step
           </Button>
         ) : (
-          <Button className="gradient-primary text-primary-foreground">
+          <Button 
+            className="gradient-primary text-primary-foreground"
+            onClick={onComplete}
+          >
             Complete Setup
           </Button>
         )}

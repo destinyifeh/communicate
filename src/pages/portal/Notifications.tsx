@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { ClientLayout } from '@/components/layouts/ClientLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+'use client';
+
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export type UserRole = 'admin' | 'client';
 

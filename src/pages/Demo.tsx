@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +54,7 @@ export default function Demo() {
         </div>
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Link to="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
               <Zap className="h-6 w-6 text-white" />
             </div>
@@ -122,14 +124,14 @@ export default function Demo() {
       {/* Right side - Form */}
       <div className="flex-1 flex flex-col">
         <div className="flex justify-between items-center p-6">
-          <Link to="/" className="lg:hidden flex items-center gap-2">
+          <Link href="/" className="lg:hidden flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-lg font-semibold">AutomateFlow</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/">
+            <Link href="/">
               <Button variant="ghost" size="sm" className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -175,14 +177,14 @@ export default function Demo() {
                     <p className="text-sm text-muted-foreground text-center">
                       Check your inbox for a confirmation email with next steps.
                     </p>
-                    <Link to="/" className="block">
+                    <Link href="/" className="block">
                       <Button 
                         className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90"
                       >
                         Back to Homepage
                       </Button>
                     </Link>
-                    <Link to="/signup" className="block">
+                    <Link href="/signup" className="block">
                       <Button 
                         variant="outline"
                         className="w-full h-11"

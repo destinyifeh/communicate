@@ -1,73 +1,88 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Zap, Loader2, Eye, EyeOff, Crown, Building2, Check, 
-  Instagram, Facebook, MessageSquare, Mail, CreditCard,
-  ArrowRight, CheckCircle2, Building, Sparkles,
-  Unlink, Settings, MoreVertical
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
-import { 
-  PlanType, 
-  planDetails, 
-  ChannelType, 
-  ChannelConnection, 
-  countries,
-  mockManyChatOAuth,
-  mockTikTokOAuth,
-  BusinessCategoryType,
-  businessCategories,
-  ConfiguredBusinessAutomation,
-  generateId,
-  AutomationConfig,
-  BusinessKindType,
-  businessKinds,
-  getAutomationsForBusinessKind
-} from '@/lib/businessTypes';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChannelAutomationSetup } from '@/components/automation/ChannelAutomationSetup';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+"use client";
 
-// 8 steps with business kind selection
-const TOTAL_STEPS = 8;
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  BusinessKindType,
+  ChannelType,
+  PlanType,
+  businessKinds,
+} from "@/lib/businessTypes";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  Crown,
+  Eye,
+  EyeOff,
+  Facebook,
+  Instagram,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+// 3 steps for quick onboarding
+const TOTAL_STEPS = 3;
 
 const stepTitles = {
-  1: 'Create Account',
-  2: 'Verify Email',
-  3: 'Business Details',
-  4: 'Business Type',
-  5: 'Select Plan',
-  6: 'Payment',
-  7: 'Connect Channels',
-  8: 'Setup Automations',
+  1: "Create Account",
+  2: "Business Type",
+  3: "Verify Email",
 };
 
 const TikTokIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" />
   </svg>
 );
 
-const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; color: string }> = {
-  instagram: { icon: <Instagram className="h-5 w-5" />, name: 'Instagram', color: 'from-purple-500 to-pink-500' },
-  facebook: { icon: <Facebook className="h-5 w-5" />, name: 'Facebook', color: 'from-blue-600 to-blue-500' },
-  whatsapp: { icon: <MessageSquare className="h-5 w-5" />, name: 'WhatsApp', color: 'from-green-500 to-green-400' },
-  tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'from-gray-900 to-gray-700 dark:from-white dark:to-gray-200' },
-  email: { icon: <Mail className="h-5 w-5" />, name: 'Email', color: 'from-red-500 to-rose-500' },
+const channelInfo: Record<
+  ChannelType,
+  { icon: React.ReactNode; name: string; color: string }
+> = {
+  instagram: {
+    icon: <Instagram className="h-5 w-5" />,
+    name: "Instagram",
+    color: "from-purple-500 to-pink-500",
+  },
+  facebook: {
+    icon: <Facebook className="h-5 w-5" />,
+    name: "Facebook",
+    color: "from-blue-600 to-blue-500",
+  },
+  whatsapp: {
+    icon: <MessageSquare className="h-5 w-5" />,
+    name: "WhatsApp",
+    color: "from-green-500 to-green-400",
+  },
+  tiktok: {
+    icon: <TikTokIcon />,
+    name: "TikTok",
+    color: "from-gray-900 to-gray-700 dark:from-white dark:to-gray-200",
+  },
+  email: {
+    icon: <Mail className="h-5 w-5" />,
+    name: "Email",
+    color: "from-red-500 to-rose-500",
+  },
 };
 
 interface BusinessDetails {
@@ -79,195 +94,100 @@ interface BusinessDetails {
 }
 
 export default function Signup() {
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [connectingChannel, setConnectingChannel] = useState<ChannelType | null>(null);
-  
-  // Step 1: Account
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  
-  // Step 2: Email Verification
-  const [verificationCode, setVerificationCode] = useState('');
-  const [emailVerified, setEmailVerified] = useState(false);
-  
-  // Step 3: Business Details
-  const [businessDetails, setBusinessDetails] = useState<BusinessDetails>({
-    name: '',
-    email: '',
-    whatsappNumber: '',
-    phoneNumber: '',
-    country: '',
-  });
-  
-  // Step 4: Business Kind
-  const [selectedBusinessKind, setSelectedBusinessKind] = useState<BusinessKindType | null>(null);
-  
-  // Step 5: Plan Selection
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('starter');
-  
-  // Step 6: Payment
-  const [paymentCompleted, setPaymentCompleted] = useState(false);
-  
-  // Step 7: Channel Connections
-  const [channels, setChannels] = useState<ChannelConnection[]>([
-    { type: 'instagram', connected: false },
-    { type: 'facebook', connected: false },
-    { type: 'whatsapp', connected: false },
-    { type: 'tiktok', connected: false },
-  ]);
+  const [connectingChannel, setConnectingChannel] =
+    useState<ChannelType | null>(null);
 
-  // Step 8: Automation Setup (per channel)
-  const [configuredAutomations, setConfiguredAutomations] = useState<ConfiguredBusinessAutomation[]>([]);
+  // Step 1: Account
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Step 2: Email Verification
+  const [verificationCode, setVerificationCode] = useState("");
+
+  // Step 3: Business Details (Combined with Step 1)
+  const [businessDetails, setBusinessDetails] = useState<BusinessDetails>({
+    name: "",
+    email: "",
+    whatsappNumber: "",
+    phoneNumber: "",
+    country: "",
+  });
+
+  // Step 2: Business Kind
+  const [selectedBusinessKind, setSelectedBusinessKind] =
+    useState<BusinessKindType | null>(null);
 
   const { signup } = useAuth();
-  const navigate = useNavigate();
-  const currentPlan = planDetails[selectedPlan];
+  const router = useRouter();
 
   useEffect(() => {
-    const planParam = searchParams.get('plan');
-    if (planParam && ['starter', 'professional', 'enterprise'].includes(planParam)) {
-      setSelectedPlan(planParam as PlanType);
+    const planParam = searchParams?.get("plan");
+    if (
+      planParam &&
+      ["starter", "professional", "enterprise"].includes(planParam)
+    ) {
+      localStorage.setItem("selected_plan", planParam);
     }
   }, [searchParams]);
 
-  const connectedChannelsCount = channels.filter(c => c.connected).length;
-  const maxChannels = currentPlan.maxChannels;
-  const connectedChannelsList = channels.filter(c => c.connected);
-
   const handleNextStep = async () => {
     if (step === 1) {
-      if (!email || !password) {
-        toast.error('Please fill in all fields');
+      if (!email || !password || !businessDetails.name) {
+        toast.error("Please fill in required fields");
         return;
       }
       if (password.length < 6) {
-        toast.error('Password must be at least 6 characters');
+        toast.error("Password must be at least 6 characters");
         return;
       }
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsLoading(false);
-      toast.success('Verification code sent to your email');
       setStep(2);
     } else if (step === 2) {
-      if (verificationCode !== '123456') {
-        toast.error('Invalid verification code. Use 123456 for demo.');
+      if (!selectedBusinessKind) {
+        toast.error("Please select your business type");
         return;
       }
-      setEmailVerified(true);
-      toast.success('Email verified!');
+      setIsLoading(true);
+      // Simulate sending verification code
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsLoading(false);
+      toast.success("Verification code sent to your email");
       setStep(3);
     } else if (step === 3) {
-      if (!businessDetails.name || !businessDetails.email || !businessDetails.whatsappNumber || !businessDetails.country) {
-        toast.error('Please fill in all required fields');
+      if (verificationCode !== "123456") {
+        toast.error("Invalid verification code. Use 123456 for demo.");
         return;
       }
-      setStep(4);
-    } else if (step === 4) {
-      if (!selectedBusinessKind) {
-        toast.error('Please select your business type');
-        return;
-      }
-      setStep(5);
-    } else if (step === 5) {
-      setStep(6);
-    } else if (step === 6) {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setPaymentCompleted(true);
-      setIsLoading(false);
-      toast.success('Payment successful!');
-      setStep(7);
-    } else if (step === 7) {
-      if (connectedChannelsCount === 0) {
-        toast.error('Please connect at least one channel');
-        return;
-      }
-      setStep(8);
+      toast.success("Email verified!");
+      handleCompleteOnboarding();
     }
   };
 
-  const handleConnectChannel = async (channelType: ChannelType) => {
-    if (connectedChannelsCount >= maxChannels) {
-      toast.error(`Your ${currentPlan.name} plan allows only ${maxChannels} channel(s)`);
-      return;
-    }
-    
-    setConnectingChannel(channelType);
-    
-    try {
-      const response = channelType === 'tiktok' 
-        ? await mockTikTokOAuth() 
-        : await mockManyChatOAuth(channelType);
-      
-      if (response.success) {
-        setChannels(prev => prev.map(ch => 
-          ch.type === channelType 
-            ? { 
-                ...ch, 
-                connected: true, 
-                workspaceId: response.workspaceId,
-                accessToken: response.accessToken,
-                accountName: response.accountName,
-                connectedAt: new Date().toISOString(),
-              } 
-            : ch
-        ));
-        toast.success(`${channelInfo[channelType].name} connected successfully!`);
-      }
-    } catch {
-      toast.error(`Failed to connect ${channelInfo[channelType].name}`);
-    } finally {
-      setConnectingChannel(null);
-    }
-  };
-
-  const handleDisconnectChannel = (channelType: ChannelType) => {
-    setChannels(prev => prev.map(ch => 
-      ch.type === channelType 
-        ? { type: ch.type, connected: false } 
-        : ch
-    ));
-    // Remove automations for this channel
-    setConfiguredAutomations(prev => prev.filter(a => a.channel !== channelType));
-    toast.success(`${channelInfo[channelType].name} disconnected`);
-  };
-
-  const handleAutomationsComplete = (automations: {
-    channel: ChannelType;
-    category: BusinessCategoryType;
-    config: AutomationConfig;
-  }[]) => {
-    const newAutomations: ConfiguredBusinessAutomation[] = automations.map(a => ({
-      id: generateId(),
-      businessCategory: a.category,
-      categoryName: businessCategories.find(c => c.id === a.category)?.name || '',
-      channel: a.channel,
-      automation: a.config,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-    
-    setConfiguredAutomations(newAutomations);
-    handleCompleteOnboarding(newAutomations);
-  };
-
-  const handleCompleteOnboarding = async (automations: ConfiguredBusinessAutomation[]) => {
+  const handleCompleteOnboarding = async () => {
     setIsLoading(true);
     try {
-      await signup(email, password, businessDetails.name, 'client');
-      localStorage.setItem('configured_automations', JSON.stringify(automations));
-      localStorage.setItem('connected_channels', JSON.stringify(channels.filter(c => c.connected)));
-      localStorage.setItem('selected_plan', selectedPlan);
-      localStorage.setItem('business_kind', selectedBusinessKind || '');
-      toast.success('Welcome to AutomateFlow!');
-      navigate('/portal');
-    } catch {
-      toast.error('Failed to complete setup');
+      await signup(email, password, businessDetails.name, "client");
+
+      // Store basic setup
+      localStorage.setItem("business_kind", selectedBusinessKind || "");
+      localStorage.setItem("business_details", JSON.stringify(businessDetails));
+
+      // Initialize with fresh state for new user
+      localStorage.removeItem("selected_plan"); // Clear any stale session plan
+      localStorage.setItem("plan_confirmed", "false");
+      localStorage.setItem("connected_channels", "[]");
+      localStorage.setItem("configured_automations", "[]");
+      // Optional: if a plan was pre-selected during signup (e.g. from landing page),
+      // it's already in localStorage.selected_plan from the useEffect, which is fine.
+
+      toast.success("Welcome to PartnerPeak!");
+      router.push("/portal");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(error.message || "Failed to complete setup");
     } finally {
       setIsLoading(false);
     }
@@ -275,75 +195,98 @@ export default function Signup() {
 
   const getPlanIcon = (plan: PlanType) => {
     switch (plan) {
-      case 'starter': return Zap;
-      case 'professional': return Crown;
-      case 'enterprise': return Building2;
+      case "starter":
+        return Zap;
+      case "professional":
+        return Crown;
+      case "enterprise":
+        return Building2;
     }
   };
 
   // Get enabled automations for the selected business kind
-  const enabledAutomations = selectedBusinessKind 
-    ? businessKinds.find(b => b.id === selectedBusinessKind)?.enabledAutomations || []
+  const enabledAutomations = selectedBusinessKind
+    ? businessKinds.find((b) => b.id === selectedBusinessKind)
+        ?.enabledAutomations || []
     : [];
-
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-64 h-64 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
+    <div className="relative min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Left side - Branding (Static background but animated content) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background border-r border-border">
+        <div className="absolute inset-0 gradient-primary opacity-[0.03]" />
+
+        <div className="relative z-10 flex flex-col justify-between p-16 w-full">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-primary shadow-lg group-hover:rotate-12 transition-transform">
               <Zap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-semibold text-white">AutomateFlow</span>
+            <span className="text-xl font-black tracking-tighter text-foreground">
+              Partner<span className="text-primary">Peak</span>
+            </span>
           </Link>
 
-          <div className="max-w-md">
-            <motion.h1 
-              key={step}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              {stepTitles[step as keyof typeof stepTitles]}
-            </motion.h1>
-            <motion.p 
-              key={`desc-${step}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-white/80 text-lg"
-            >
-              {step === 1 && 'Create your account to get started with automation.'}
-              {step === 2 && 'We sent a verification code to your email.'}
-              {step === 3 && 'Tell us about your business.'}
-              {step === 4 && 'What type of business do you run?'}
-              {step === 5 && 'Choose the plan that fits your needs.'}
-              {step === 6 && 'Complete your subscription to unlock features.'}
-              {step === 7 && 'Connect your social channels to start automating.'}
-              {step === 8 && 'Set up automations for each connected channel.'}
-            </motion.p>
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black mb-8 uppercase tracking-widest">
+              <Sparkles className="h-3 w-3" />
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.5, ease: "circOut" }}
+              >
+                <h1 className="text-5xl md:text-6xl font-black text-foreground mb-6 tracking-tight leading-[1.1]">
+                  {step === 1 ? (
+                    <>
+                      Let's get your business{" "}
+                      <span className="text-primary italic">Automated.</span>
+                    </>
+                  ) : step === 2 ? (
+                    <>
+                      Tell us what you{" "}
+                      <span className="text-gradient">Do.</span>
+                    </>
+                  ) : (
+                    <>
+                      Secure your{" "}
+                      <span className="text-gradient">Account.</span>
+                    </>
+                  )}
+                </h1>
+
+                <p className="text-xl text-muted-foreground font-semibold leading-relaxed max-w-lg">
+                  {step === 1 &&
+                    "Join 500+ businesses using intelligent multi-channel automation to scale faster and respond smarter."}
+                  {step === 2 &&
+                    "Different businesses have different needs. Tell us what you do so we can enable the right tools."}
+                  {step === 3 &&
+                    "We've sent a high-security verification code to your email address. It'll take just a moment."}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <div className="flex gap-8">
-            <div>
-              <div className="text-2xl font-bold text-white">500+</div>
-              <div className="text-white/60 text-sm">Active businesses</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-white">5M+</div>
-              <div className="text-white/60 text-sm">Leads captured</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-white">24/7</div>
-              <div className="text-white/60 text-sm">Support</div>
-            </div>
+          <div className="grid grid-cols-3 gap-12">
+            {[
+              { label: "ACTIVE TEAMS", value: "500+" },
+              { label: "LEADS CAPTURED", value: "10M+" },
+              { label: "RESPONSE TIME", value: "< 1s" },
+            ].map((stat, i) => (
+              <div key={i}>
+                <div className="text-2xl font-black text-foreground mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -351,11 +294,13 @@ export default function Signup() {
       {/* Right side - Form */}
       <div className="flex-1 flex flex-col">
         <div className="flex justify-between items-center p-6">
-          <Link to="/" className="lg:hidden flex items-center gap-2">
+          <Link href="/" className="lg:hidden flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold">AutomateFlow</span>
+            <span className="text-xl font-black tracking-tighter text-foreground">
+              PartnerPeak
+            </span>
           </Link>
           <div className="flex items-center gap-4 ml-auto">
             <div className="flex items-center gap-1.5">
@@ -363,81 +308,136 @@ export default function Signup() {
                 <div
                   key={s}
                   className={`h-2 rounded-full transition-all ${
-                    s === step ? 'w-6 bg-primary' : s < step ? 'w-2 bg-primary' : 'w-2 bg-muted'
+                    s === step
+                      ? "w-6 bg-primary"
+                      : s < step
+                        ? "w-2 bg-primary/50"
+                        : "w-2 bg-muted-foreground/20"
                   }`}
                 />
               ))}
             </div>
-            <span className="text-sm text-muted-foreground">Step {step}/{TOTAL_STEPS}</span>
+            <span className="text-sm text-muted-foreground">
+              Step {step}/{TOTAL_STEPS}
+            </span>
             <ThemeToggle />
           </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
           <AnimatePresence mode="wait">
-            {/* Step 1: Create Account */}
+            {/* Step 1: Create Account & Business Info */}
             {step === 1 && (
-              <motion.div 
+              <motion.div
                 key="step1"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-sm"
+                className="w-full max-w-md"
               >
-                <Card className="border-border/50 shadow-large">
+                <Card className="glass rounded-[2.5rem] shadow-2xl overflow-hidden group">
                   <CardHeader className="space-y-1 text-center">
                     <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2">
                       <Mail className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-foreground">
+                      Create Your Account
+                    </CardTitle>
                     <CardDescription>
-                      Enter your email and password to get started
+                      Join PartnerPeak and start automating
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="name@company.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-11"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="email">Work Email</Label>
                         <Input
-                          id="password"
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="h-11 pr-10"
+                          id="email"
+                          type="email"
+                          placeholder="name@company.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-11"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="h-11 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="businessName">Business Name</Label>
+                        <Input
+                          id="businessName"
+                          placeholder="Enter your business name"
+                          value={businessDetails.name}
+                          onChange={(e) =>
+                            setBusinessDetails((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="phone">Phone Number (Optional)</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="+234 xxx xxx xxxx"
+                          value={businessDetails.phoneNumber}
+                          onChange={(e) =>
+                            setBusinessDetails((prev) => ({
+                              ...prev,
+                              phoneNumber: e.target.value,
+                            }))
+                          }
+                          className="h-11"
+                        />
                       </div>
                     </div>
 
-                    <Button 
+                    <Button
                       onClick={handleNextStep}
                       disabled={isLoading}
-                      className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90"
+                      className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90 mt-2"
                     >
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="ml-2 h-4 w-4" /></>}
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          Continue to Business Type{" "}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
 
                     <p className="text-center text-sm text-muted-foreground">
-                      Already have an account?{' '}
-                      <Link to="/login" className="text-primary hover:underline font-medium">
+                      Already have an account?{" "}
+                      <Link
+                        href="/login"
+                        className="text-primary hover:underline font-medium"
+                      >
                         Sign in
                       </Link>
                     </p>
@@ -446,21 +446,106 @@ export default function Signup() {
               </motion.div>
             )}
 
-            {/* Step 2: Verify Email */}
+            {/* Step 2: Business Type selection */}
             {step === 2 && (
-              <motion.div 
+              <motion.div
                 key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full max-w-2xl"
+              >
+                <Card className="glass rounded-[2.5rem] shadow-2xl overflow-hidden group">
+                  <CardHeader className="text-center">
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                      <Building2 className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">
+                      What Type of Business Do You Run?
+                    </CardTitle>
+                    <CardDescription>
+                      We'll tailor your dashboard based on your selection
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {businessKinds.map((kind) => {
+                        const isSelected = selectedBusinessKind === kind.id;
+                        return (
+                          <motion.button
+                            key={kind.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedBusinessKind(kind.id)}
+                            className={`p-6 rounded-2xl border-2 text-left transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary/5 shadow-lg"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <div
+                              className={`h-12 w-12 rounded-xl flex items-center justify-center mb-4 ${
+                                isSelected ? "gradient-primary" : "bg-secondary"
+                              }`}
+                            >
+                              <div
+                                className={
+                                  isSelected
+                                    ? "text-primary-foreground"
+                                    : "text-foreground"
+                                }
+                              >
+                                {kind.icon}
+                              </div>
+                            </div>
+                            <h3 className="font-bold text-lg mb-1">
+                              {kind.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {kind.description}
+                            </p>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setStep(1)}
+                        className="flex-1 h-11"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleNextStep}
+                        className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
+                      >
+                        Continue to Verification
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Step 3: Verify Email */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full max-w-sm"
               >
-                <Card className="border-border/50 shadow-large">
+                <Card className="glass rounded-[2.5rem] shadow-2xl overflow-hidden group">
                   <CardHeader className="space-y-1 text-center">
                     <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2">
                       <CheckCircle2 className="h-6 w-6 text-accent" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Verify Email</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-foreground">
+                      Verify Email
+                    </CardTitle>
                     <CardDescription>
                       Enter the 6-digit code sent to <strong>{email}</strong>
                     </CardDescription>
@@ -483,484 +568,26 @@ export default function Signup() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-11">
-                        Back
-                      </Button>
-                      <Button onClick={handleNextStep} className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90">
-                        Verify
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 3: Business Details */}
-            {step === 3 && (
-              <motion.div 
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-md"
-              >
-                <Card className="border-border/50 shadow-large">
-                  <CardHeader className="space-y-1 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                      <Building className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Business Details</CardTitle>
-                    <CardDescription>Tell us about your business</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="businessName">Business Name *</Label>
-                        <Input
-                          id="businessName"
-                          placeholder="Your Business Name"
-                          value={businessDetails.name}
-                          onChange={(e) => setBusinessDetails(prev => ({ ...prev, name: e.target.value }))}
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="businessEmail">Business Email *</Label>
-                        <Input
-                          id="businessEmail"
-                          type="email"
-                          placeholder="contact@business.com"
-                          value={businessDetails.email}
-                          onChange={(e) => setBusinessDetails(prev => ({ ...prev, email: e.target.value }))}
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="whatsapp">WhatsApp Number *</Label>
-                        <Input
-                          id="whatsapp"
-                          type="tel"
-                          placeholder="+234 xxx xxx xxxx"
-                          value={businessDetails.whatsappNumber}
-                          onChange={(e) => setBusinessDetails(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number (Optional)</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+234 xxx xxx xxxx"
-                          value={businessDetails.phoneNumber}
-                          onChange={(e) => setBusinessDetails(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="country">Country *</Label>
-                        <Select 
-                          value={businessDetails.country} 
-                          onValueChange={(value) => setBusinessDetails(prev => ({ ...prev, country: value }))}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Select your country" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {countries.map(country => (
-                              <SelectItem key={country} value={country}>{country}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-11">
-                        Back
-                      </Button>
-                      <Button onClick={handleNextStep} className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90">
-                        Continue <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 4: Business Kind */}
-            {step === 4 && (
-              <motion.div 
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-2xl"
-              >
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">What Type of Business Do You Run?</h2>
-                  <p className="text-muted-foreground">We'll enable the right automations for your business type</p>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  {businessKinds.map((kind, index) => (
-                    <motion.button
-                      key={kind.id}
-                      type="button"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={() => setSelectedBusinessKind(kind.id)}
-                      className={`relative p-6 rounded-xl border-2 text-left transition-all ${
-                        selectedBusinessKind === kind.id
-                          ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
-                          : 'border-border hover:border-primary/50 hover:shadow-md'
-                      }`}
-                    >
-                      <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${kind.color} flex items-center justify-center mb-4 text-2xl`}>
-                        {kind.icon}
-                      </div>
-                      
-                      <h3 className="font-semibold text-lg mb-1">{kind.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{kind.description}</p>
-                      
-                      <div className="flex flex-wrap gap-1.5">
-                        {kind.enabledAutomations.map(automationId => {
-                          const category = businessCategories.find(c => c.id === automationId);
-                          return (
-                            <Badge 
-                              key={automationId} 
-                              variant="secondary" 
-                              className="text-xs bg-accent/10 text-accent"
-                            >
-                              {category?.icon} {category?.name}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                      
-                      {selectedBusinessKind === kind.id && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center"
-                        >
-                          <Check className="h-4 w-4 text-primary-foreground" />
-                        </motion.div>
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 max-w-md mx-auto">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-12">
-                    Back
-                  </Button>
-                  <Button 
-                    onClick={handleNextStep} 
-                    disabled={!selectedBusinessKind}
-                    className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90"
-                  >
-                    Continue <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 5: Select Plan */}
-            {step === 5 && (
-              <motion.div 
-                key="step5"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-3xl"
-              >
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">Choose Your Plan</h2>
-                  <p className="text-muted-foreground">Select the plan that works for your business</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  {(Object.entries(planDetails) as [PlanType, typeof planDetails.starter][]).map(([key, plan]) => {
-                    const PlanIcon = getPlanIcon(key);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setSelectedPlan(key)}
-                        className={`relative p-5 rounded-xl border-2 text-left transition-all ${
-                          selectedPlan === key
-                            ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
-                            : 'border-border hover:border-primary/50'
-                        }`}
+                      <Button
+                        variant="outline"
+                        onClick={() => setStep(2)}
+                        className="flex-1 h-11"
                       >
-                        {key === 'professional' && selectedPlan !== key && (
-                          <Badge className="absolute -top-2 right-2 bg-accent text-accent-foreground text-xs">
-                            Popular
-                          </Badge>
-                        )}
-                        <div className={`h-11 w-11 rounded-lg flex items-center justify-center mb-3 ${
-                          selectedPlan === key ? 'gradient-primary' : 'bg-secondary'
-                        }`}>
-                          <PlanIcon className={`h-5 w-5 ${selectedPlan === key ? 'text-primary-foreground' : 'text-foreground'}`} />
-                        </div>
-                        <div className="font-semibold text-lg mb-1">{plan.name}</div>
-                        <div className="text-2xl font-bold text-primary mb-1">
-                          {plan.price}<span className="text-sm font-normal text-muted-foreground">/mo</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-4">{plan.description}</div>
-                        <div className="space-y-2">
-                          <div className="text-xs text-muted-foreground">
-                            {plan.maxChannels} channel{plan.maxChannels > 1 ? 's' : ''} • {plan.maxAutomations === 'unlimited' ? 'Unlimited' : `${plan.maxAutomations}`} automations
-                          </div>
-                          {plan.features.slice(0, 3).map((feature, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm">
-                              <Check className="h-4 w-4 text-accent shrink-0" />
-                              <span className="text-muted-foreground">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-3 max-w-md mx-auto">
-                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-12">
-                    Back
-                  </Button>
-                  <Button onClick={handleNextStep} className="flex-1 h-12 gradient-primary text-primary-foreground hover:opacity-90">
-                    Continue with {currentPlan.name} <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 6: Payment */}
-            {step === 6 && (
-              <motion.div 
-                key="step6"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-md"
-              >
-                <Card className="border-border/50 shadow-large">
-                  <CardHeader className="space-y-1 text-center">
-                    <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2">
-                      <CreditCard className="h-6 w-6 text-accent" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Complete Payment</CardTitle>
-                    <CardDescription>Subscribe to the {currentPlan.name} plan</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="p-4 rounded-xl bg-secondary/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {(() => {
-                            const PlanIcon = getPlanIcon(selectedPlan);
-                            return (
-                              <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
-                                <PlanIcon className="h-5 w-5 text-primary-foreground" />
-                              </div>
-                            );
-                          })()}
-                          <div>
-                            <div className="font-semibold">{currentPlan.name} Plan</div>
-                            <div className="text-sm text-muted-foreground">Monthly subscription</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg">{currentPlan.price}</div>
-                          <div className="text-xs text-muted-foreground">/month</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Card Number</Label>
-                        <Input placeholder="4242 4242 4242 4242" className="h-11" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Expiry</Label>
-                          <Input placeholder="MM/YY" className="h-11" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>CVC</Label>
-                          <Input placeholder="123" className="h-11" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(5)} className="flex-1 h-11">
                         Back
                       </Button>
-                      <Button 
+                      <Button
                         onClick={handleNextStep}
-                        disabled={isLoading}
                         className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
                       >
                         {isLoading ? (
-                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <>Pay {currentPlan.price}</>
+                          "Verify"
                         )}
                       </Button>
                     </div>
-                    
-                    <p className="text-xs text-center text-muted-foreground">
-                      Your payment is secured with 256-bit SSL encryption
-                    </p>
                   </CardContent>
                 </Card>
-              </motion.div>
-            )}
-
-            {/* Step 7: Connect Channels */}
-            {step === 7 && (
-              <motion.div 
-                key="step7"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-lg"
-              >
-                <Card className="border-border/50 shadow-large">
-                  <CardHeader className="space-y-1 text-center">
-                    <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2">
-                      <Sparkles className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Connect Your Channels</CardTitle>
-                    <CardDescription>
-                      Connect up to {maxChannels} channel{maxChannels > 1 ? 's' : ''} with your {currentPlan.name} plan
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                      <span className="text-sm">Connected Channels</span>
-                      <Badge variant="secondary">{connectedChannelsCount} / {maxChannels}</Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {channels.map((channel) => {
-                        const info = channelInfo[channel.type];
-                        const automationsForChannel = selectedBusinessKind 
-                          ? getAutomationsForBusinessKind(selectedBusinessKind, channel.type)
-                          : [];
-                        
-                        return (
-                          <div
-                            key={channel.type}
-                            className={`p-4 rounded-xl border-2 transition-all ${
-                              channel.connected
-                                ? 'border-accent bg-accent/5'
-                                : 'border-border'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
-                                {info.icon}
-                              </div>
-                              {channel.connected && (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem className="text-xs">
-                                      <Settings className="h-3 w-3 mr-2" />
-                                      Channel Settings
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                      className="text-xs text-destructive"
-                                      onClick={() => handleDisconnectChannel(channel.type)}
-                                    >
-                                      <Unlink className="h-3 w-3 mr-2" />
-                                      Disconnect
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              )}
-                            </div>
-                            <div className="font-medium text-sm mb-1">{info.name}</div>
-                            
-                            {/* Show available automations for this channel */}
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {automationsForChannel.map(catId => {
-                                const cat = businessCategories.find(c => c.id === catId);
-                                return (
-                                  <span key={catId} className="text-xs">{cat?.icon}</span>
-                                );
-                              })}
-                            </div>
-                            
-                            {channel.connected ? (
-                              <div className="space-y-1">
-                                <p className="text-xs text-accent">{channel.accountName}</p>
-                                <Badge variant="secondary" className="text-xs bg-accent/10 text-accent">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
-                                </Badge>
-                              </div>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-2 h-8 text-xs"
-                                disabled={connectedChannelsCount >= maxChannels || connectingChannel === channel.type}
-                                onClick={() => handleConnectChannel(channel.type)}
-                              >
-                                {connectingChannel === channel.type ? (
-                                  <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Connecting...</>
-                                ) : (
-                                  'Connect'
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep(6)} className="flex-1 h-11">
-                        Back
-                      </Button>
-                      <Button 
-                        onClick={handleNextStep}
-                        disabled={connectedChannelsCount === 0}
-                        className="flex-1 h-11 gradient-primary text-primary-foreground hover:opacity-90"
-                      >
-                        Setup Automations <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 8: Setup Automations */}
-            {step === 8 && (
-              <motion.div 
-                key="step8"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-3xl"
-              >
-                <ChannelAutomationSetup
-                  connectedChannels={connectedChannelsList}
-                  currentPlan={selectedPlan}
-                  businessKind={selectedBusinessKind}
-                  onComplete={handleAutomationsComplete}
-                  onBack={() => setStep(7)}
-                />
               </motion.div>
             )}
           </AnimatePresence>

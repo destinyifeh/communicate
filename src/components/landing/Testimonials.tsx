@@ -1,165 +1,181 @@
-import { motion } from 'framer-motion';
-import { Star, Quote } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+"use client";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { ArrowRight, MessageSquare, Quote, Sparkles, Star } from "lucide-react";
+import Link from "next/link";
 
 const testimonials = [
   {
     id: 1,
-    name: 'Adaeze Okonkwo',
-    role: 'Founder, StyleHub Lagos',
-    avatar: '',
-    content: 'AutomateFlow transformed our Instagram DMs. We now capture 10x more leads without lifting a finger. The ROI has been incredible!',
+    name: "Elena Rodriguez",
+    role: "Founder, Global Design Studio",
+    avatar: "",
+    content:
+      "PartnerPeak transformed our international client interactions. We now handle inquiries across four time zones automatically. The ROI has been incredible!",
     rating: 5,
-    platform: 'Instagram',
-    metric: '10x more leads',
+    platform: "Instagram",
+    metric: "12x more global leads",
   },
   {
     id: 2,
-    name: 'Chidi Emenike',
-    role: 'CEO, TechVentures Nigeria',
-    avatar: '',
-    content: 'Our response time went from hours to seconds. Customers love it, and our sales team can focus on closing deals instead of answering FAQs.',
+    name: "Marcus Thorne",
+    role: "CEO, OmniSystems UK",
+    avatar: "",
+    content:
+      "Our expansion into new markets was seamless thanks to the automation. Response times are consistent globally, and our efficiency has peaked.",
     rating: 5,
-    platform: 'WhatsApp',
-    metric: '95% faster response',
+    platform: "WhatsApp",
+    metric: "98% global coverage",
   },
   {
     id: 3,
-    name: 'Funke Adeyemi',
-    role: 'Marketing Director, BeautyBox',
-    avatar: '',
-    content: 'The best investment we made this year. AutomateFlow handles thousands of inquiries daily and never misses a beat.',
+    name: "Sarah Jenkins",
+    role: "Marketing Director, LuxeTrade",
+    avatar: "",
+    content:
+      "The best global scaling tool we've used. PartnerPeak handles traffic from every continent without any lag or downtime.",
     rating: 5,
-    platform: 'Facebook',
-    metric: '3,000+ daily chats',
+    platform: "Facebook",
+    metric: "5,000+ hourly chats",
   },
   {
     id: 4,
-    name: 'Tunde Bakare',
-    role: 'Owner, FoodieExpress',
-    avatar: '',
-    content: 'From struggling with customer queries to having a 24/7 automated assistant. Our customers are happier and so are we!',
+    name: "David Chen",
+    role: "Owner, AeroLogistics",
+    avatar: "",
+    content:
+      "Managing global delivery queries used to be a nightmare. Now, it's 100% automated. Our customers worldwide are more satisfied than ever!",
     rating: 5,
-    platform: 'WhatsApp',
-    metric: '24/7 availability',
+    platform: "WhatsApp",
+    metric: "Worldwide support 24/7",
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 },
-  },
-};
-
 export function Testimonials() {
   return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-gradient-to-l from-primary/5 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-r from-accent/5 to-transparent rounded-full blur-3xl" />
-      </div>
+    <section
+      id="testimonials"
+      className="py-24 relative overflow-hidden bg-[#0B1528]"
+    >
+      {/* Background Decor */}
+      <div className="absolute top-[20%] left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Success Stories
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-            Trusted by <span className="text-gradient">500+ businesses</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            See how businesses across Nigeria are transforming their customer engagement with AutomateFlow
-          </p>
-        </motion.div>
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-6 tracking-widest uppercase border border-primary/20 backdrop-blur-md"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Success Stories</span>
+          </motion.div>
 
-        {/* Stats Row */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
-        >
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl lg:text-7xl font-black mb-6 tracking-tight text-white leading-[1.1]"
+          >
+            Trusted by{" "}
+            <span className="text-primary italic">500+ Businesses.</span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-xl text-slate-400 font-medium leading-relaxed"
+          >
+            Discover how businesses worldwide are scaling their operations with
+            PartnerPeak's automation engine.
+          </motion.p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
           {[
-            { value: '500+', label: 'Active Businesses' },
-            { value: '2M+', label: 'Messages Automated' },
-            { value: '98%', label: 'Customer Satisfaction' },
-            { value: '50%', label: 'More Conversions' },
+            { value: "500+", label: "Businesses" },
+            { value: "2M+", label: "Automations" },
+            { value: "98%", label: "Satisfaction" },
+            { value: "50%", label: "Conversions" },
           ].map((stat, index) => (
-            <div key={index} className="text-center p-6 rounded-2xl bg-card border border-border/50">
-              <div className="text-3xl md:text-4xl font-bold text-gradient mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </div>
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-slate-900/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2rem] text-center hover:border-primary/20 transition-all duration-500"
+            >
+              <div className="text-3xl md:text-4xl font-black text-white italic mb-2">
+                {stat.value}
+              </div>
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                {stat.label}
+              </div>
+            </motion.div>
           ))}
-        </motion.div>
+        </div>
 
         {/* Testimonials Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {testimonials.map((testimonial, index) => (
-            <motion.div key={testimonial.id} variants={itemVariants}>
-              <Card className="h-full border-border/50 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-                <CardContent className="p-6 relative">
-                  {/* Quote Icon */}
-                  <Quote className="absolute top-6 right-6 h-8 w-8 text-primary/10 group-hover:text-primary/20 transition-colors" />
-                  
-                  {/* Rating */}
-                  <div className="flex gap-1 mb-4">
+            <motion.div
+              key={testimonial.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="relative group"
+            >
+              <Card className="rounded-[3rem] bg-slate-900/40 backdrop-blur-xl border-white/5 overflow-hidden group-hover:border-primary/20 transition-all duration-500 shadow-xl group-hover:shadow-[0_0_50px_rgba(59,130,246,0.05)]">
+                <CardContent className="p-12 relative">
+                  <Quote className="absolute top-12 right-12 h-16 w-16 text-primary/5 group-hover:text-primary/10 transition-colors" />
+
+                  <div className="flex gap-1.5 mb-8">
                     {Array.from({ length: testimonial.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star
+                        key={i}
+                        className="h-4 w-4 fill-primary text-primary"
+                      />
                     ))}
                   </div>
 
-                  {/* Content */}
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                  <p className="text-2xl font-black text-white mb-10 leading-snug italic tracking-tight">
                     "{testimonial.content}"
                   </p>
 
-                  {/* Metric Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-primary/10 text-primary text-[10px] font-black mb-10 border border-primary/20 uppercase tracking-widest">
+                    <MessageSquare className="h-4 w-4" />
                     {testimonial.metric}
                   </div>
 
-                  {/* Author */}
-                  <div className="flex items-center gap-4 pt-4 border-t border-border/50">
-                    <Avatar className="h-12 w-12 border-2 border-primary/20">
+                  <div className="flex items-center gap-5 pt-10 border-t border-white/5">
+                    <Avatar className="h-16 w-16 ring-4 ring-primary/10 grayscale group-hover:grayscale-0 transition-all duration-500">
                       <AvatarImage src={testimonial.avatar} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {testimonial.name.split(' ').map(n => n[0]).join('')}
+                      <AvatarFallback className="bg-primary text-white font-black text-xl">
+                        {testimonial.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-semibold">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                      <div className="text-xl font-black text-white italic tracking-tight">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                        {testimonial.role}
+                      </div>
                     </div>
-                    <div className="text-xs px-2 py-1 rounded bg-secondary text-muted-foreground">
+                    <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
                       {testimonial.platform}
                     </div>
                   </div>
@@ -167,26 +183,28 @@ export function Testimonials() {
               </Card>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* CTA within Testimonials */}
+        {/* Action Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-center mt-12"
+          transition={{ delay: 0.4 }}
+          className="mt-24 text-center"
         >
-          <p className="text-muted-foreground mb-4">
-            Join hundreds of successful businesses
+          <p className="text-slate-400 font-bold mb-8 text-lg">
+            Ready to become our next success story?
           </p>
-          <a 
-            href="/signup" 
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full gradient-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
-          >
-            Start Your Success Story
-            <span className="text-xl">→</span>
-          </a>
+          <Link href="/signup">
+            <Button
+              size="lg"
+              className="bg-primary text-white h-16 px-12 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all active:scale-95 group uppercase tracking-widest"
+            >
+              Start Your Growth Journey
+              <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </section>

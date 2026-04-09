@@ -1,39 +1,39 @@
-import { useState } from 'react';
-import { 
-  BusinessCategoryType, 
-  businessCategories,
-  AutomationConfig,
-  getDefaultConfig,
-  PlanType,
-  ChannelType,
-  ChannelConnection,
-  planDetails,
-  BusinessKindType,
-  getAutomationsForBusinessKind
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    AutomationConfig,
+    businessCategories,
+    BusinessCategoryType,
+    BusinessKindType,
+    ChannelConnection,
+    ChannelType,
+    getAutomationsForBusinessKind,
+    getDefaultConfig,
+    planDetails,
+    PlanType
 } from '@/lib/businessTypes';
-import { 
-  channelAutomationDescriptions 
+import {
+    channelAutomationDescriptions
 } from '@/lib/channelAutomationMap';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    ArrowLeft,
+    ArrowRight,
+    Check,
+    Facebook,
+    Instagram,
+    Lock,
+    Mail,
+    MessageSquare,
+    Sparkles
+} from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { AppointmentSetup } from './AppointmentSetup';
-import { SalesOrderSetup } from './SalesOrderSetup';
 import { EnquirySupportSetup } from './EnquirySupportSetup';
 import { LeadCaptureSetup } from './LeadCaptureSetup';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  Instagram, 
-  Facebook, 
-  MessageSquare,
-  Lock,
-  Sparkles,
-  Mail
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { SalesOrderSetup } from './SalesOrderSetup';
 
 const TikTokIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -405,6 +405,7 @@ export function ChannelAutomationSetup({
                   <AppointmentSetup
                     config={currentConfig.config}
                     onChange={(newConfig) => setCurrentConfig({ type: 'appointments_bookings', config: newConfig })}
+                    onComplete={handleSaveAutomation}
                   />
                 )}
 
@@ -412,6 +413,7 @@ export function ChannelAutomationSetup({
                   <SalesOrderSetup
                     config={currentConfig.config}
                     onChange={(newConfig) => setCurrentConfig({ type: 'sales_orders', config: newConfig })}
+                    onComplete={handleSaveAutomation}
                   />
                 )}
 
@@ -419,6 +421,7 @@ export function ChannelAutomationSetup({
                   <EnquirySupportSetup
                     config={currentConfig.config}
                     onChange={(newConfig) => setCurrentConfig({ type: 'enquiries_support', config: newConfig })}
+                    onComplete={handleSaveAutomation}
                   />
                 )}
 
@@ -426,6 +429,7 @@ export function ChannelAutomationSetup({
                   <LeadCaptureSetup
                     config={currentConfig.config}
                     onChange={(newConfig) => setCurrentConfig({ type: 'lead_capture', config: newConfig })}
+                    onComplete={handleSaveAutomation}
                   />
                 )}
               </CardContent>

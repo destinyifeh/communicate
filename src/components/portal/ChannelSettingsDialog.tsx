@@ -1,28 +1,26 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Instagram, 
-  Facebook, 
-  MessageSquare, 
-  Settings, 
-  Bell, 
-  Shield,
-  RefreshCw,
-  Unlink
-} from 'lucide-react';
 import { ChannelType } from '@/lib/onboardingTypes';
-import { toast } from 'sonner';
+import {
+    Bell,
+    Facebook,
+    Instagram,
+    Mail,
+    MessageSquare,
+    RefreshCw,
+    Unlink
+} from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const TikTokIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -35,6 +33,7 @@ const channelInfo: Record<ChannelType, { icon: React.ReactNode; name: string; co
   facebook: { icon: <Facebook className="h-5 w-5" />, name: 'Facebook', color: 'bg-blue-500' },
   whatsapp: { icon: <MessageSquare className="h-5 w-5" />, name: 'WhatsApp', color: 'bg-green-500' },
   tiktok: { icon: <TikTokIcon />, name: 'TikTok', color: 'bg-gray-900 dark:bg-white dark:text-black' },
+  email: { icon: <Mail className="h-5 w-5" />, name: 'Email', color: 'bg-red-500' },
 };
 
 interface ChannelSettingsDialogProps {

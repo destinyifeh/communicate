@@ -63,7 +63,7 @@ export const planDetails: Record<PlanType, PlanDetails> = {
   },
 };
 
-export type ChannelType = 'instagram' | 'facebook' | 'whatsapp' | 'tiktok';
+export type ChannelType = 'instagram' | 'facebook' | 'whatsapp' | 'tiktok' | 'email';
 
 export interface ChannelConnection {
   type: ChannelType;

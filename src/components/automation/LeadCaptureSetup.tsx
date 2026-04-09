@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { LeadCaptureConfig, generateId } from '@/lib/businessTypes';
-import { UserPlus, MessageSquare, Gift, Phone, Bell, Plus, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Gift, MessageSquare, Phone, Plus, Trash2, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 
 interface LeadCaptureSetupProps {
   config: LeadCaptureConfig;
   onChange: (config: LeadCaptureConfig) => void;
+  onComplete: () => void;
 }
 
-export function LeadCaptureSetup({ config, onChange }: LeadCaptureSetupProps) {
+export function LeadCaptureSetup({ config, onChange, onComplete }: LeadCaptureSetupProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -422,7 +423,10 @@ export function LeadCaptureSetup({ config, onChange }: LeadCaptureSetupProps) {
             Next Step
           </Button>
         ) : (
-          <Button className="gradient-primary text-primary-foreground">
+          <Button 
+            className="gradient-primary text-primary-foreground"
+            onClick={onComplete}
+          >
             Complete Setup
           </Button>
         )}

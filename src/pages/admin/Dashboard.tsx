@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,7 +100,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold">Agency Command Center</h2>
             <p className="text-muted-foreground">Overview of all client performance and automation metrics</p>
           </div>
-          <Link to="/admin/clients">
+          <Link href="/admin/clients">
             <Button className="gradient-primary text-primary-foreground gap-2">
               <Plus className="h-4 w-4" />
               Add Client

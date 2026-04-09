@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { SalesOrderConfig, ProductItem, generateId } from '@/lib/businessTypes';
-import { ShoppingCart, Package, CreditCard, Truck, MessageSquare, Plus, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { ProductItem, SalesOrderConfig, generateId } from '@/lib/businessTypes';
+import { CreditCard, MessageSquare, Package, Plus, Trash2, Truck } from 'lucide-react';
+import { useState } from 'react';
 
 interface SalesOrderSetupProps {
   config: SalesOrderConfig;
   onChange: (config: SalesOrderConfig) => void;
+  onComplete: () => void;
 }
 
-export function SalesOrderSetup({ config, onChange }: SalesOrderSetupProps) {
+export function SalesOrderSetup({ config, onChange, onComplete }: SalesOrderSetupProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -325,7 +326,10 @@ export function SalesOrderSetup({ config, onChange }: SalesOrderSetupProps) {
             Next Step
           </Button>
         ) : (
-          <Button className="gradient-primary text-primary-foreground">
+          <Button 
+            className="gradient-primary text-primary-foreground"
+            onClick={onComplete}
+          >
             Complete Setup
           </Button>
         )}

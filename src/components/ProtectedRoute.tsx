@@ -1,6 +1,8 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+'use client';
+
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,6 +11,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -19,12 +22,13 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    router.replace('/login');
+    return null;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/portal'} replace />;
+    router.replace(user.role === 'admin' ? '/admin' : '/portal');
+    return null;
   }
 
   return <>{children}</>;

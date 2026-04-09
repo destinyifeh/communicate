@@ -1,9 +1,11 @@
-import { Moon, Sun } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useTheme } from '@/contexts/ThemeContext';
-import { motion } from 'framer-motion';
+"use client";
 
-export function ThemeToggle() {
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
+import { motion } from "framer-motion";
+import { Moon, Sun } from "lucide-react";
+
+export function ThemeToggle({ scrolled }: { scrolled?: boolean }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -11,13 +13,15 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="relative h-9 w-9 rounded-full"
+      className={`relative h-9 w-9 rounded-full hover:bg-primary/90 ${
+        scrolled ? "text-muted-foreground hover:text-white" : ""
+      }`}
     >
       <motion.div
         initial={false}
-        animate={{ 
-          rotate: theme === 'dark' ? 180 : 0,
-          scale: theme === 'dark' ? 0 : 1
+        animate={{
+          rotate: theme === "dark" ? 180 : 0,
+          scale: theme === "dark" ? 0 : 1,
         }}
         transition={{ duration: 0.3 }}
         className="absolute"
@@ -26,9 +30,9 @@ export function ThemeToggle() {
       </motion.div>
       <motion.div
         initial={false}
-        animate={{ 
-          rotate: theme === 'dark' ? 0 : -180,
-          scale: theme === 'dark' ? 1 : 0
+        animate={{
+          rotate: theme === "dark" ? 0 : -180,
+          scale: theme === "dark" ? 1 : 0,
         }}
         transition={{ duration: 0.3 }}
         className="absolute"

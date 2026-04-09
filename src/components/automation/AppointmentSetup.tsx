@@ -1,24 +1,23 @@
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  AppointmentConfig, 
-  defaultAppointmentConfig, 
-  DayOfWeek,
-  AppointmentDuration 
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    AppointmentConfig,
+    AppointmentDuration,
+    DayOfWeek
 } from '@/lib/businessTypes';
-import { Clock, Calendar, Bell, MessageSquare, Users, DollarSign } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell, Calendar, Clock, DollarSign, MessageSquare, Users } from 'lucide-react';
+import { useState } from 'react';
 
 interface AppointmentSetupProps {
   config: AppointmentConfig;
   onChange: (config: AppointmentConfig) => void;
+  onComplete: () => void;
 }
 
 const DAYS: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -31,7 +30,7 @@ const DURATIONS: { value: AppointmentDuration; label: string }[] = [
   { value: '120', label: '2 hours' },
 ];
 
-export function AppointmentSetup({ config, onChange }: AppointmentSetupProps) {
+export function AppointmentSetup({ config, onChange, onComplete }: AppointmentSetupProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
 
@@ -406,7 +405,10 @@ export function AppointmentSetup({ config, onChange }: AppointmentSetupProps) {
             Next Step
           </Button>
         ) : (
-          <Button className="gradient-primary text-primary-foreground">
+          <Button 
+            className="gradient-primary text-primary-foreground"
+            onClick={onComplete}
+          >
             Complete Setup
           </Button>
         )}

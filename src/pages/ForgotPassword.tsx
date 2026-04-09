@@ -1,16 +1,24 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Zap, Loader2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+"use client";
+
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { motion } from "framer-motion";
+import { ArrowLeft, CheckCircle, Loader2, Mail, Zap } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -19,83 +27,94 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     setIsLoading(false);
     setIsSubmitted(true);
-    toast.success('Password reset link sent to your email!');
+    toast.success("Password reset link sent to your email!");
   };
 
   return (
     <div className="min-h-screen flex">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-64 h-64 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-        </div>
-        
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background border-r border-border">
+        <div className="absolute inset-0 gradient-primary opacity-[0.05]" />
+
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shadow-lg group-hover:rotate-12 transition-transform">
               <Zap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-semibold text-white">AutomateFlow</span>
+            <span className="text-xl font-black tracking-tighter text-foreground">
+              Partner<span className="text-primary">Peak</span>
+            </span>
           </Link>
 
           <div className="max-w-md">
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl font-bold text-white mb-4"
+              className="text-4xl font-bold text-foreground mb-4"
             >
               Reset your password
             </motion.h1>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-white/80 text-lg"
+              className="text-muted-foreground text-lg"
             >
-              We'll send you a secure link to reset your password and get you back into your account.
+              We'll send you a secure link to reset your password and get you
+              back into your account.
             </motion.p>
           </div>
 
-          <p className="text-white/60 text-sm">
+          <p className="text-muted-foreground text-sm">
             Trusted by 500+ businesses worldwide
           </p>
         </div>
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex justify-between items-center p-6">
-          <Link to="/" className="lg:hidden flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-              <Zap className="h-5 w-5 text-primary-foreground" />
+      <div className="flex-1 flex flex-col bg-background">
+        <div className="flex justify-between items-center p-6 bg-background/80 backdrop-blur-sm">
+          <Link href="/" className="lg:hidden flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+              <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold">AutomateFlow</span>
+            <span className="text-lg font-black tracking-tighter text-foreground">
+              Partner<span className="text-primary">Peak</span>
+            </span>
           </Link>
           <ThemeToggle />
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6">
-          <motion.div 
+        <div className="flex-1 flex items-center justify-center p-6 bg-background relative overflow-hidden">
+          {/* Background Decor */}
+          <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-[#3B82F6]/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#06B6D4]/5 rounded-full blur-[120px] pointer-events-none" />
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-sm"
+            className="w-full max-w-sm relative z-10"
           >
-            <Card className="border-border/50 shadow-large">
+            <Card className="glass rounded-[2.5rem] shadow-2xl overflow-hidden group">
               <CardHeader className="space-y-1 text-center">
                 {isSubmitted ? (
                   <>
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
                       <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-                    <CardDescription>
-                      We've sent a password reset link to <span className="font-medium text-foreground">{email}</span>
+                    <CardTitle className="text-2xl font-bold text-foreground">
+                      Check your email
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      We've sent a password reset link to{" "}
+                      <span className="font-medium text-foreground">
+                        {email}
+                      </span>
                     </CardDescription>
                   </>
                 ) : (
@@ -103,8 +122,10 @@ export default function ForgotPassword() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                       <Mail className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-2xl font-bold text-foreground">
+                      Forgot password?
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
                       No worries, we'll send you reset instructions.
                     </CardDescription>
                   </>
@@ -114,22 +135,21 @@ export default function ForgotPassword() {
                 {isSubmitted ? (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground text-center">
-                      Didn't receive the email? Check your spam folder or try again.
+                      Didn't receive the email? Check your spam folder or try
+                      again.
                     </p>
-                    <Button 
-                      variant="outline" 
-                      className="w-full h-11"
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 hover:bg-primary/10"
                       onClick={() => {
                         setIsSubmitted(false);
-                        setEmail('');
+                        setEmail("");
                       }}
                     >
                       Try another email
                     </Button>
-                    <Link to="/login" className="block">
-                      <Button 
-                        className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90"
-                      >
+                    <Link href="/login" className="block">
+                      <Button className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to login
                       </Button>
@@ -149,8 +169,8 @@ export default function ForgotPassword() {
                         className="h-11"
                       />
                     </div>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90"
                       disabled={isLoading}
                     >
@@ -160,14 +180,14 @@ export default function ForgotPassword() {
                           Sending...
                         </>
                       ) : (
-                        'Reset password'
+                        "Reset password"
                       )}
                     </Button>
-                    <Link to="/login" className="block">
-                      <Button 
+                    <Link href="/login" className="block">
+                      <Button
                         type="button"
-                        variant="ghost" 
-                        className="w-full h-11"
+                        variant="ghost"
+                        className="w-full h-11 hover:bg-primary/10"
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to login

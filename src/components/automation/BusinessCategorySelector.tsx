@@ -1,24 +1,28 @@
-import { motion } from 'framer-motion';
-import { BusinessCategoryType, businessCategories, PlanType, planDetails } from '@/lib/businessTypes';
-import { Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { BusinessCategoryType, PlanType, businessCategories, planDetails } from '@/lib/businessTypes';
+import { motion } from 'framer-motion';
+import { Lock } from 'lucide-react';
 
 interface BusinessCategorySelectorProps {
   selectedCategory: BusinessCategoryType | null;
   onSelect: (category: BusinessCategoryType) => void;
   currentPlan: PlanType;
+  availableCategories?: BusinessCategoryType[];
 }
 
 export function BusinessCategorySelector({ 
   selectedCategory, 
   onSelect,
-  currentPlan 
+  currentPlan,
+  availableCategories
 }: BusinessCategorySelectorProps) {
   const plan = planDetails[currentPlan];
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {businessCategories.map((category, index) => {
+      {businessCategories
+        .filter(category => !availableCategories || availableCategories.includes(category.id))
+        .map((category, index) => {
         const isSupported = plan.supportedCategories.includes(category.id);
         const isSelected = selectedCategory === category.id;
         
