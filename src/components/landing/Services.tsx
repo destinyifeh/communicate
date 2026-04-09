@@ -23,7 +23,7 @@ const TikTokIconSvg = () => (
 );
 
 interface ChannelData {
-  icon: LucideIcon | (() => JSX.Element);
+  icon: LucideIcon | (() => React.ReactNode);
   name: string;
   color: string;
   automations: {
@@ -132,7 +132,7 @@ export function Services() {
       className="py-24 relative overflow-hidden bg-[#0F1C36]"
     >
       {/* Background elements */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[80px] transform-gpu pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
         <motion.div

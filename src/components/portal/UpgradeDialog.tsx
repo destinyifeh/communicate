@@ -59,7 +59,7 @@ export function UpgradeDialog({
   };
 
   const currentPlanIndex = planOrder.indexOf(currentPlan);
-  const planConfirmed = localStorage.getItem("plan_confirmed") === "true";
+  const planConfirmed = typeof window !== "undefined" && localStorage.getItem("plan_confirmed") === "true";
 
   const getAvailablePlans = () => {
     return (

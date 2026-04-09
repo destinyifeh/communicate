@@ -79,7 +79,7 @@ const automationTypesData = [
 interface ChannelDistribution {
   name: string;
   value: number;
-  icon: LucideIcon | (() => JSX.Element);
+  icon: LucideIcon | (() => React.ReactNode);
   color: string;
 }
 

@@ -20,10 +20,15 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    let lastScrolled = false;
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const isScrolled = window.scrollY > 20;
+      if (isScrolled !== lastScrolled) {
+        setScrolled(isScrolled);
+        lastScrolled = isScrolled;
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

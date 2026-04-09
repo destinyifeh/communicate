@@ -518,7 +518,7 @@ export default function ClientDashboard() {
   );
 
   // Setup Roadmap Logic
-  const hasPlan = localStorage.getItem("plan_confirmed") === "true";
+  const hasPlan = typeof window !== "undefined" && localStorage.getItem("plan_confirmed") === "true";
   const hasChannels = connectedChannels.length > 0;
   const hasAutomations = configuredAutomations.length > 0;
 

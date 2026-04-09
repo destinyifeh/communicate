@@ -154,9 +154,9 @@ export function Hero() {
   return (
     <section className="relative min-h-[95vh] flex items-center overflow-hidden pt-12 md:pt-24 pb-8 md:pb-16 bg-[#0B1528]">
       {/* Background Decor */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-[#3B82F6]/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#06B6D4]/5 rounded-full blur-[120px]" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-[#3B82F6]/10 rounded-full blur-[80px] transform-gpu" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#06B6D4]/5 rounded-full blur-[80px] transform-gpu" />
       </div>
 
       <div className="container relative z-10 mx-auto px-4">

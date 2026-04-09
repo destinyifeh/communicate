@@ -1,4 +1,5 @@
 "use client";
+import React, { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -7,6 +8,15 @@ import { Moon, Sun } from "lucide-react";
 
 export function ThemeToggle({ scrolled }: { scrolled?: boolean }) {
   const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-9 w-9" />;
+  }
 
   return (
     <Button
