@@ -88,7 +88,7 @@ export default function ClientManagement() {
       setClients(prev => prev.map(c => 
         c.id === leadLimitDialog.id ? { ...c, leadLimit: parseInt(newLeadLimit) } : c
       ));
-      toast.success('Lead limit updated');
+      toast.success('Message limit updated');
       setLeadLimitDialog(null);
       setNewLeadLimit('');
     }
@@ -184,7 +184,7 @@ export default function ClientManagement() {
                           setNewLeadLimit(client.leadLimit.toString());
                         }}>
                           <Users className="h-4 w-4 mr-2" />
-                          Set Lead Limit
+                          Set Message Limit
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleRegenerateKey(client.id)}>
                           <Key className="h-4 w-4 mr-2" />
@@ -210,7 +210,7 @@ export default function ClientManagement() {
                     
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Lead Usage</span>
+                        <span className="text-muted-foreground">Message Usage</span>
                         <span>{client.leadsUsed.toLocaleString()} / {client.leadLimit.toLocaleString()}</span>
                       </div>
                       <Progress 
@@ -260,7 +260,7 @@ export default function ClientManagement() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead>Client</TableHead>
                     <TableHead>Plan</TableHead>
-                    <TableHead>Lead Usage</TableHead>
+                    <TableHead>Message Usage</TableHead>
                     <TableHead>Revenue</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -346,7 +346,7 @@ export default function ClientManagement() {
                               setNewLeadLimit(client.leadLimit.toString());
                             }}>
                               <Users className="h-4 w-4 mr-2" />
-                              Set Lead Limit
+                              Set Message Limit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleRegenerateKey(client.id)}>
                               <Key className="h-4 w-4 mr-2" />
@@ -371,18 +371,18 @@ export default function ClientManagement() {
           </Card>
         </motion.div>
 
-        {/* Lead Limit Dialog */}
+        {/* Message Limit Dialog */}
         <Dialog open={!!leadLimitDialog} onOpenChange={() => setLeadLimitDialog(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Set Lead Limit</DialogTitle>
+              <DialogTitle>Set Message Limit</DialogTitle>
               <DialogDescription>
-                Update the monthly lead limit for {leadLimitDialog?.company}
+                Update the monthly message limit for {leadLimitDialog?.company}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Current Limit: {leadLimitDialog?.leadLimit.toLocaleString()} leads/month</Label>
+                <Label>Current Limit: {leadLimitDialog?.leadLimit.toLocaleString()} messages/month</Label>
                 <Input
                   type="number"
                   value={newLeadLimit}

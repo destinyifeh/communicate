@@ -1,0 +1,106 @@
+enum UserRole {
+  ADMIN
+  OWNER
+  AGENT
+}
+
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum FeatureType {
+  BOOKING
+  SUPPORT
+  INQUIRIES
+  MARKETING
+}
+
+enum ConversationChannel {
+  SMS
+  WHATSAPP
+  VOICE
+  EMAIL
+}
+
+enum ConversationStatus {
+  BOT_HANDLED
+  ESCALATED
+  AGENT_ACTIVE
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageSender {
+  CUSTOMER
+  BOT
+  AGENT
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum InquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum InquiryPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InquiryCategory {
+  GENERAL
+  PRICING
+  AVAILABILITY
+  SUPPORT
+  COMPLAINT
+  FEEDBACK
+  OTHER
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  COMPLETED
+  PAUSED
+  FAILED
+}
+
+enum CampaignType {
+  SMS
+  WHATSAPP
+  EMAIL
+}

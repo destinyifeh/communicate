@@ -124,10 +124,10 @@ export function AddClientWizard({ open, onOpenChange, onClientAdded }: AddClient
       email: formData.email,
       company: formData.company,
       phone: formData.phone || '+234 000 000 0000',
-      plan: planDetails[formData.plan].name as 'Starter' | 'Professional' | 'Enterprise',
+      plan: planDetails[formData.plan].name as 'Starter' | 'Growth' | 'Pro',
       status: 'active',
       leadsUsed: 0,
-      leadLimit: formData.plan === 'starter' ? 500 : formData.plan === 'professional' ? 2500 : 10000,
+      leadLimit: formData.plan === 'starter' ? 500 : formData.plan === 'growth' ? 2500 : 10000,
       revenue: 0,
       apiKey: 'ak_live_' + Math.random().toString(36).substring(2, 30),
       joinedDate: new Date().toISOString().split('T')[0],
@@ -163,8 +163,8 @@ export function AddClientWizard({ open, onOpenChange, onClientAdded }: AddClient
   const getPlanIcon = (plan: PlanType) => {
     switch (plan) {
       case 'starter': return Zap;
-      case 'professional': return Crown;
-      case 'enterprise': return Sparkles;
+      case 'growth': return Crown;
+      case 'pro': return Sparkles;
     }
   };
 
@@ -307,7 +307,7 @@ export function AddClientWizard({ open, onOpenChange, onClientAdded }: AddClient
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{plan.name}</span>
-                            {key === 'professional' && (
+                            {key === 'growth' && (
                               <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">Popular</Badge>
                             )}
                           </div>

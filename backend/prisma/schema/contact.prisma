@@ -1,0 +1,25 @@
+model Contact {
+  id               String         @id @default(uuid())
+  firstName        String?
+  lastName         String?
+  email            String?
+  phone            String
+  whatsappNumber   String?
+  tags             Json?
+  customFields     Json?
+  source           String?
+  notes            String?
+  optedOutSms      Boolean        @default(false)
+  optedOutWhatsapp Boolean        @default(false)
+  optedOutEmail    Boolean        @default(false)
+  lastContactedAt  DateTime?
+  businessId       String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  bookings         Booking[]
+  business         Business       @relation(fields: [businessId], references: [id])
+  conversations    Conversation[]
+  inquiries        Inquiry[]
+
+  @@map("contacts")
+}

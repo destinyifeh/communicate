@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks";
+import { getErrorMessage } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -17,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,14 +40,18 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       toast.success("Welcome back!");
-      const storedUser = JSON.parse(
-        localStorage.getItem("automationAgency_user") || "{}",
-      );
-      router.push(storedUser.role === "admin" ? "/admin" : "/portal");
-    } catch (error: any) {
-      toast.error(error.message || "Invalid email or password");
+
+      const redirectPath = searchParams?.get("redirect");
+
+      if (loggedInUser.role === "admin") {
+        router.push(redirectPath || "/admin");
+      } else {
+        router.push(redirectPath || "/portal");
+      }
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Invalid email or password"));
     } finally {
       setIsLoading(false);
     }

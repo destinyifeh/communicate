@@ -1,10 +1,10 @@
 'use client';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import AutomationSettings from '@/pages/portal/AutomationSettings';
+import Settings from '@/pages/portal/Settings';
 export default function Page() {
   return (
     <ProtectedRoute allowedRoles={['client']}>
-      <AutomationSettings />
+      <Settings />
     </ProtectedRoute>
   );
 }

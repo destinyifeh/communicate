@@ -1,0 +1,27 @@
+model Inquiry {
+  id                  String          @id @default(uuid())
+  subject             String
+  description         String?
+  status              InquiryStatus   @default(OPEN)
+  priority            InquiryPriority @default(MEDIUM)
+  category            InquiryCategory @default(GENERAL)
+  autoResponded       Boolean         @default(false)
+  autoResponseContent String?
+  escalated           Boolean         @default(false)
+  escalatedAt         DateTime?
+  escalationReason    String?
+  assignedAgentId     String?
+  resolvedAt          DateTime?
+  resolution          String?
+  conversationId      String?
+  contactId           String?
+  businessId          String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  assignedAgent       User?           @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  business            Business        @relation(fields: [businessId], references: [id])
+  contact             Contact?        @relation(fields: [contactId], references: [id])
+  conversation        Conversation?   @relation(fields: [conversationId], references: [id])
+
+  @@map("inquiries")
+}

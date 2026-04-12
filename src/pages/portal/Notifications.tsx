@@ -7,88 +7,157 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  MessageSquare, 
-  DollarSign, 
-  Users, 
+import {
+  Bell,
+  MessageSquare,
+  DollarSign,
+  Users,
   Settings,
   CheckCircle2,
   AlertCircle,
   Info,
   Trash2,
   CheckCheck,
-  Filter
+  Mail,
+  Phone,
+  Calendar,
+  Bot,
+  UserCheck,
+  PhoneIncoming,
+  PhoneMissed,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Notification {
   id: string;
-  type: 'lead' | 'sale' | 'system' | 'alert';
+  type: 'message' | 'email' | 'call' | 'escalation' | 'appointment' | 'system' | 'alert';
   title: string;
   message: string;
   time: string;
   read: boolean;
-  platform?: string;
+  channel?: 'whatsapp' | 'sms' | 'email' | 'voice' | 'instagram';
+  contactName?: string;
 }
 
 const mockNotifications: Notification[] = [
   {
     id: '1',
-    type: 'lead',
-    title: 'New Lead Captured',
-    message: 'Adebayo Johnson from WhatsApp is interested in your premium package.',
-    time: '5 min ago',
+    type: 'email',
+    title: 'New Email Received',
+    message: 'David Chen replied to "Order #12345 - Shipping Update"',
+    time: '2 min ago',
     read: false,
-    platform: 'whatsapp',
+    channel: 'email',
+    contactName: 'David Chen',
   },
   {
     id: '2',
-    type: 'sale',
-    title: 'Sale Confirmed!',
-    message: 'Payment of ₦25,000 received from Chioma Okafor.',
-    time: '1 hour ago',
+    type: 'escalation',
+    title: 'Conversation Escalated',
+    message: 'Sarah Johnson\'s refund request has been escalated and requires attention.',
+    time: '15 min ago',
     read: false,
+    channel: 'whatsapp',
+    contactName: 'Sarah Johnson',
   },
   {
     id: '3',
+    type: 'message',
+    title: 'New WhatsApp Message',
+    message: 'Amara Okafor is asking about the skincare bundle pricing.',
+    time: '25 min ago',
+    read: false,
+    channel: 'whatsapp',
+    contactName: 'Amara Okafor',
+  },
+  {
+    id: '4',
+    type: 'call',
+    title: 'Missed Call',
+    message: 'You missed a call from +1 555-0892. Duration: 0:00',
+    time: '45 min ago',
+    read: false,
+    channel: 'voice',
+  },
+  {
+    id: '5',
+    type: 'appointment',
+    title: 'Appointment Reminder',
+    message: 'Hair Consultation with Amara Okafor starts in 1 hour.',
+    time: '1 hour ago',
+    read: true,
+  },
+  {
+    id: '6',
+    type: 'email',
+    title: 'Partnership Inquiry',
+    message: 'Emma Wilson from TechCorp sent a partnership inquiry email.',
+    time: '2 hours ago',
+    read: true,
+    channel: 'email',
+    contactName: 'Emma Wilson',
+  },
+  {
+    id: '7',
     type: 'system',
-    title: 'Bot Response Updated',
-    message: 'Your WhatsApp bot responses have been successfully updated.',
+    title: 'AI Assistant Update',
+    message: 'Your AI assistant auto-resolved 45 conversations today.',
     time: '3 hours ago',
     read: true,
   },
   {
-    id: '4',
-    type: 'alert',
-    title: 'Lead Limit Warning',
-    message: 'You have used 80% of your monthly lead limit.',
+    id: '8',
+    type: 'call',
+    title: 'Call Completed',
+    message: 'Call with Mike Brown ended. Duration: 4:05. Notes saved.',
+    time: '4 hours ago',
+    read: true,
+    channel: 'voice',
+    contactName: 'Mike Brown',
+  },
+  {
+    id: '9',
+    type: 'message',
+    title: 'New SMS Message',
+    message: 'John Smith confirmed their appointment for tomorrow at 2pm.',
     time: '5 hours ago',
     read: true,
+    channel: 'sms',
+    contactName: 'John Smith',
   },
   {
-    id: '5',
-    type: 'lead',
-    title: 'New Lead Captured',
-    message: 'Emeka Nwosu from Instagram is asking about pricing.',
+    id: '10',
+    type: 'alert',
+    title: 'High Volume Alert',
+    message: 'You have 12 unread conversations in your inbox.',
+    time: '6 hours ago',
+    read: true,
+  },
+  {
+    id: '11',
+    type: 'system',
+    title: 'Email Integration Active',
+    message: 'Resend email integration is now connected and receiving emails.',
     time: '1 day ago',
     read: true,
-    platform: 'instagram',
   },
   {
-    id: '6',
-    type: 'sale',
-    title: 'Sale Confirmed!',
-    message: 'Payment of ₦15,000 received from Fatima Ibrahim.',
-    time: '2 days ago',
+    id: '12',
+    type: 'appointment',
+    title: 'New Appointment Booked',
+    message: 'Lisa Anderson booked a consultation for Friday at 3pm.',
+    time: '1 day ago',
     read: true,
   },
 ];
 
 const notificationIcons: Record<string, { icon: React.ReactNode; color: string }> = {
-  lead: { icon: <Users className="h-5 w-5" />, color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  sale: { icon: <DollarSign className="h-5 w-5" />, color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  system: { icon: <Info className="h-5 w-5" />, color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+  message: { icon: <MessageSquare className="h-5 w-5" />, color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+  email: { icon: <Mail className="h-5 w-5" />, color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400' },
+  call: { icon: <Phone className="h-5 w-5" />, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+  escalation: { icon: <UserCheck className="h-5 w-5" />, color: 'bg-red-500/10 text-red-600 dark:text-red-400' },
+  appointment: { icon: <Calendar className="h-5 w-5" />, color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+  system: { icon: <Bot className="h-5 w-5" />, color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
   alert: { icon: <AlertCircle className="h-5 w-5" />, color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' },
 };
 
@@ -96,11 +165,14 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [filter, setFilter] = useState<string>('all');
   const [notificationSettings, setNotificationSettings] = useState({
-    leads: true,
-    sales: true,
+    messages: true,
+    emails: true,
+    calls: true,
+    escalations: true,
+    appointments: true,
     system: true,
     alerts: true,
-    email: false,
+    emailDelivery: false,
     push: true,
   });
 
@@ -190,20 +262,36 @@ export default function Notifications() {
                         Unread
                       </Button>
                       <Button
-                        variant={filter === 'lead' ? 'default' : 'outline'}
+                        variant={filter === 'message' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setFilter('lead')}
+                        onClick={() => setFilter('message')}
                         className="text-xs md:text-sm"
                       >
-                        Leads
+                        Messages
                       </Button>
                       <Button
-                        variant={filter === 'sale' ? 'default' : 'outline'}
+                        variant={filter === 'email' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setFilter('sale')}
+                        onClick={() => setFilter('email')}
                         className="text-xs md:text-sm"
                       >
-                        Sales
+                        Emails
+                      </Button>
+                      <Button
+                        variant={filter === 'call' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilter('call')}
+                        className="text-xs md:text-sm"
+                      >
+                        Calls
+                      </Button>
+                      <Button
+                        variant={filter === 'escalation' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilter('escalation')}
+                        className="text-xs md:text-sm"
+                      >
+                        Escalations
                       </Button>
                     </div>
                     <div className="flex gap-2">
@@ -334,51 +422,108 @@ export default function Notifications() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                        <Users className="h-4 w-4" />
+                      <div className="p-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+                        <MessageSquare className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="font-medium">New Leads</p>
+                        <p className="font-medium">New Messages</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a new lead is captured
+                          WhatsApp, SMS, and social media messages
                         </p>
                       </div>
                     </div>
                     <Switch
-                      checked={notificationSettings.leads}
+                      checked={notificationSettings.messages}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, leads: checked })
+                        setNotificationSettings({ ...notificationSettings, messages: checked })
                       }
                     />
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
-                        <DollarSign className="h-4 w-4" />
+                      <div className="p-2 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                        <Mail className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="font-medium">Sales</p>
+                        <p className="font-medium">Emails</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a sale is confirmed
+                          Incoming emails and replies
                         </p>
                       </div>
                     </div>
                     <Switch
-                      checked={notificationSettings.sales}
+                      checked={notificationSettings.emails}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, sales: checked })
+                        setNotificationSettings({ ...notificationSettings, emails: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Calls</p>
+                        <p className="text-sm text-muted-foreground">
+                          Incoming, missed, and completed calls
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.calls}
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, calls: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
+                        <UserCheck className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Escalations</p>
+                        <p className="text-sm text-muted-foreground">
+                          Conversations requiring human attention
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.escalations}
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, escalations: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Appointments</p>
+                        <p className="text-sm text-muted-foreground">
+                          Bookings, reminders, and cancellations
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.appointments}
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, appointments: checked })
                       }
                     />
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                        <Info className="h-4 w-4" />
+                        <Bot className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="font-medium">System Updates</p>
+                        <p className="font-medium">System & AI Updates</p>
                         <p className="text-sm text-muted-foreground">
-                          Bot updates, feature changes, and more
+                          AI assistant activity and system changes
                         </p>
                       </div>
                     </div>
@@ -397,7 +542,7 @@ export default function Notifications() {
                       <div>
                         <p className="font-medium">Alerts</p>
                         <p className="text-sm text-muted-foreground">
-                          Important warnings and limit notifications
+                          Important warnings and volume alerts
                         </p>
                       </div>
                     </div>
@@ -447,9 +592,9 @@ export default function Notifications() {
                       </p>
                     </div>
                     <Switch
-                      checked={notificationSettings.email}
+                      checked={notificationSettings.emailDelivery}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, email: checked })
+                        setNotificationSettings({ ...notificationSettings, emailDelivery: checked })
                       }
                     />
                   </div>

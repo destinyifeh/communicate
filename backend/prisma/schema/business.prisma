@@ -1,0 +1,53 @@
+model Business {
+  id                    String            @id @default(uuid())
+  name                  String
+  slug                  String?           @unique
+  description           String?
+  website               String?
+  logoUrl               String?
+  brandColor            String?
+  industry              String?
+  timezone              String?
+  email                 String?
+  phone                 String?
+  address               String?
+  city                  String?
+  state                 String?
+  country               String?
+  postalCode            String?
+  businessHours         Json?
+  faqResponses          Json?
+  emailFromAddress      String?
+  emailFromName         String?
+  isActive              Boolean           @default(true)
+  onboardingCompletedAt DateTime?
+  ownerId               String
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  bookings              Booking[]
+  features              BusinessFeature[]
+  owner                 User              @relation("OwnedBusinesses", fields: [ownerId], references: [id])
+  campaigns             Campaign[]
+  contacts              Contact[]
+  conversations         Conversation[]
+  inquiries             Inquiry[]
+  phoneNumbers          PhoneNumber[]
+  subscription          Subscription?
+  twilioSubaccount      TwilioSubaccount?
+  usersWithCurrent      User[]            @relation("CurrentBusiness")
+
+  @@map("businesses")
+}
+
+model BusinessFeature {
+  id          String      @id @default(uuid())
+  featureType FeatureType
+  enabled     Boolean     @default(true)
+  config      Json?
+  businessId  String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  business    Business    @relation(fields: [businessId], references: [id])
+
+  @@map("business_features")
+}

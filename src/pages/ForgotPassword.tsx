@@ -11,27 +11,56 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/lib/utils";
+import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validation/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle, Loader2, Mail, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    reset,
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const email = watch("email");
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
+    try {
+      await authService.forgotPassword(data.email);
+      setSubmittedEmail(data.email);
+      setIsSubmitted(true);
+      toast.success("Password reset code sent to your email!");
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      toast.error(getErrorMessage(error, "Failed to send reset email"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsLoading(false);
-    setIsSubmitted(true);
-    toast.success("Password reset link sent to your email!");
+  const handleTryAnother = () => {
+    setIsSubmitted(false);
+    setSubmittedEmail("");
+    reset();
   };
 
   return (
@@ -111,9 +140,9 @@ export default function ForgotPassword() {
                       Check your email
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      We've sent a password reset link to{" "}
+                      We've sent a 6-digit reset code to{" "}
                       <span className="font-medium text-foreground">
-                        {email}
+                        {submittedEmail}
                       </span>
                     </CardDescription>
                   </>
@@ -141,33 +170,36 @@ export default function ForgotPassword() {
                     <Button
                       variant="outline"
                       className="w-full h-11 hover:bg-primary/10"
-                      onClick={() => {
-                        setIsSubmitted(false);
-                        setEmail("");
-                      }}
+                      onClick={handleTryAnother}
                     >
                       Try another email
                     </Button>
-                    <Link href="/login" className="block">
+                    <Link href={`/reset-password?email=${encodeURIComponent(submittedEmail)}`} className="block">
                       <Button className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90">
+                        Enter Reset Code
+                      </Button>
+                    </Link>
+                    <Link href="/login" className="block">
+                      <Button variant="outline" className="w-full h-11 hover:bg-primary/10">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to login
                       </Button>
                     </Link>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
                         placeholder="name@company.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="h-11"
+                        className={`h-11 ${errors.email ? "border-destructive" : ""}`}
+                        {...register("email")}
                       />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                      )}
                     </div>
                     <Button
                       type="submit"

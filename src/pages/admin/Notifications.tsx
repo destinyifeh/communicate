@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  MessageSquare, 
-  DollarSign, 
-  Users, 
+import {
+  Bell,
+  MessageSquare,
+  DollarSign,
+  Users,
   Settings,
   CheckCircle2,
   AlertCircle,
@@ -20,13 +20,16 @@ import {
   CheckCheck,
   Server,
   Shield,
-  Webhook
+  Webhook,
+  Mail,
+  Phone,
+  Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AdminNotification {
   id: string;
-  type: 'client' | 'system' | 'security' | 'webhook' | 'revenue';
+  type: 'client' | 'system' | 'security' | 'webhook' | 'revenue' | 'channel' | 'ai';
   title: string;
   message: string;
   time: string;
@@ -39,13 +42,21 @@ const mockAdminNotifications: AdminNotification[] = [
     id: '1',
     type: 'client',
     title: 'New Client Registration',
-    message: 'TechCorp Nigeria has registered for the Business plan.',
+    message: 'TechCorp Nigeria has registered for the Business plan with WhatsApp, SMS, and Email channels.',
     time: '5 min ago',
     read: false,
     priority: 'high',
   },
   {
     id: '2',
+    type: 'channel',
+    title: 'Resend Email Integration Active',
+    message: 'Email integration via Resend is now live for Fashion Hub. Webhook configured successfully.',
+    time: '15 min ago',
+    read: false,
+  },
+  {
+    id: '3',
     type: 'revenue',
     title: 'Payment Received',
     message: 'Monthly subscription payment of ₦150,000 from Elegant Fashion.',
@@ -53,36 +64,61 @@ const mockAdminNotifications: AdminNotification[] = [
     read: false,
   },
   {
-    id: '3',
+    id: '4',
     type: 'webhook',
-    title: 'Webhook Failure',
-    message: '3 consecutive webhook failures detected for WhatsApp integration.',
+    title: 'Twilio Webhook Failure',
+    message: '3 consecutive webhook failures detected for Voice/SMS integration on GreenLeaf Farms.',
     time: '1 hour ago',
     read: false,
     priority: 'high',
   },
   {
-    id: '4',
+    id: '5',
+    type: 'ai',
+    title: 'AI Performance Alert',
+    message: 'AI resolution rate dropped to 72% for BeautyPro Salon. Review escalated conversations.',
+    time: '2 hours ago',
+    read: false,
+    priority: 'medium',
+  },
+  {
+    id: '6',
     type: 'security',
     title: 'Suspicious Activity',
-    message: 'Multiple failed login attempts detected for admin@leadxo.com.',
-    time: '2 hours ago',
+    message: 'Multiple failed login attempts detected for admin@communicate.com.',
+    time: '3 hours ago',
     read: true,
     priority: 'high',
   },
   {
-    id: '5',
+    id: '7',
+    type: 'channel',
+    title: 'New Phone Number Provisioned',
+    message: 'Twilio phone number +1 (555) 123-4567 assigned to TechCorp Nigeria.',
+    time: '4 hours ago',
+    read: true,
+  },
+  {
+    id: '8',
     type: 'system',
     title: 'Server Maintenance',
-    message: 'Scheduled maintenance completed successfully.',
+    message: 'Scheduled maintenance completed. All channels (WhatsApp, SMS, Email, Voice) operational.',
     time: '5 hours ago',
     read: true,
   },
   {
-    id: '6',
+    id: '9',
+    type: 'ai',
+    title: 'AI Training Complete',
+    message: 'Custom AI responses updated for 12 clients. New conversation patterns deployed.',
+    time: '6 hours ago',
+    read: true,
+  },
+  {
+    id: '10',
     type: 'client',
     title: 'Client Plan Upgrade',
-    message: 'GreenLeaf Farms upgraded from Starter to Business plan.',
+    message: 'GreenLeaf Farms upgraded from Starter to Business plan. Voice channel now enabled.',
     time: '1 day ago',
     read: true,
   },
@@ -94,6 +130,8 @@ const notificationIcons: Record<string, { icon: React.ReactNode; color: string }
   system: { icon: <Server className="h-5 w-5" />, color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
   security: { icon: <Shield className="h-5 w-5" />, color: 'bg-red-500/10 text-red-600 dark:text-red-400' },
   webhook: { icon: <Webhook className="h-5 w-5" />, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+  channel: { icon: <Phone className="h-5 w-5" />, color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400' },
+  ai: { icon: <Bot className="h-5 w-5" />, color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400' },
 };
 
 export default function AdminNotifications() {
@@ -105,6 +143,8 @@ export default function AdminNotifications() {
     system: true,
     security: true,
     webhooks: true,
+    channels: true,
+    ai: true,
     email: true,
     slack: false,
   });
@@ -209,6 +249,22 @@ export default function AdminNotifications() {
                         className="text-xs md:text-sm"
                       >
                         Clients
+                      </Button>
+                      <Button
+                        variant={filter === 'channel' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilter('channel')}
+                        className="text-xs md:text-sm"
+                      >
+                        Channels
+                      </Button>
+                      <Button
+                        variant={filter === 'ai' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilter('ai')}
+                        className="text-xs md:text-sm"
+                      >
+                        AI
                       </Button>
                     </div>
                     <div className="flex gap-2">
@@ -434,6 +490,44 @@ export default function AdminNotifications() {
                       checked={notificationSettings.system}
                       onCheckedChange={(checked) =>
                         setNotificationSettings({ ...notificationSettings, system: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Channel Integrations</p>
+                        <p className="text-sm text-muted-foreground">
+                          Email, SMS, Voice, and social channel updates
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.channels}
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, channels: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                        <Bot className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">AI Performance</p>
+                        <p className="text-sm text-muted-foreground">
+                          AI resolution rates, training, and escalations
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.ai}
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, ai: checked })
                       }
                     />
                   </div>

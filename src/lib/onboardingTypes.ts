@@ -1,10 +1,16 @@
-// Onboarding types and mock data for ManyChat integration
+// Onboarding types and mock data for Twilio SaaS integration
 // NOTE: Main plan and business types are in businessTypes.ts
-// This file is kept for legacy compatibility
+// This file re-exports from businessTypes for legacy compatibility
 
-export type PlanType = 'starter' | 'professional' | 'enterprise';
+import type { PlanType as BusinessPlanType, PlanDetails as BusinessPlanDetails } from './businessTypes';
 
-export interface PlanDetails {
+// Re-export from businessTypes for consistency
+export { planDetails } from './businessTypes';
+export type PlanType = BusinessPlanType;
+export type PlanDetails = BusinessPlanDetails;
+
+// Legacy interface kept for backwards compatibility with existing components
+export interface LegacyPlanDetails {
   name: string;
   price: string;
   maxChannels: number;
@@ -13,55 +19,6 @@ export interface PlanDetails {
   features: string[];
   description: string;
 }
-
-// Updated plans: Starter (1 channel), Professional (2 channels), Enterprise (all 4)
-export const planDetails: Record<PlanType, PlanDetails> = {
-  starter: {
-    name: 'Starter',
-    price: '₦25,000',
-    maxChannels: 1,
-    maxAutomations: 2,
-    maxContacts: 500,
-    features: [
-      '1 Social Channel',
-      'Lead Capture Automation',
-      'Basic FAQ Bot',
-      'Dashboard Analytics',
-      'Email Support',
-    ],
-    description: '1 channel of your choice',
-  },
-  professional: {
-    name: 'Professional',
-    price: '₦50,000',
-    maxChannels: 2,
-    maxAutomations: 8,
-    maxContacts: 2500,
-    features: [
-      '2 Social Channels',
-      'All Automation Types',
-      'Appointment Booking',
-      'Transactional Email',
-      'Priority Support',
-    ],
-    description: '2 channels of your choice',
-  },
-  enterprise: {
-    name: 'Enterprise',
-    price: '₦120,000',
-    maxChannels: 4,
-    maxAutomations: 'unlimited',
-    maxContacts: 10000,
-    features: [
-      'All 4 Social Channels',
-      'Unlimited Automations',
-      'AI-Powered Responses',
-      'Dedicated Account Manager',
-      'Custom Integrations',
-    ],
-    description: 'All channels (IG, FB, WhatsApp, TikTok)',
-  },
-};
 
 export type ChannelType = 'instagram' | 'facebook' | 'whatsapp' | 'tiktok' | 'email';
 

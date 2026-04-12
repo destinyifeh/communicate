@@ -10,7 +10,9 @@ import {
   HeadphonesIcon,
   Instagram,
   LucideIcon,
+  Mail,
   MessageSquare,
+  Phone,
   ShoppingCart,
   UserPlus,
 } from "lucide-react";
@@ -35,6 +37,118 @@ interface ChannelData {
 }
 
 const channels: ChannelData[] = [
+  {
+    icon: MessageSquare,
+    name: "WhatsApp",
+    color: "from-green-500 to-green-400",
+    automations: [
+      {
+        type: "sales_orders",
+        icon: ShoppingCart,
+        name: "Sales / Orders",
+        trigger: '"price/order/buy"',
+      },
+      {
+        type: "appointments_bookings",
+        icon: Calendar,
+        name: "Appointments",
+        trigger: '"book/schedule"',
+      },
+      {
+        type: "lead_capture",
+        icon: UserPlus,
+        name: "Lead Capture",
+        trigger: '"interested/info"',
+      },
+      {
+        type: "enquiries_support",
+        icon: HeadphonesIcon,
+        name: "Support",
+        trigger: "FAQ keywords",
+      },
+    ],
+  },
+  {
+    icon: MessageSquare,
+    name: "SMS",
+    color: "from-blue-500 to-blue-400",
+    automations: [
+      {
+        type: "appointments_bookings",
+        icon: Calendar,
+        name: "Appointments",
+        trigger: "Booking confirmations",
+      },
+      {
+        type: "lead_capture",
+        icon: UserPlus,
+        name: "Lead Capture",
+        trigger: "Inbound messages",
+      },
+      {
+        type: "enquiries_support",
+        icon: HeadphonesIcon,
+        name: "Support",
+        trigger: "Two-way conversations",
+      },
+    ],
+  },
+  {
+    icon: Mail,
+    name: "Email",
+    color: "from-cyan-500 to-cyan-400",
+    automations: [
+      {
+        type: "sales_orders",
+        icon: ShoppingCart,
+        name: "Order Updates",
+        trigger: "Shipping / Invoice emails",
+      },
+      {
+        type: "appointments_bookings",
+        icon: Calendar,
+        name: "Appointments",
+        trigger: "Booking confirmations",
+      },
+      {
+        type: "lead_capture",
+        icon: UserPlus,
+        name: "Lead Capture",
+        trigger: "Contact form replies",
+      },
+      {
+        type: "enquiries_support",
+        icon: HeadphonesIcon,
+        name: "Support",
+        trigger: "Inbound email threads",
+      },
+    ],
+  },
+  {
+    icon: Phone,
+    name: "Voice",
+    color: "from-orange-500 to-orange-400",
+    automations: [
+      {
+        type: "appointments_bookings",
+        icon: Calendar,
+        name: "Appointments",
+        trigger: "Booking calls / reminders",
+      },
+      {
+        type: "enquiries_support",
+        icon: HeadphonesIcon,
+        name: "Support",
+        trigger: "Inbound / outbound calls",
+      },
+      {
+        type: "lead_capture",
+        icon: UserPlus,
+        name: "Voicemail",
+        trigger: "Missed call follow-up",
+      },
+    ],
+  },
   {
     icon: Instagram,
     name: "Instagram",
@@ -79,50 +193,6 @@ const channels: ChannelData[] = [
       },
     ],
   },
-  {
-    icon: MessageSquare,
-    name: "WhatsApp",
-    color: "from-green-500 to-green-400",
-    automations: [
-      {
-        type: "sales_orders",
-        icon: ShoppingCart,
-        name: "Sales / Orders",
-        trigger: '"price/order/buy"',
-      },
-      {
-        type: "appointments_bookings",
-        icon: Calendar,
-        name: "Appointments",
-        trigger: '"book/schedule"',
-      },
-      {
-        type: "lead_capture",
-        icon: UserPlus,
-        name: "Lead Capture",
-        trigger: '"interested/info"',
-      },
-      {
-        type: "enquiries_support",
-        icon: HeadphonesIcon,
-        name: "Support",
-        trigger: "FAQ keywords",
-      },
-    ],
-  },
-  {
-    icon: TikTokIconSvg,
-    name: "TikTok",
-    color: "from-foreground to-foreground/80",
-    automations: [
-      {
-        type: "lead_capture",
-        icon: UserPlus,
-        name: "Lead Capture",
-        trigger: "Lead form / comments",
-      },
-    ],
-  },
 ];
 
 export function Services() {
@@ -143,20 +213,20 @@ export function Services() {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-widest border border-primary/20 backdrop-blur-md mb-4">
-            Channel Automations
+            Multi-Channel Communication
           </span>
           <h2 className="text-4xl md:text-5xl lg:text-7xl font-black mb-6 tracking-tight text-white leading-[1.1]">
-            Each Channel,
+            Every Channel,
             <br />
-            <span className="text-primary italic">Custom Automations</span>
+            <span className="text-primary italic">One Unified Inbox</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-            Different channels support different automation types. See what's
-            possible on each platform.
+            WhatsApp, SMS, Email, Voice, and social media - all conversations
+            unified per customer with smart automations on each channel.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {channels.map((channel, index) => (
             <motion.div
               key={index}

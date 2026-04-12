@@ -24,12 +24,11 @@ export function CTA() {
 
           <div className="relative z-10 max-w-3xl mx-auto">
             <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-[1] italic">
-              Ready to <span className="text-primary">Transform</span> your
-              business?
+              Ready to <span className="text-primary">Unify</span> your
+              communications?
             </h2>
             <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto font-medium">
-              Join hundreds of businesses already saving thousands of hours with
-              intelligent automation.
+              Join thousands of businesses using AI to manage WhatsApp, SMS, Email, Voice, and social media in one unified inbox.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Link href="/signup">

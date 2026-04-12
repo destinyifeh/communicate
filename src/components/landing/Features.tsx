@@ -1,55 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, Bot, Globe, Layers, ShieldCheck, Zap } from "lucide-react";
-
-const bentoFeatures = [
-  {
-    title: "Multi-Channel Integration",
-    description:
-      "Connect your business across Instagram, Facebook, WhatsApp, and TikTok seamlessly. Sync all conversations in one place.",
-    icon: Globe,
-    className: "md:col-span-2 md:row-span-2",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-  },
-  {
-    title: "AI Chatbots",
-    description:
-      "Smart replies that understand context and respond naturally 24/7.",
-    icon: Bot,
-    className: "md:col-span-1 md:row-span-1",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-  },
-  {
-    title: "Real-time Analytics",
-    description:
-      "Track sales, orders, and customer engagement with deep data insights.",
-    icon: BarChart3,
-    className: "md:col-span-1 md:row-span-2",
-    color: "text-green-500",
-    bg: "bg-green-500/10",
-  },
-  {
-    title: "Secure & Reliable",
-    description:
-      "Enterprise-grade security ensuring your business data and customer info are safe.",
-    icon: ShieldCheck,
-    className: "md:col-span-1 md:row-span-1",
-    color: "text-red-500",
-    bg: "bg-red-500/10",
-  },
-  {
-    title: "Smart Automations",
-    description:
-      "Build complex workflows with a simple drag-and-drop interface. Scale your business without adding more headcounts.",
-    icon: Zap,
-    className: "md:col-span-2 md:row-span-1",
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-  },
-];
+import { BarChart3, Bot, Calendar, Inbox, Layers, Mail, Phone, Zap } from "lucide-react";
 
 export function Features() {
   return (
@@ -97,7 +49,7 @@ export function Features() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6 auto-rows-fr">
-          {/* Main Feature: Multi-Channel */}
+          {/* Main Feature: Unified Inbox */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -106,20 +58,19 @@ export function Features() {
           >
             <div className="relative z-10 max-w-lg">
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 md:mb-8 border border-primary/20">
-                <Globe className="h-8 w-8 text-primary" />
+                <Inbox className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-white">
-                Multi-Channel Integration
+                Unified Inbox
               </h3>
               <p className="text-lg text-slate-400 font-semibold leading-relaxed">
-                Connect your business across Instagram, Facebook, WhatsApp, and
-                TikTok seamlessly. Sync all conversations in one place and never
-                miss a lead.
+                Every conversation in one place. WhatsApp, SMS, Email, Voice calls,
+                and social media - all unified in a single threaded inbox per customer.
               </p>
             </div>
 
             <div className="mt-8 md:mt-12 flex flex-wrap gap-3 md:gap-4 relative z-10">
-              {["Instagram", "WhatsApp", "Facebook", "TikTok"].map(
+              {["WhatsApp", "SMS", "Email", "Voice", "Instagram", "Facebook"].map(
                 (platform) => (
                   <div
                     key={platform}
@@ -133,11 +84,11 @@ export function Features() {
 
             {/* Decorative background element */}
             <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-              <Globe className="w-full h-full scale-150 translate-x-1/4" />
+              <Inbox className="w-full h-full scale-150 translate-x-1/4" />
             </div>
           </motion.div>
 
-          {/* AI Chatbots */}
+          {/* AI Assistant */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -147,9 +98,9 @@ export function Features() {
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-accent/10 flex items-center justify-center mb-6 md:mb-8 border border-accent/20">
               <Bot className="h-8 w-8 text-accent" />
             </div>
-            <h3 className="text-2xl font-black mb-3 text-white">AI Chatbots</h3>
+            <h3 className="text-2xl font-black mb-3 text-white">AI Assistant</h3>
             <p className="text-slate-400 font-semibold leading-relaxed">
-              Smart replies that understand context and respond naturally 24/7.
+              AI handles 80%+ of conversations automatically. Smart escalation to humans when needed.
             </p>
 
             <div className="mt-8 p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2 opacity-60">
@@ -158,22 +109,57 @@ export function Features() {
             </div>
           </motion.div>
 
-          {/* Real-time Analytics */}
+          {/* Email Integration */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             className="md:col-span-3 lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-10 rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
           >
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 md:mb-8 border border-emerald-500/20">
-              <BarChart3 className="h-8 w-8 text-emerald-500" />
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-6 md:mb-8 border border-cyan-500/20">
+              <Mail className="h-8 w-8 text-cyan-500" />
             </div>
             <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">
-              Performance
+              Email
             </h3>
             <p className="text-slate-400 font-semibold leading-relaxed">
-              Track sales, orders, and customer engagement with deep data
-              insights.
+              Send and receive emails via Resend. All emails appear in conversations alongside other channels.
+            </p>
+          </motion.div>
+
+          {/* Call Center */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="md:col-span-3 lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-10 rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
+          >
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6 md:mb-8 border border-orange-500/20">
+              <Phone className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">
+              Call Center
+            </h3>
+            <p className="text-slate-400 font-semibold leading-relaxed">
+              Virtual phone numbers with Twilio. Inbound/outbound calls, voicemail, and call history.
+            </p>
+          </motion.div>
+
+          {/* Calendar & Appointments */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="md:col-span-3 lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-10 rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
+          >
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 md:mb-8 border border-blue-500/20">
+              <Calendar className="h-8 w-8 text-blue-500" />
+            </div>
+            <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">
+              Calendar
+            </h3>
+            <p className="text-slate-400 font-semibold leading-relaxed">
+              Built-in scheduling with automated reminders. AI books appointments directly from conversations.
             </p>
           </motion.div>
 
@@ -182,33 +168,50 @@ export function Features() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="md:col-span-3 lg:col-span-8 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
+            className="md:col-span-6 lg:col-span-8 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
           >
             <div className="flex flex-col md:flex-row gap-10 h-full">
               <div className="flex-1">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6 md:mb-8 border border-orange-500/20">
-                  <Zap className="h-8 w-8 text-orange-500" />
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 md:mb-8 border border-emerald-500/20">
+                  <Zap className="h-8 w-8 text-emerald-500" />
                 </div>
                 <h3 className="text-3xl font-black mb-4 text-white">
                   Smart Automations
                 </h3>
                 <p className="text-slate-400 font-semibold leading-relaxed">
-                  Build complex workflows with a simple drag-and-drop interface.
-                  Scale your business without adding more headcounts.
+                  Trigger workflows across channels. Auto-respond, schedule follow-ups, send reminders, and escalate to agents - all automatically.
                 </p>
               </div>
               <div className="flex-1 flex items-center justify-center">
                 <div className="relative w-full aspect-video rounded-2xl bg-slate-800/50 border border-white/10 flex items-center justify-center overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
                   <div className="relative z-10 flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Automation Active
+                      89% Auto-resolved
                     </span>
                   </div>
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Analytics */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="md:col-span-3 lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-white/5 group relative p-10 rounded-[2.5rem] overflow-hidden hover:border-primary/20 transition-all duration-500"
+          >
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6 md:mb-8 border border-purple-500/20">
+              <BarChart3 className="h-8 w-8 text-purple-500" />
+            </div>
+            <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">
+              Analytics
+            </h3>
+            <p className="text-slate-400 font-semibold leading-relaxed">
+              Track conversations, response times, AI performance, and customer satisfaction across all channels.
+            </p>
           </motion.div>
         </div>
       </div>

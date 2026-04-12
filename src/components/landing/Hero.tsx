@@ -13,7 +13,7 @@ const industries = [
     headline: "Turn product enquiries into paying customers",
     color: "text-orange-500",
     aiPrompt:
-      "AI agent that handles order tracking, provides product recommendations, and manages common returns/exchange inquiries automatically",
+      "AI agent that handles order tracking via WhatsApp, SMS & Email, provides product recommendations, and manages returns/exchange inquiries - all in one unified inbox",
     stats: [
       { value: "42%", label: "reduction in support tickets" },
       { value: "15%", label: "increase in average order value" },
@@ -29,7 +29,7 @@ const industries = [
     headline: "Capture and convert property enquiries",
     color: "text-blue-500",
     aiPrompt:
-      "AI agent that qualifies buyers by asking about budget, location, and property type, then schedules viewing appointments for agents",
+      "AI agent that qualifies buyers via WhatsApp, email, or phone calls, asks about budget and location, then schedules viewing appointments directly in your calendar",
     stats: [
       { value: "45%", label: "faster lead qualification process" },
       { value: "30%", label: "increase in qualified viewing appointments" },
@@ -48,7 +48,7 @@ const industries = [
     headline: "Automate delivery enquiries and shipment bookings",
     color: "text-blue-400",
     aiPrompt:
-      "AI agent that provides real-time shipment updates, handles delivery rescheduling, and qualifies courier applications",
+      "AI agent that provides real-time shipment updates via SMS and Email, handles delivery rescheduling through any channel, and keeps all conversations unified per customer",
     stats: [
       { value: "50%", label: "faster response to delivery queries" },
       { value: "22%", label: "reduction in manual tracking requests" },
@@ -64,7 +64,7 @@ const industries = [
     headline: "Turn patient enquiries into booked appointments",
     color: "text-teal-500",
     aiPrompt:
-      "AI agent that manages patient inquiries, directs them to correct departments, and handles follow-up appointment scheduling",
+      "AI agent that manages patient inquiries across calls, WhatsApp, and email, books appointments in your calendar, and sends automated SMS reminders",
     stats: [
       { value: "50%", label: "lower call volume to front desk" },
       { value: "12min", label: "saved per patient in registration" },
@@ -80,7 +80,7 @@ const industries = [
     headline: "Scale your beauty salon with automated bookings",
     color: "text-purple-500",
     aiPrompt:
-      "AI agent that showcases portfolio, handles booking for specific stylists, and sends automated reminders",
+      "AI agent that handles booking requests from Instagram, WhatsApp, and phone calls, syncs with your calendar, and sends SMS/Email reminders to reduce no-shows",
     stats: [
       { value: "40%", label: "reduction in no-shows with smart reminders" },
       { value: "22%", label: "more bookings during after-hours" },
@@ -96,7 +96,7 @@ const industries = [
     headline: "Convert product enquiries into orders automatically",
     color: "text-orange-400",
     aiPrompt:
-      "AI agent that manages inventory inquiries, processes bulk orders, and provides real-time shipping updates for your distributors and retailers",
+      "AI agent that manages inventory inquiries via WhatsApp and Email, processes bulk orders, and sends real-time shipping updates to your distributors via SMS",
     stats: [
       { value: "55%", label: "faster order processing time" },
       { value: "34%", label: "increase in repeat vendor orders" },
@@ -112,7 +112,7 @@ const industries = [
     headline: "Automate bookings and scale your appointment business",
     color: "text-indigo-400",
     aiPrompt:
-      "AI agent that handles complex scheduling, syncs with your staff calendars, and manages waitlists and cancellations automatically",
+      "AI agent that handles scheduling from any channel - phone calls, WhatsApp, email - syncs with your calendar, and manages waitlists and cancellations automatically",
     stats: [
       { value: "65%", label: "automation of scheduling tasks" },
       { value: "28%", label: "higher slot utilization rate" },
@@ -128,9 +128,9 @@ const industries = [
     headline: "Respond to customers across every channel in one place",
     color: "text-amber-400",
     aiPrompt:
-      "AI agent that handles multi-tier support, resolves common issues instantly, and escalates complex cases to the right human agent",
+      "Unified inbox that brings WhatsApp, SMS, Email, Voice calls, and social media into one place. AI handles 80%+ automatically, escalates complex cases to agents",
     stats: [
-      { value: "80%", label: "first-response resolution rate" },
+      { value: "89%", label: "AI auto-resolution rate" },
       { value: "4.9/5", label: "average customer satisfaction score" },
       { value: "70%", label: "reduction in support ticket backlog" },
     ],

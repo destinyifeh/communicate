@@ -13,26 +13,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   Bell,
+  Calendar,
   ChevronDown,
   HeadphonesIcon,
   Inbox,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Menu,
-  MessageSquare,
+  Phone,
   Settings,
-  Sliders,
   Users,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
-import { toast } from "sonner";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -40,9 +41,12 @@ interface ClientLayoutProps {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/portal" },
-  { icon: Users, label: "Lead CRM", href: "/portal/leads" },
+  { icon: Users, label: "Contacts", href: "/portal/contacts" },
+  { icon: Calendar, label: "Calendar", href: "/portal/calendar" },
   { icon: Inbox, label: "Inbox", href: "/portal/inbox" },
-  { icon: Sliders, label: "Automation Settings", href: "/portal/settings" },
+  { icon: Phone, label: "Call Center", href: "/portal/call-center" },
+  { icon: Megaphone, label: "Marketing", href: "/portal/marketing" },
+  { icon: Settings, label: "Settings", href: "/portal/settings" },
 ];
 
 function SidebarContent({
@@ -67,14 +71,30 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo */}
+      {/* Logo & Business Name */}
       <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <Zap className="h-4 w-4 text-white" />
+        {user?.businessLogo ? (
+          <img
+            src={user.businessLogo}
+            alt={user.businessName || "Business"}
+            className="h-8 w-8 rounded-lg object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
+            style={{ backgroundColor: user?.brandColor || 'hsl(var(--primary))' }}
+          >
+            <Zap className="h-4 w-4 text-white" />
+          </div>
+        )}
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-black tracking-tighter text-foreground truncate">
+            {user?.businessName || "PartnerPeak"}
+          </span>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            Powered by PartnerPeak
+          </span>
         </div>
-        <span className="text-lg font-black tracking-tighter text-foreground">
-          Partner<span className="text-primary">Peak</span>
-        </span>
       </div>
 
       {/* Navigation */}
@@ -141,7 +161,7 @@ function SidebarContent({
                   {user?.name}
                 </p>
                 <p className="text-xs text-sidebar-foreground/60">
-                  {user?.company || "Client"}
+                  {user?.businessName || "Client"}
                 </p>
               </div>
               <ChevronDown className="h-4 w-4 text-sidebar-foreground/60" />
@@ -168,7 +188,9 @@ function SidebarContent({
 export function ClientLayout({ children }: ClientLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const { user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleSupportClick = () => {
     setSupportDialogOpen(true);
@@ -204,8 +226,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       {/* Main content */}
       <div className="flex-1 lg:pl-64 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 lg:px-6 w-full max-w-full overflow-hidden shrink-0">
-          <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 w-full max-w-full overflow-hidden shrink-0">
+          <div className="flex items-center gap-3">
             {/* Mobile menu trigger */}
             <Button
               variant="ghost"
@@ -215,29 +237,50 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-black tracking-tight text-foreground">
-              {navItems.find((item) => item.href === pathname)?.label ||
-                "Dashboard"}
-            </h1>
+            {/* Back button for non-dashboard pages */}
+            {pathname !== "/portal" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.back()}
+                className="hidden lg:flex h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <div className="flex items-center gap-3">
+              {/* Business name badge - visible on mobile */}
+              <div className="lg:hidden flex items-center gap-2">
+                {user?.businessLogo ? (
+                  <img
+                    src={user.businessLogo}
+                    alt={user.businessName || "Business"}
+                    className="h-7 w-7 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: user?.brandColor || 'hsl(var(--primary))' }}
+                  >
+                    <Zap className="h-3.5 w-3.5 text-white" />
+                  </div>
+                )}
+                <span className="text-sm font-bold text-foreground truncate max-w-[120px]">
+                  {user?.businessName || "PartnerPeak"}
+                </span>
+              </div>
+              {/* Page title - desktop */}
+              <h1 className="hidden lg:block text-lg font-bold tracking-tight text-foreground">
+                {navItems.find((item) => item.href === pathname)?.label ||
+                  "Dashboard"}
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden sm:flex"
-              onClick={() =>
-                toast.info("Messages coming soon!", {
-                  description:
-                    "Direct messaging will be available in a future update.",
-                })
-              }
-            >
-              <MessageSquare className="h-5 w-5" />
-            </Button>
             <Link href="/portal/notifications">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-[10px] font-medium text-accent-foreground flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
                   2
                 </span>
               </Button>

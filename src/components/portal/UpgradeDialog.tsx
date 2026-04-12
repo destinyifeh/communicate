@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PlanType, planDetails } from "@/lib/onboardingTypes";
+import { PlanType, planDetails } from "@/lib/businessTypes";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -33,7 +33,7 @@ interface UpgradeDialogProps {
   planExpiryDate?: string;
 }
 
-const planOrder: PlanType[] = ["starter", "professional", "enterprise"];
+const planOrder: PlanType[] = ["starter", "growth", "pro"];
 
 export function UpgradeDialog({
   open,
@@ -51,9 +51,9 @@ export function UpgradeDialog({
     switch (plan) {
       case "starter":
         return Zap;
-      case "professional":
+      case "growth":
         return Crown;
-      case "enterprise":
+      case "pro":
         return Building2;
     }
   };
@@ -348,31 +348,21 @@ export function UpgradeDialog({
                         animate={{ opacity: 1, height: "auto" }}
                         className="mt-4 pt-4 border-t border-border"
                       >
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground">
-                              Channels:
+                              Phone Numbers:
                             </span>{" "}
                             <span className="font-medium">
-                              {plan.maxChannels}
+                              {plan.maxPhoneNumbers}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">
-                              Automations:
+                              Messages/mo:
                             </span>{" "}
                             <span className="font-medium">
-                              {plan.maxAutomations === "unlimited"
-                                ? "Unlimited"
-                                : plan.maxAutomations}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Contacts:
-                            </span>{" "}
-                            <span className="font-medium">
-                              {plan.maxContacts.toLocaleString()}
+                              {plan.maxMessages.toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -398,7 +388,7 @@ export function UpgradeDialog({
 
             {availablePlans.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                {mode === "upgrade" && currentPlan === "enterprise"
+                {mode === "upgrade" && currentPlan === "pro"
                   ? "You're already on the highest plan!"
                   : mode === "downgrade" && currentPlan === "starter"
                     ? "You're already on the basic plan."

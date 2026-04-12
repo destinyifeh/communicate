@@ -12,15 +12,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks";
 import { motion } from "framer-motion";
 import {
   Bell,
+  Calendar,
   ChevronDown,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Menu,
   MessageSquare,
+  Phone,
   Settings,
   Users,
   Webhook,
@@ -38,6 +41,9 @@ interface AdminLayoutProps {
 const navItems = [
   { icon: LayoutDashboard, label: "Command Center", href: "/admin" },
   { icon: Users, label: "Client Management", href: "/admin/clients" },
+  { icon: Calendar, label: "Bookings Overview", href: "/admin/bookings" },
+  { icon: Phone, label: "Call Center", href: "/admin/call-center" },
+  { icon: Megaphone, label: "Marketing", href: "/admin/marketing" },
   { icon: Webhook, label: "Webhook Logs", href: "/admin/webhooks" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];

@@ -1,0 +1,24 @@
+model Subscription {
+  id                       String             @id @default(uuid())
+  plan                     SubscriptionPlan   @default(STARTER)
+  status                   SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId         String?
+  stripeSubscriptionId     String?
+  stripePriceId            String?
+  currentPeriodStart       DateTime?
+  currentPeriodEnd         DateTime?
+  canceledAt               DateTime?
+  trialEndsAt              DateTime?
+  maxPhoneNumbers          Int                @default(1)
+  maxMessagesPerMonth      Int                @default(100)
+  messagesUsedThisMonth    Int                @default(0)
+  callMinutesUsedThisMonth Int                @default(0)
+  monthlyPrice             Decimal            @default(29) @db.Decimal(10, 2)
+  currency                 String?
+  businessId               String             @unique
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  business                 Business           @relation(fields: [businessId], references: [id])
+
+  @@map("subscriptions")
+}

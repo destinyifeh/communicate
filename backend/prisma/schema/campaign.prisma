@@ -1,0 +1,32 @@
+model Campaign {
+  id                String         @id @default(uuid())
+  name              String
+  description       String?
+  type              CampaignType   @default(SMS)
+  status            CampaignStatus @default(DRAFT)
+  messageTemplate   String
+  mediaUrls         Json?
+  targetTags        Json?
+  excludeTags       Json?
+  recipientPhones   Json?
+  recipientEmails   Json?
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  totalRecipients   Int            @default(0)
+  messagesSent      Int            @default(0)
+  messagesDelivered Int            @default(0)
+  messagesFailed    Int            @default(0)
+  messagesRead      Int            @default(0)
+  responses         Int            @default(0)
+  optOuts           Int            @default(0)
+  totalCost         Decimal        @default(0) @db.Decimal(10, 4)
+  createdById       String?
+  businessId        String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  business          Business       @relation(fields: [businessId], references: [id])
+  createdBy         User?          @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@map("campaigns")
+}

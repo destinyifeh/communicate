@@ -437,80 +437,107 @@ export const getDefaultConfig = (category: BusinessCategoryType): AutomationConf
 };
 
 // =====================================
-// PLAN TYPES (Updated - Starter: 1 channel, Professional: 2 channels, Enterprise: all)
+// PLAN TYPES (Twilio SaaS: Starter $29, Growth $79, Pro $149)
 // =====================================
-export type PlanType = 'starter' | 'professional' | 'enterprise';
+export type PlanType = 'starter' | 'growth' | 'pro';
+
+// Feature types for Twilio SaaS
+export type FeatureType = 'booking' | 'support' | 'inquiries' | 'marketing';
 
 export interface PlanDetails {
   name: string;
   price: string;
   priceValue: number;
+  maxPhoneNumbers: number;
+  maxMessages: number;
+  features: string[];
+  description: string;
+  includedFeatures: FeatureType[];
+  // Legacy fields for backwards compatibility with existing components
   maxChannels: number;
   maxAutomations: number | 'unlimited';
   maxContacts: number;
-  features: string[];
-  description: string;
   supportedCategories: BusinessCategoryType[];
 }
 
 export const planDetails: Record<PlanType, PlanDetails> = {
   starter: {
     name: 'Starter',
-    price: '₦25,000',
-    priceValue: 25000,
-    maxChannels: 1,
-    maxAutomations: 2,
-    maxContacts: 500,
+    price: '$29',
+    priceValue: 29,
+    maxPhoneNumbers: 1,
+    maxMessages: 100,
     features: [
-      '1 Social Channel (WhatsApp OR IG/FB/TikTok)',
-      'Lead Capture Automation',
-      'Basic FAQ Bot',
-      'Dashboard Analytics',
-      '500 Contacts Limit',
+      '1 Phone Number',
+      'Appointment Booking via SMS/WhatsApp',
+      'AI-powered Inquiry Responses',
+      'FAQ Auto-responder',
+      'Unified Inbox',
+      '100 Messages/month',
       'Email Support',
     ],
-    description: '1 channel of your choice',
-    supportedCategories: ['lead_capture', 'enquiries_support'],
-  },
-  professional: {
-    name: 'Professional',
-    price: '₦50,000',
-    priceValue: 50000,
+    description: 'Booking + Inquiries',
+    includedFeatures: ['booking', 'inquiries'],
+    // Legacy fields
     maxChannels: 2,
-    maxAutomations: 8,
-    maxContacts: 2500,
+    maxAutomations: 5,
+    maxContacts: 500,
+    supportedCategories: ['appointments_bookings', 'enquiries_support', 'lead_capture'],
+  },
+  growth: {
+    name: 'Growth',
+    price: '$79',
+    priceValue: 79,
+    maxPhoneNumbers: 2,
+    maxMessages: 500,
     features: [
-      '2 Social Channels',
-      'All Automation Types',
-      'Appointment Booking',
-      'Sales & Order Automation',
-      'Email Automation',
-      '2,500 Contacts Limit',
+      '2 Phone Numbers',
+      'Everything in Starter',
+      'Voice Call Center (IVR)',
+      'Live Agent Support via Flex',
+      'Agent Takeover from Bot',
+      '500 Messages/month',
       'Priority Support',
     ],
-    description: '2 channels of your choice',
-    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders', 'email_marketing'],
+    description: 'Booking + Inquiries + Support',
+    includedFeatures: ['booking', 'inquiries', 'support'],
+    // Legacy fields
+    maxChannels: 4,
+    maxAutomations: 15,
+    maxContacts: 2500,
+    supportedCategories: ['appointments_bookings', 'enquiries_support', 'lead_capture', 'sales_orders'],
   },
-  enterprise: {
-    name: 'Enterprise',
-    price: '₦120,000',
-    priceValue: 120000,
-    maxChannels: 5,
+  pro: {
+    name: 'Pro',
+    price: '$149',
+    priceValue: 149,
+    maxPhoneNumbers: 5,
+    maxMessages: 2000,
+    features: [
+      '5 Phone Numbers',
+      'Everything in Growth',
+      'Mass Marketing Campaigns',
+      'Bulk SMS/WhatsApp Sending',
+      'CSV Contact Import',
+      '2,000 Messages/month',
+      'Advanced Analytics',
+      'Dedicated Account Manager',
+    ],
+    description: 'All Features Included',
+    includedFeatures: ['booking', 'inquiries', 'support', 'marketing'],
+    // Legacy fields
+    maxChannels: 6,
     maxAutomations: 'unlimited',
     maxContacts: 10000,
-    features: [
-      'All 5 Channels (IG, FB, WhatsApp, TikTok, Email)',
-      'Unlimited Automations',
-      'AI-Powered Responses',
-      'Advanced Analytics',
-      '10,000+ Contacts',
-      'Dedicated Account Manager',
-      'Custom Integrations',
-      'White-label Options',
-    ],
-    description: 'All channels (IG, FB, WhatsApp, TikTok, Email)',
-    supportedCategories: ['lead_capture', 'enquiries_support', 'appointments_bookings', 'sales_orders', 'email_marketing'],
+    supportedCategories: ['appointments_bookings', 'enquiries_support', 'lead_capture', 'sales_orders', 'email_marketing'],
   },
+};
+
+// Get minimum plan for selected features
+export const getMinimumPlanForFeatures = (features: FeatureType[]): PlanType => {
+  if (features.includes('marketing')) return 'pro';
+  if (features.includes('support')) return 'growth';
+  return 'starter';
 };
 
 // =====================================

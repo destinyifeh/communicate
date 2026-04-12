@@ -18,7 +18,7 @@ export interface Client {
   phone: string;
   apiKey: string;
   status: 'active' | 'suspended';
-  plan: 'Starter' | 'Professional' | 'Enterprise';
+  plan: 'Starter' | 'Growth' | 'Pro';
   leadLimit: number;
   leadsUsed: number;
   revenue: number;
@@ -195,12 +195,12 @@ export const mockClients: Client[] = [
   {
     id: '1',
     name: 'Jordan Smith',
-    company: 'Acme Corp',
-    email: 'jordan@acme.com',
+    company: 'Demo Company',
+    email: 'jordan@demo.com',
     phone: '+234 801 111 1111',
     apiKey: 'ak_live_Xk9j2mNp4Q7rT1wZ8vB3cD6fH0gI',
     status: 'active',
-    plan: 'Professional',
+    plan: 'Growth',
     leadLimit: 1000,
     leadsUsed: 456,
     revenue: 2450000,
@@ -221,7 +221,7 @@ export const mockClients: Client[] = [
     phone: '+234 802 222 2222',
     apiKey: 'ak_live_Lm8k3nOq5R9sU2xA1yC4eF7hJ0lK',
     status: 'active',
-    plan: 'Enterprise',
+    plan: 'Pro',
     leadLimit: 5000,
     leadsUsed: 1234,
     revenue: 5800000,
@@ -264,7 +264,7 @@ export const mockClients: Client[] = [
     phone: '+234 804 444 4444',
     apiKey: 'ak_live_Qo1m5pSs7T2uW4zC3aB6eH9jM2oP',
     status: 'suspended',
-    plan: 'Professional',
+    plan: 'Growth',
     leadLimit: 1000,
     leadsUsed: 1000,
     revenue: 1200000,
@@ -284,7 +284,7 @@ export const mockClients: Client[] = [
     phone: '+234 805 555 5555',
     apiKey: 'ak_live_Rp2n6qTt8U3vX5aC4bD7fI0kN3pQ',
     status: 'active',
-    plan: 'Enterprise',
+    plan: 'Pro',
     leadLimit: 5000,
     leadsUsed: 2890,
     revenue: 7500000,
@@ -302,52 +302,70 @@ export const mockClients: Client[] = [
   },
 ];
 
-// Webhook logs
+// Webhook logs - Twilio-based webhooks
 export const mockWebhookLogs: WebhookLog[] = [
   {
     id: '1',
-    timestamp: '2024-12-11T14:32:15Z',
-    source: 'ManyChat',
-    endpoint: '/api/webhooks/manychat',
+    timestamp: '2026-04-11T14:32:15Z',
+    source: 'Twilio SMS',
+    endpoint: '/api/webhooks/twilio/sms',
     status: 'success',
-    payload: '{"user_id": "12345", "message": "Hello", "platform": "instagram"}',
-    response: '{"status": "received", "lead_id": "abc123"}',
+    payload: '{"From": "+1234567890", "To": "+1987654321", "Body": "I want to book an appointment", "MessageSid": "SM123abc"}',
+    response: '{"status": "received", "conversation_id": "conv_abc123", "ai_responded": true}',
   },
   {
     id: '2',
-    timestamp: '2024-12-11T14:30:45Z',
-    source: 'WAmation',
-    endpoint: '/api/webhooks/wamation',
+    timestamp: '2026-04-11T14:30:45Z',
+    source: 'Twilio Voice',
+    endpoint: '/api/webhooks/twilio/voice',
     status: 'success',
-    payload: '{"phone": "+234801234567", "message": "Price?", "type": "text"}',
-    response: '{"status": "processed", "bot_response": true}',
+    payload: '{"CallSid": "CA123xyz", "From": "+1234567891", "To": "+1987654321", "CallStatus": "ringing"}',
+    response: '{"status": "call_initiated", "ivr_flow": "main_menu"}',
   },
   {
     id: '3',
-    timestamp: '2024-12-11T14:28:30Z',
-    source: 'ManyChat',
-    endpoint: '/api/webhooks/manychat',
+    timestamp: '2026-04-11T14:28:30Z',
+    source: 'Twilio WhatsApp',
+    endpoint: '/api/webhooks/twilio/whatsapp',
     status: 'error',
-    payload: '{"user_id": "67890", "message": null}',
-    response: '{"error": "Invalid message format"}',
+    payload: '{"From": "whatsapp:+1234567892", "Body": null, "MediaUrl0": null}',
+    response: '{"error": "Invalid message format - empty body"}',
   },
   {
     id: '4',
-    timestamp: '2024-12-11T14:25:00Z',
-    source: 'TikTok',
-    endpoint: '/api/webhooks/tiktok',
+    timestamp: '2026-04-11T14:25:00Z',
+    source: 'Twilio SMS',
+    endpoint: '/api/webhooks/twilio/sms/status',
     status: 'success',
-    payload: '{"lead_info": {"name": "Test User", "comment": "Interested!"}}',
-    response: '{"status": "lead_created"}',
+    payload: '{"MessageSid": "SM456def", "MessageStatus": "delivered", "To": "+1234567893"}',
+    response: '{"status": "status_updated", "delivery_confirmed": true}',
   },
   {
     id: '5',
-    timestamp: '2024-12-11T14:20:15Z',
-    source: 'WAmation',
-    endpoint: '/api/webhooks/wamation',
+    timestamp: '2026-04-11T14:20:15Z',
+    source: 'Twilio Voice',
+    endpoint: '/api/webhooks/twilio/voice/status',
     status: 'success',
-    payload: '{"phone": "+234802345678", "type": "payment_confirmed", "amount": 25000}',
-    response: '{"status": "sale_recorded"}',
+    payload: '{"CallSid": "CA789ghi", "CallStatus": "completed", "CallDuration": "245", "From": "+1234567894"}',
+    response: '{"status": "call_completed", "recording_url": "https://api.twilio.com/recordings/RE123"}',
+  },
+  {
+    id: '6',
+    timestamp: '2026-04-11T14:15:00Z',
+    source: 'SendGrid',
+    endpoint: '/api/webhooks/sendgrid/events',
+    status: 'success',
+    payload: '{"event": "open", "email": "customer@example.com", "campaign_id": "camp_123", "timestamp": 1712847300}',
+    response: '{"status": "event_logged", "open_tracked": true}',
+  },
+  {
+    id: '7',
+    timestamp: '2026-04-11T14:10:30Z',
+    source: 'Twilio WhatsApp',
+    endpoint: '/api/webhooks/twilio/whatsapp',
+    status: 'success',
+    payload: '{"From": "whatsapp:+1234567895", "Body": "What are your business hours?", "ProfileName": "John Doe"}',
+    response: '{"status": "received", "ai_responded": true, "response_type": "faq_auto_reply"}',
   },
 ];
 
@@ -356,7 +374,414 @@ export const clientTrafficData = mockClients
   .filter(c => c.status === 'active')
   .map(client => ({
     name: client.company,
-    leads: client.leadsUsed,
+    messages: client.leadsUsed, // Now represents messages sent
     revenue: client.revenue / 1000, // in thousands
   }))
-  .sort((a, b) => b.leads - a.leads);
+  .sort((a, b) => b.messages - a.messages);
+
+// =====================================
+// ADMIN AGGREGATE DATA FOR NEW FEATURES
+// =====================================
+
+// Aggregate Booking/Calendar Data
+export interface AdminBookingStats {
+  clientId: string;
+  clientName: string;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  noShowRate: number;
+  avgBookingsPerDay: number;
+}
+
+export const adminBookingStats: AdminBookingStats[] = [
+  {
+    clientId: '1',
+    clientName: 'Demo Company',
+    totalBookings: 145,
+    pendingBookings: 12,
+    confirmedBookings: 28,
+    completedBookings: 98,
+    cancelledBookings: 7,
+    noShowRate: 4.8,
+    avgBookingsPerDay: 4.8,
+  },
+  {
+    clientId: '2',
+    clientName: 'TechStart Inc',
+    totalBookings: 312,
+    pendingBookings: 24,
+    confirmedBookings: 45,
+    completedBookings: 230,
+    cancelledBookings: 13,
+    noShowRate: 3.2,
+    avgBookingsPerDay: 10.4,
+  },
+  {
+    clientId: '3',
+    clientName: 'Growth Co',
+    totalBookings: 89,
+    pendingBookings: 8,
+    confirmedBookings: 15,
+    completedBookings: 62,
+    cancelledBookings: 4,
+    noShowRate: 5.1,
+    avgBookingsPerDay: 3.0,
+  },
+  {
+    clientId: '5',
+    clientName: 'Fashion Hub',
+    totalBookings: 456,
+    pendingBookings: 35,
+    confirmedBookings: 68,
+    completedBookings: 340,
+    cancelledBookings: 13,
+    noShowRate: 2.9,
+    avgBookingsPerDay: 15.2,
+  },
+];
+
+// Aggregate Call Center Data
+export interface AdminCallStats {
+  clientId: string;
+  clientName: string;
+  totalCalls: number;
+  inboundCalls: number;
+  outboundCalls: number;
+  missedCalls: number;
+  avgCallDuration: number; // in seconds
+  avgWaitTime: number; // in seconds
+  resolutionRate: number;
+}
+
+export const adminCallStats: AdminCallStats[] = [
+  {
+    clientId: '1',
+    clientName: 'Demo Company',
+    totalCalls: 234,
+    inboundCalls: 156,
+    outboundCalls: 78,
+    missedCalls: 12,
+    avgCallDuration: 245,
+    avgWaitTime: 18,
+    resolutionRate: 87,
+  },
+  {
+    clientId: '2',
+    clientName: 'TechStart Inc',
+    totalCalls: 567,
+    inboundCalls: 398,
+    outboundCalls: 169,
+    missedCalls: 23,
+    avgCallDuration: 312,
+    avgWaitTime: 15,
+    resolutionRate: 92,
+  },
+  {
+    clientId: '3',
+    clientName: 'Growth Co',
+    totalCalls: 123,
+    inboundCalls: 89,
+    outboundCalls: 34,
+    missedCalls: 8,
+    avgCallDuration: 198,
+    avgWaitTime: 22,
+    resolutionRate: 84,
+  },
+  {
+    clientId: '5',
+    clientName: 'Fashion Hub',
+    totalCalls: 789,
+    inboundCalls: 512,
+    outboundCalls: 277,
+    missedCalls: 31,
+    avgCallDuration: 267,
+    avgWaitTime: 12,
+    resolutionRate: 95,
+  },
+];
+
+// Aggregate Marketing Campaign Data
+export interface AdminCampaignStats {
+  clientId: string;
+  clientName: string;
+  totalCampaigns: number;
+  activeCampaigns: number;
+  totalRecipients: number;
+  totalDelivered: number;
+  totalOpened: number;
+  totalClicked: number;
+  avgOpenRate: number;
+  avgClickRate: number;
+}
+
+export const adminCampaignStats: AdminCampaignStats[] = [
+  {
+    clientId: '1',
+    clientName: 'Demo Company',
+    totalCampaigns: 12,
+    activeCampaigns: 2,
+    totalRecipients: 15600,
+    totalDelivered: 14892,
+    totalOpened: 5215,
+    totalClicked: 1245,
+    avgOpenRate: 35.0,
+    avgClickRate: 8.4,
+  },
+  {
+    clientId: '2',
+    clientName: 'TechStart Inc',
+    totalCampaigns: 28,
+    activeCampaigns: 5,
+    totalRecipients: 45200,
+    totalDelivered: 43892,
+    totalOpened: 18345,
+    totalClicked: 4892,
+    avgOpenRate: 41.8,
+    avgClickRate: 11.1,
+  },
+  {
+    clientId: '3',
+    clientName: 'Growth Co',
+    totalCampaigns: 6,
+    activeCampaigns: 1,
+    totalRecipients: 5800,
+    totalDelivered: 5512,
+    totalOpened: 1876,
+    totalClicked: 423,
+    avgOpenRate: 34.0,
+    avgClickRate: 7.7,
+  },
+  {
+    clientId: '5',
+    clientName: 'Fashion Hub',
+    totalCampaigns: 45,
+    activeCampaigns: 8,
+    totalRecipients: 89500,
+    totalDelivered: 86845,
+    totalOpened: 38912,
+    totalClicked: 12456,
+    avgOpenRate: 44.8,
+    avgClickRate: 14.3,
+  },
+];
+
+// Aggregate summary calculations
+export const getAdminBookingSummary = () => {
+  const totals = adminBookingStats.reduce(
+    (acc, stat) => ({
+      totalBookings: acc.totalBookings + stat.totalBookings,
+      pendingBookings: acc.pendingBookings + stat.pendingBookings,
+      confirmedBookings: acc.confirmedBookings + stat.confirmedBookings,
+      completedBookings: acc.completedBookings + stat.completedBookings,
+      cancelledBookings: acc.cancelledBookings + stat.cancelledBookings,
+    }),
+    { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, completedBookings: 0, cancelledBookings: 0 }
+  );
+  return {
+    ...totals,
+    avgNoShowRate: adminBookingStats.reduce((acc, s) => acc + s.noShowRate, 0) / adminBookingStats.length,
+    totalClients: adminBookingStats.length,
+  };
+};
+
+export const getAdminCallSummary = () => {
+  const totals = adminCallStats.reduce(
+    (acc, stat) => ({
+      totalCalls: acc.totalCalls + stat.totalCalls,
+      inboundCalls: acc.inboundCalls + stat.inboundCalls,
+      outboundCalls: acc.outboundCalls + stat.outboundCalls,
+      missedCalls: acc.missedCalls + stat.missedCalls,
+    }),
+    { totalCalls: 0, inboundCalls: 0, outboundCalls: 0, missedCalls: 0 }
+  );
+  return {
+    ...totals,
+    avgCallDuration: Math.round(adminCallStats.reduce((acc, s) => acc + s.avgCallDuration, 0) / adminCallStats.length),
+    avgResolutionRate: (adminCallStats.reduce((acc, s) => acc + s.resolutionRate, 0) / adminCallStats.length).toFixed(1),
+    totalClients: adminCallStats.length,
+  };
+};
+
+export const getAdminCampaignSummary = () => {
+  const totals = adminCampaignStats.reduce(
+    (acc, stat) => ({
+      totalCampaigns: acc.totalCampaigns + stat.totalCampaigns,
+      activeCampaigns: acc.activeCampaigns + stat.activeCampaigns,
+      totalRecipients: acc.totalRecipients + stat.totalRecipients,
+      totalDelivered: acc.totalDelivered + stat.totalDelivered,
+      totalOpened: acc.totalOpened + stat.totalOpened,
+      totalClicked: acc.totalClicked + stat.totalClicked,
+    }),
+    { totalCampaigns: 0, activeCampaigns: 0, totalRecipients: 0, totalDelivered: 0, totalOpened: 0, totalClicked: 0 }
+  );
+  return {
+    ...totals,
+    avgOpenRate: ((totals.totalOpened / totals.totalDelivered) * 100).toFixed(1),
+    avgClickRate: ((totals.totalClicked / totals.totalDelivered) * 100).toFixed(1),
+    totalClients: adminCampaignStats.length,
+  };
+};
+
+// =====================================
+// CONTACTS DATA FOR CLIENT PORTAL
+// =====================================
+
+export interface Contact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string;
+  company: string | null;
+  tags: string[];
+  notes: string | null;
+  source: 'manual' | 'inbox' | 'call_center' | 'import';
+  preferredChannel: 'sms' | 'whatsapp' | 'email' | 'voice' | null;
+  createdAt: string;
+  updatedAt: string;
+  lastContactedAt: string | null;
+  totalConversations: number;
+  totalCalls: number;
+}
+
+export const mockContacts: Contact[] = [
+  {
+    id: 'c1',
+    firstName: 'Amara',
+    lastName: 'Okafor',
+    email: 'amara.okafor@example.com',
+    phone: '+1 555-0100',
+    company: 'Okafor Enterprises',
+    tags: ['VIP', 'Repeat Customer'],
+    notes: 'Prefers WhatsApp communication. Usually orders skincare bundles.',
+    source: 'inbox',
+    preferredChannel: 'whatsapp',
+    createdAt: '2026-03-15T10:00:00Z',
+    updatedAt: '2026-04-11T10:32:00Z',
+    lastContactedAt: '2026-04-11T10:32:00Z',
+    totalConversations: 12,
+    totalCalls: 2,
+  },
+  {
+    id: 'c2',
+    firstName: 'John',
+    lastName: 'Smith',
+    email: 'john.smith@email.com',
+    phone: '+1 555-0123',
+    company: null,
+    tags: ['New Lead'],
+    notes: 'Interested in appointment booking',
+    source: 'inbox',
+    preferredChannel: 'sms',
+    createdAt: '2026-04-10T09:45:00Z',
+    updatedAt: '2026-04-11T09:52:00Z',
+    lastContactedAt: '2026-04-11T09:52:00Z',
+    totalConversations: 2,
+    totalCalls: 0,
+  },
+  {
+    id: 'c3',
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah.j@company.com',
+    phone: '+1 555-0456',
+    company: 'Johnson & Co',
+    tags: ['Support', 'Escalated'],
+    notes: 'Had refund issue - resolved. Follow up in 1 week.',
+    source: 'inbox',
+    preferredChannel: 'whatsapp',
+    createdAt: '2026-02-20T14:00:00Z',
+    updatedAt: '2026-04-11T08:25:00Z',
+    lastContactedAt: '2026-04-11T08:25:00Z',
+    totalConversations: 8,
+    totalCalls: 3,
+  },
+  {
+    id: 'c4',
+    firstName: 'Mike',
+    lastName: 'Brown',
+    email: 'mike.brown@business.com',
+    phone: '+1 555-0789',
+    company: 'Brown Industries',
+    tags: ['Business'],
+    notes: 'Billing inquiry - prefers voice calls',
+    source: 'call_center',
+    preferredChannel: 'voice',
+    createdAt: '2026-03-01T11:00:00Z',
+    updatedAt: '2026-04-11T09:02:00Z',
+    lastContactedAt: '2026-04-11T09:02:00Z',
+    totalConversations: 3,
+    totalCalls: 7,
+  },
+  {
+    id: 'c5',
+    firstName: 'Emily',
+    lastName: 'Davis',
+    email: 'emily.d@gmail.com',
+    phone: '+1 555-0234',
+    company: null,
+    tags: ['Customer', 'Purchased'],
+    notes: 'Purchased premium package',
+    source: 'inbox',
+    preferredChannel: 'whatsapp',
+    createdAt: '2026-04-11T07:30:00Z',
+    updatedAt: '2026-04-11T07:40:00Z',
+    lastContactedAt: '2026-04-11T07:40:00Z',
+    totalConversations: 1,
+    totalCalls: 0,
+  },
+  {
+    id: 'c6',
+    firstName: 'David',
+    lastName: 'Chen',
+    email: 'david.chen@example.com',
+    phone: '+1 555-0567',
+    company: 'Chen Tech',
+    tags: ['Business', 'Email Preferred'],
+    notes: 'Waiting for shipping update on order #12345',
+    source: 'inbox',
+    preferredChannel: 'email',
+    createdAt: '2026-04-09T09:00:00Z',
+    updatedAt: '2026-04-11T10:15:00Z',
+    lastContactedAt: '2026-04-11T10:15:00Z',
+    totalConversations: 4,
+    totalCalls: 0,
+  },
+  {
+    id: 'c7',
+    firstName: 'Emma',
+    lastName: 'Wilson',
+    email: 'emma.wilson@company.com',
+    phone: '+1 555-0678',
+    company: 'TechCorp',
+    tags: ['Partnership', 'High Priority'],
+    notes: 'Marketing Director - interested in partnership',
+    source: 'inbox',
+    preferredChannel: 'email',
+    createdAt: '2026-04-11T08:30:00Z',
+    updatedAt: '2026-04-11T08:45:00Z',
+    lastContactedAt: '2026-04-11T08:45:00Z',
+    totalConversations: 1,
+    totalCalls: 0,
+  },
+  {
+    id: 'c8',
+    firstName: 'Lisa',
+    lastName: 'Anderson',
+    email: null,
+    phone: '+1 555-0345',
+    company: null,
+    tags: ['Appointment'],
+    notes: 'Booked consultation for Friday 3pm',
+    source: 'inbox',
+    preferredChannel: 'sms',
+    createdAt: '2026-04-11T05:20:00Z',
+    updatedAt: '2026-04-11T05:25:00Z',
+    lastContactedAt: '2026-04-11T05:25:00Z',
+    totalConversations: 1,
+    totalCalls: 0,
+  },
+];

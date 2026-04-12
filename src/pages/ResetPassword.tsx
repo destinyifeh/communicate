@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/lib/utils";
+import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validation/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -22,38 +26,49 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function ResetPassword() {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const email = searchParams?.get("email") || "";
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      token: searchParams?.get("token") || "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    if (!email) {
+      toast.error("Email is missing. Please go back and request a new reset code.");
       return;
     }
 
     setIsLoading(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsLoading(false);
-    setIsSubmitted(true);
-    toast.success("Password has been reset successfully!");
+    try {
+      await authService.resetPassword(email, data.token, data.password);
+      setIsSubmitted(true);
+      toast.success("Password has been reset successfully!");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Invalid or expired reset code"));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -161,7 +176,36 @@ export default function ResetPassword() {
                     </Link>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        disabled
+                        className="h-11 bg-muted"
+                      />
+                      {!email && (
+                        <p className="text-sm text-destructive">
+                          Email is missing. <Link href="/forgot-password" className="underline">Request a new reset code</Link>
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="token">Reset Code</Label>
+                      <Input
+                        id="token"
+                        type="text"
+                        placeholder="Enter 6-digit code"
+                        maxLength={6}
+                        className={`h-11 text-center text-xl tracking-[0.5em] font-mono ${errors.token ? "border-destructive" : ""}`}
+                        {...register("token")}
+                      />
+                      {errors.token && (
+                        <p className="text-sm text-destructive">{errors.token.message}</p>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">New Password</Label>
                       <div className="relative">
@@ -169,10 +213,8 @@ export default function ResetPassword() {
                           id="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          className="h-11 pr-10"
+                          className={`h-11 pr-10 ${errors.password ? "border-destructive" : ""}`}
+                          {...register("password")}
                         />
                         <button
                           type="button"
@@ -186,6 +228,9 @@ export default function ResetPassword() {
                           )}
                         </button>
                       </div>
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password.message}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -194,10 +239,8 @@ export default function ResetPassword() {
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          className="h-11 pr-10"
+                          className={`h-11 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`}
+                          {...register("confirmPassword")}
                         />
                         <button
                           type="button"
@@ -213,11 +256,14 @@ export default function ResetPassword() {
                           )}
                         </button>
                       </div>
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                      )}
                     </div>
                     <Button
                       type="submit"
                       className="w-full h-11 gradient-primary text-primary-foreground hover:opacity-90"
-                      disabled={isLoading}
+                      disabled={isLoading || !email}
                     >
                       {isLoading ? (
                         <>

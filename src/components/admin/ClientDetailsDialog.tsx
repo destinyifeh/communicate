@@ -14,18 +14,17 @@ import {
   User,
   Mail,
   Phone,
+  PhoneCall,
   Building2,
   Calendar,
   Key,
-  Instagram,
-  Facebook,
   MessageSquare,
   CheckCircle,
   XCircle,
   Copy,
   Bot,
-  Users,
   CreditCard,
+  Smartphone,
 } from 'lucide-react';
 import { Client } from '@/lib/mockData';
 import { toast } from 'sonner';
@@ -36,24 +35,26 @@ interface ClientDetailsDialogProps {
   client: Client | null;
 }
 
-const TikTokIcon = () => (
-  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-  </svg>
-);
-
-const platformIcons: Record<string, React.ReactNode> = {
-  instagram: <Instagram className="h-4 w-4" />,
-  facebook: <Facebook className="h-4 w-4" />,
+// Channel icons for Twilio-based communication channels
+const channelIcons: Record<string, React.ReactNode> = {
+  sms: <Smartphone className="h-4 w-4" />,
   whatsapp: <MessageSquare className="h-4 w-4" />,
-  tiktok: <TikTokIcon />,
+  voice: <PhoneCall className="h-4 w-4" />,
+  email: <Mail className="h-4 w-4" />,
 };
 
-const platformColors: Record<string, string> = {
-  instagram: 'bg-gradient-to-br from-purple-500 to-pink-500',
-  facebook: 'bg-blue-600',
+const channelColors: Record<string, string> = {
+  sms: 'bg-blue-500',
   whatsapp: 'bg-green-500',
-  tiktok: 'bg-foreground',
+  voice: 'bg-orange-500',
+  email: 'bg-cyan-500',
+};
+
+const channelNames: Record<string, string> = {
+  sms: 'SMS',
+  whatsapp: 'WhatsApp',
+  voice: 'Voice Calls',
+  email: 'Email',
 };
 
 export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetailsDialogProps) {
@@ -64,9 +65,19 @@ export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetail
     toast.success('API key copied to clipboard');
   };
 
-  const connectedPlatforms = Object.entries(client.platforms)
+  // Map old platform names to new channel names for display
+  // The client data still uses platforms object, but we display as communication channels
+  const channelMapping: Record<string, string> = {
+    whatsapp: 'whatsapp',
+    instagram: 'sms', // Map legacy instagram to SMS
+    facebook: 'voice', // Map legacy facebook to Voice
+    tiktok: 'email', // Map legacy tiktok to Email
+  };
+
+  const connectedChannels = Object.entries(client.platforms)
     .filter(([_, connected]) => connected)
-    .map(([platform]) => platform);
+    .map(([platform]) => channelMapping[platform] || platform)
+    .filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,7 +101,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetail
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="channels">Channels</TabsTrigger>
-            <TabsTrigger value="automations">Automations</TabsTrigger>
+            <TabsTrigger value="automations">AI Workflows</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
@@ -171,7 +182,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetail
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Lead Usage</span>
+                    <span className="text-muted-foreground">Message Usage</span>
                     <span>{client.leadsUsed.toLocaleString()} / {client.leadLimit.toLocaleString()}</span>
                   </div>
                   <Progress value={(client.leadsUsed / client.leadLimit) * 100} className="h-2" />
@@ -214,22 +225,24 @@ export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetail
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {connectedPlatforms.length === 0 ? (
+                {connectedChannels.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">No channels connected</p>
                 ) : (
                   <div className="grid gap-3">
-                    {connectedPlatforms.map((platform) => (
-                      <div 
-                        key={platform}
+                    {connectedChannels.map((channel) => (
+                      <div
+                        key={channel}
                         className="flex items-center justify-between p-4 rounded-lg border border-border"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg ${platformColors[platform]} flex items-center justify-center text-white`}>
-                            {platformIcons[platform]}
+                          <div className={`h-10 w-10 rounded-lg ${channelColors[channel]} flex items-center justify-center text-white`}>
+                            {channelIcons[channel]}
                           </div>
                           <div>
-                            <p className="font-medium capitalize">{platform}</p>
-                            <p className="text-xs text-muted-foreground">@{client.company.toLowerCase().replace(/\s/g, '')}_{platform}</p>
+                            <p className="font-medium">{channelNames[channel]}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {channel === 'voice' ? 'Twilio Voice' : channel === 'sms' ? 'Twilio SMS' : channel === 'whatsapp' ? 'Twilio WhatsApp' : 'SendGrid'}
+                            </p>
                           </div>
                         </div>
                         <Badge variant="secondary" className="bg-green-500/10 text-green-600">
@@ -248,41 +261,63 @@ export function ClientDetailsDialog({ open, onOpenChange, client }: ClientDetail
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Bot className="h-4 w-4" />
-                  Active Automations
+                  AI Workflows
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {!client.automations || client.automations.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No automations configured</p>
+                  <p className="text-center text-muted-foreground py-8">No AI workflows configured</p>
                 ) : (
                   <div className="space-y-3">
-                    {client.automations.map((automation, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center justify-between p-4 rounded-lg border border-border"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl">
-                            {automation.goalId === 'lead_capture' ? '📥' :
-                             automation.goalId === 'auto_reply' ? '💬' :
-                             automation.goalId === 'whatsapp_redirect' ? '📱' : '🤖'}
-                          </div>
-                          <div>
-                            <p className="font-medium">{automation.goalName}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{automation.channel}</p>
-                          </div>
-                        </div>
-                        <Badge 
-                          variant="secondary"
-                          className={automation.status === 'active' 
-                            ? 'bg-green-500/10 text-green-600' 
-                            : 'bg-yellow-500/10 text-yellow-600'
-                          }
+                    {client.automations.map((automation, index) => {
+                      // Map old goal names to new workflow names
+                      const workflowNames: Record<string, string> = {
+                        'lead_capture': 'Inbound Message Handler',
+                        'auto_reply': 'AI Auto-Response',
+                        'whatsapp_redirect': 'WhatsApp Routing',
+                        'faq_bot': 'FAQ Assistant',
+                      };
+                      const workflowIcons: Record<string, string> = {
+                        'lead_capture': '📨',
+                        'auto_reply': '🤖',
+                        'whatsapp_redirect': '📱',
+                        'faq_bot': '💬',
+                      };
+                      // Map old channel names to new ones
+                      const channelDisplayNames: Record<string, string> = {
+                        'instagram': 'SMS',
+                        'facebook': 'Voice',
+                        'tiktok': 'Email',
+                        'whatsapp': 'WhatsApp',
+                      };
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-4 rounded-lg border border-border"
                         >
-                          {automation.status === 'active' ? 'Active' : 'Paused'}
-                        </Badge>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl">
+                              {workflowIcons[automation.goalId] || '🤖'}
+                            </div>
+                            <div>
+                              <p className="font-medium">{workflowNames[automation.goalId] || automation.goalName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {channelDisplayNames[automation.channel] || automation.channel}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={automation.status === 'active'
+                              ? 'bg-green-500/10 text-green-600'
+                              : 'bg-yellow-500/10 text-yellow-600'
+                            }
+                          >
+                            {automation.status === 'active' ? 'Active' : 'Paused'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
