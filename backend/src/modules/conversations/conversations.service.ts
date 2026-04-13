@@ -65,16 +65,14 @@ export class ConversationsService {
       ];
     }
 
-    // Determine sort - use createdAt as default since lastMessageAt can be null
-    let orderBy: Prisma.ConversationOrderByWithRelationInput = { createdAt: 'desc' };
+    // Default sort by lastMessageAt (most recent activity first)
+    let orderBy: Prisma.ConversationOrderByWithRelationInput | Prisma.ConversationOrderByWithRelationInput[] = [
+      { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+      { createdAt: 'desc' },
+    ];
+
     if (pagination.sortBy === 'createdAt') {
       orderBy = { createdAt: pagination.sortOrder || 'desc' };
-    } else if (pagination.sortBy === 'lastMessageAt') {
-      // Sort by lastMessageAt with nulls last, then by createdAt
-      orderBy = [
-        { lastMessageAt: { sort: pagination.sortOrder || 'desc', nulls: 'last' } },
-        { createdAt: 'desc' },
-      ] as any;
     } else if (pagination.sortBy === 'status') {
       orderBy = { status: pagination.sortOrder || 'desc' };
     }

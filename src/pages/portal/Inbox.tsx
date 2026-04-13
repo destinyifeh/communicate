@@ -19,10 +19,14 @@ import type { Conversation as APIConversation, ConversationChannel, Conversation
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
   Archive,
   ArrowLeft,
   Bot,
+  Check,
+  CheckCheck,
   CheckCircle2,
+  Clock,
   Filter,
   Loader2,
   Mail,
@@ -41,12 +45,16 @@ import { toast } from "sonner";
 type Channel = "all" | "whatsapp" | "sms" | "email" | "voice";
 type ConversationStatus = "bot_handled" | "escalated" | "agent_active" | "closed";
 
+type MessageStatusType = "pending" | "sent" | "delivered" | "read" | "failed";
+
 interface Message {
   id: string;
   from: "contact" | "bot" | "agent";
   text: string;
   time: string;
   read: boolean;
+  status?: MessageStatusType;
+  mediaUrls?: string[];
 }
 
 interface Conversation {
@@ -138,6 +146,8 @@ function transformConversation(apiConv: APIConversation): Conversation {
       text: msg.body,
       time: new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       read: msg.status === "READ" || msg.status === "DELIVERED",
+      status: (msg.status?.toLowerCase() || "sent") as MessageStatusType,
+      mediaUrls: msg.mediaUrls,
     })),
   };
 }
@@ -652,10 +662,24 @@ export default function Inbox() {
                                 </span>
                               </div>
                             )}
+                            {/* Media attachments */}
+                            {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                              <div className="mb-2 space-y-1">
+                                {msg.mediaUrls.map((url, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={url}
+                                    alt="attachment"
+                                    className="max-w-[200px] rounded-md cursor-pointer hover:opacity-90"
+                                    onClick={() => window.open(url, '_blank')}
+                                  />
+                                ))}
+                              </div>
+                            )}
                             <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                            <p
+                            <div
                               className={cn(
-                                "text-[10px] mt-1",
+                                "flex items-center gap-1 mt-1",
                                 msg.from === "contact"
                                   ? "text-muted-foreground"
                                   : msg.from === "bot"
@@ -663,8 +687,18 @@ export default function Inbox() {
                                     : "text-primary-foreground/70"
                               )}
                             >
-                              {msg.time}
-                            </p>
+                              <span className="text-[10px]">{msg.time}</span>
+                              {/* Status indicators for outbound messages */}
+                              {msg.from !== "contact" && msg.status && (
+                                <span className="ml-0.5">
+                                  {msg.status === "pending" && <Clock className="h-3 w-3" />}
+                                  {msg.status === "sent" && <Check className="h-3 w-3" />}
+                                  {msg.status === "delivered" && <CheckCheck className="h-3 w-3" />}
+                                  {msg.status === "read" && <CheckCheck className="h-3 w-3 text-blue-400" />}
+                                  {msg.status === "failed" && <AlertCircle className="h-3 w-3 text-red-500" />}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </motion.div>
                       ))}
