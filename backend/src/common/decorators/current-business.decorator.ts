@@ -2,7 +2,7 @@ import { createParamDecorator, ExecutionContext, BadRequestException } from '@ne
 import { User } from '@prisma/client';
 
 export const CurrentBusiness = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (data: 'id' | 'full' | unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const user = request.user as User & { currentBusiness?: any };
 
@@ -10,9 +10,15 @@ export const CurrentBusiness = createParamDecorator(
       throw new BadRequestException('No business context found');
     }
 
-    return {
-      id: user.currentBusinessId,
-      business: user.currentBusiness,
-    };
+    // If 'full' is passed, return the full object
+    if (data === 'full') {
+      return {
+        id: user.currentBusinessId,
+        business: user.currentBusiness,
+      };
+    }
+
+    // Default: return just the business ID string
+    return user.currentBusinessId;
   },
 );

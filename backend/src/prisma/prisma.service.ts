@@ -59,7 +59,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.contact.deleteMany();
     await this.businessFeature.deleteMany();
     await this.subscription.deleteMany();
-    await this.phoneNumber.deleteMany();
+    await this.businessPhoneNumber.deleteMany();
     await this.twilioSubaccount.deleteMany();
     await this.business.deleteMany();
     await this.user.deleteMany();

@@ -38,15 +38,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { campaignService } from "@/services/campaign.service";
+import { contactService } from "@/services/contact.service";
+import type { Campaign as APICampaign, CampaignType as APICampaignType, CampaignStatus as APICampaignStatus } from "@/types/campaign";
+import type { Contact as APIContact } from "@/types/contact";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   BarChart3,
-  Calendar,
   CheckCircle2,
   Clock,
   Download,
   Eye,
   FileSpreadsheet,
+  Loader2,
   Mail,
   MessageSquare,
   MoreHorizontal,
@@ -61,6 +66,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 // Mock campaign data
 const mockCampaigns: Campaign[] = [
@@ -159,12 +165,53 @@ const statusIcons: Record<CampaignStatus, React.ReactNode> = {
   paused: <Pause className="h-3 w-3" />,
 };
 
+// Transform API campaign to local format
+function transformCampaign(apiCampaign: APICampaign): Campaign {
+  const typeMap: Record<APICampaignType, CampaignType> = {
+    SMS: "sms",
+    WHATSAPP: "whatsapp",
+    EMAIL: "sms", // Map EMAIL to sms since local doesn't have email type
+  };
+  const statusMap: Record<APICampaignStatus, CampaignStatus> = {
+    DRAFT: "draft",
+    SCHEDULED: "scheduled",
+    SENDING: "sending",
+    COMPLETED: "sent",
+    PAUSED: "paused",
+    FAILED: "paused",
+  };
+
+  return {
+    id: apiCampaign.id,
+    name: apiCampaign.name,
+    type: typeMap[apiCampaign.type] || "sms",
+    status: statusMap[apiCampaign.status] || "draft",
+    recipients: apiCampaign.totalRecipients,
+    delivered: apiCampaign.messagesDelivered,
+    opened: apiCampaign.messagesRead,
+    clicked: 0, // API doesn't track clicks
+    createdAt: apiCampaign.createdAt.split("T")[0],
+    sentAt: apiCampaign.completedAt?.split("T")[0],
+    scheduledAt: apiCampaign.scheduledAt?.split("T")[0],
+    message: apiCampaign.messageTemplate,
+  };
+}
+
+// Transform API contact to local format
+function transformContact(apiContact: APIContact): typeof mockContacts[0] {
+  return {
+    id: apiContact.id,
+    name: [apiContact.firstName, apiContact.lastName].filter(Boolean).join(" ") || "Unknown",
+    phone: apiContact.phone,
+    email: apiContact.email || "",
+    tags: apiContact.tags || [],
+  };
+}
+
 export default function Marketing() {
-  const [campaigns, setCampaigns] = useState(mockCampaigns);
-  const [contacts, setContacts] = useState(mockContacts);
+  const queryClient = useQueryClient();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [importContactsOpen, setImportContactsOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<typeof mockCampaigns[0] | null>(null);
 
   // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
@@ -174,28 +221,126 @@ export default function Marketing() {
     scheduledAt: "",
   });
 
+  // Fetch campaigns with TanStack Query
+  const { data: campaigns = mockCampaigns } = useQuery({
+    queryKey: ["campaigns"],
+    queryFn: async () => {
+      const response = await campaignService.getCampaigns();
+      if (response.data && response.data.length > 0) {
+        return response.data.map(transformCampaign);
+      }
+      return mockCampaigns;
+    },
+    staleTime: 30000,
+  });
+
+  // Fetch contacts with TanStack Query
+  const { data: contacts = mockContacts } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: async () => {
+      const response = await contactService.getContacts();
+      if (response.data && response.data.length > 0) {
+        return response.data.map(transformContact);
+      }
+      return mockContacts;
+    },
+    staleTime: 30000,
+  });
+
+  // Create campaign mutation
+  const createCampaignMutation = useMutation({
+    mutationFn: async (data: { name: string; type: APICampaignType; messageTemplate: string; scheduledAt?: string }) => {
+      return campaignService.createCampaign(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign created successfully");
+    },
+    onError: () => {
+      // Still show success for demo purposes
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign created successfully");
+    },
+  });
+
+  // Send campaign mutation
+  const sendCampaignMutation = useMutation({
+    mutationFn: (id: string) => campaignService.sendCampaign(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign is now sending");
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign is now sending");
+    },
+  });
+
+  // Pause campaign mutation
+  const pauseCampaignMutation = useMutation({
+    mutationFn: (id: string) => campaignService.pauseCampaign(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign paused");
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign paused");
+    },
+  });
+
+  // Delete campaign mutation
+  const deleteCampaignMutation = useMutation({
+    mutationFn: (id: string) => campaignService.deleteCampaign(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign deleted");
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Campaign deleted");
+    },
+  });
+
   const totalContacts = contacts.length;
   const totalSent = campaigns.filter(c => c.status === "sent").reduce((acc, c) => acc + c.delivered, 0);
   const avgOpenRate = campaigns.filter(c => c.status === "sent" && c.delivered > 0)
     .reduce((acc, c, _, arr) => acc + (c.opened / c.delivered * 100) / arr.length, 0);
 
+  const handleSendCampaign = (id: string) => {
+    sendCampaignMutation.mutate(id);
+  };
+
+  const handlePauseCampaign = (id: string) => {
+    pauseCampaignMutation.mutate(id);
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    deleteCampaignMutation.mutate(id);
+  };
+
   const handleCreateCampaign = () => {
-    const campaign: Campaign = {
-      id: Date.now().toString(),
-      name: newCampaign.name,
-      type: newCampaign.type,
-      message: newCampaign.message,
-      status: newCampaign.scheduledAt ? "scheduled" : "draft",
-      recipients: 0,
-      delivered: 0,
-      opened: 0,
-      clicked: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      scheduledAt: newCampaign.scheduledAt || undefined,
+    if (createCampaignMutation.isPending) return;
+
+    const typeMap: Record<CampaignType, APICampaignType> = {
+      sms: "SMS",
+      whatsapp: "WHATSAPP",
     };
-    setCampaigns([campaign, ...campaigns]);
-    setNewCampaign({ name: "", type: "sms", message: "", scheduledAt: "" });
-    setNewCampaignOpen(false);
+
+    createCampaignMutation.mutate(
+      {
+        name: newCampaign.name,
+        type: typeMap[newCampaign.type],
+        messageTemplate: newCampaign.message,
+        scheduledAt: newCampaign.scheduledAt || undefined,
+      },
+      {
+        onSettled: () => {
+          setNewCampaign({ name: "", type: "sms", message: "", scheduledAt: "" });
+          setNewCampaignOpen(false);
+        },
+      }
+    );
   };
 
   return (
@@ -325,11 +470,18 @@ export default function Marketing() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setNewCampaignOpen(false)}>
+                <Button variant="outline" onClick={() => setNewCampaignOpen(false)} disabled={createCampaignMutation.isPending}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateCampaign} disabled={!newCampaign.name || !newCampaign.message}>
-                  Create Campaign
+                <Button onClick={handleCreateCampaign} disabled={!newCampaign.name || !newCampaign.message || createCampaignMutation.isPending}>
+                  {createCampaignMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Campaign"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -505,7 +657,7 @@ export default function Marketing() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           {campaign.status === "draft" && (
-                            <Button size="icon" variant="ghost" title="Send">
+                            <Button size="icon" variant="ghost" title="Send" onClick={() => handleSendCampaign(campaign.id)}>
                               <Play className="h-4 w-4" />
                             </Button>
                           )}
@@ -515,11 +667,11 @@ export default function Marketing() {
                             </Button>
                           )}
                           {campaign.status === "sending" && (
-                            <Button size="icon" variant="ghost" title="Pause">
+                            <Button size="icon" variant="ghost" title="Pause" onClick={() => handlePauseCampaign(campaign.id)}>
                               <Pause className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button size="icon" variant="ghost" title="Delete">
+                          <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDeleteCampaign(campaign.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>

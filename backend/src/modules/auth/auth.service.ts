@@ -275,6 +275,12 @@ export class AuthService {
       throw new BadRequestException('Reset token has expired');
     }
 
+    // Check if new password is same as current password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException('New password must be different from your current password');
+    }
+
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 

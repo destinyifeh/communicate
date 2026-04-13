@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma';
 import { MockTwilioService, MockPhoneNumber } from './mock-twilio.service';
 import { SubaccountService } from './subaccount.service';
-import { PhoneNumber } from '@prisma/client';
+import { BusinessPhoneNumber } from '@prisma/client';
 
 export interface AvailableNumber {
   phoneNumber: string;
@@ -75,7 +75,7 @@ export class PhoneProvisioningService {
       voiceEnabled?: boolean;
       smsEnabled?: boolean;
     },
-  ): Promise<PhoneNumber> {
+  ): Promise<BusinessPhoneNumber> {
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
       include: {
@@ -99,7 +99,7 @@ export class PhoneProvisioningService {
     }
 
     // Check if number already purchased
-    const existing = await this.prisma.phoneNumber.findFirst({
+    const existing = await this.prisma.businessPhoneNumber.findFirst({
       where: { phoneNumber, businessId },
     });
 
@@ -129,7 +129,7 @@ export class PhoneProvisioningService {
       throw new Error('Real Twilio phone purchase not implemented yet');
     }
 
-    const phone = await this.prisma.phoneNumber.create({
+    const phone = await this.prisma.businessPhoneNumber.create({
       data: {
         phoneNumber: purchasedNumber.phoneNumber,
         friendlyName: options?.friendlyName || purchasedNumber.friendlyName,
@@ -154,22 +154,22 @@ export class PhoneProvisioningService {
     return phone;
   }
 
-  async getBusinessPhoneNumbers(businessId: string): Promise<PhoneNumber[]> {
-    return this.prisma.phoneNumber.findMany({
+  async getBusinessPhoneNumbers(businessId: string): Promise<BusinessPhoneNumber[]> {
+    return this.prisma.businessPhoneNumber.findMany({
       where: { businessId },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
   }
 
-  async setPrimaryNumber(businessId: string, phoneId: string): Promise<PhoneNumber> {
+  async setPrimaryNumber(businessId: string, phoneId: string): Promise<BusinessPhoneNumber> {
     // Remove primary from all other numbers
-    await this.prisma.phoneNumber.updateMany({
+    await this.prisma.businessPhoneNumber.updateMany({
       where: { businessId, isPrimary: true },
       data: { isPrimary: false },
     });
 
     // Set new primary
-    const phone = await this.prisma.phoneNumber.findFirst({
+    const phone = await this.prisma.businessPhoneNumber.findFirst({
       where: { id: phoneId, businessId },
     });
 
@@ -177,14 +177,14 @@ export class PhoneProvisioningService {
       throw new BadRequestException('Phone number not found');
     }
 
-    return this.prisma.phoneNumber.update({
+    return this.prisma.businessPhoneNumber.update({
       where: { id: phoneId },
       data: { isPrimary: true },
     });
   }
 
   async releaseNumber(businessId: string, phoneId: string): Promise<void> {
-    const phone = await this.prisma.phoneNumber.findFirst({
+    const phone = await this.prisma.businessPhoneNumber.findFirst({
       where: { id: phoneId, businessId },
     });
 
@@ -197,7 +197,7 @@ export class PhoneProvisioningService {
       this.logger.log(`Mock releasing phone number: ${phone.phoneNumber}`);
     }
 
-    await this.prisma.phoneNumber.delete({
+    await this.prisma.businessPhoneNumber.delete({
       where: { id: phoneId },
     });
   }

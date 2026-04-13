@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthGuard } from "@/components/AuthGuard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +97,14 @@ const featureOptions: {
 ];
 
 export default function Signup() {
+  return (
+    <AuthGuard redirectIfAuthenticated>
+      <SignupContent />
+    </AuthGuard>
+  );
+}
+
+function SignupContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { signup } = useAuth();

@@ -93,7 +93,7 @@ export class BillingService {
   }> {
     const subscription = await this.getSubscription(businessId);
 
-    const phoneNumbersUsed = await this.prisma.phoneNumber.count({
+    const phoneNumbersUsed = await this.prisma.businessPhoneNumber.count({
       where: { businessId },
     });
 

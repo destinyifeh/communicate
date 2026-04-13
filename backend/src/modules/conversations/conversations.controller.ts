@@ -24,6 +24,7 @@ import {
   ConversationQueryDto,
 } from './dto';
 import { PaginationDto } from '../../common/dto';
+import { Conversation, Message } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentBusiness } from '../../common/decorators/current-business.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -40,10 +41,9 @@ export class ConversationsController {
   @ApiResponse({ status: 200, description: 'Conversations retrieved successfully' })
   findAll(
     @CurrentBusiness() businessId: string,
-    @Query() pagination: PaginationDto,
-    @Query() filters: ConversationQueryDto,
+    @Query() query: ConversationQueryDto,
   ) {
-    return this.conversationsService.findAll(businessId, pagination, filters);
+    return this.conversationsService.findAll(businessId, query, query);
   }
 
   @Get('stats')

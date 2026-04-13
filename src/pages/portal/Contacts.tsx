@@ -37,11 +37,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Contact, mockContacts } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   Edit,
+  Loader2,
   Mail,
   MessageSquare,
   MoreVertical,
@@ -54,7 +54,11 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { contactService } from "@/services/contact.service";
+import type { Contact } from "@/types/contact";
 
 type ChannelFilter = "all" | "sms" | "whatsapp" | "email" | "voice";
 
@@ -117,7 +121,8 @@ const emptyFormData: ContactFormData = {
 };
 
 export default function Contacts() {
-  const [contacts, setContacts] = useState<Contact[]>(mockContacts);
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -126,16 +131,70 @@ export default function Contacts() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>(emptyFormData);
 
+  // Fetch contacts from API
+  const { data: contactsResponse, isLoading } = useQuery({
+    queryKey: ["contacts", searchQuery],
+    queryFn: () => contactService.getContacts({ search: searchQuery || undefined }),
+  });
+
+  // Filter out auto-created contacts without names (e.g., from voice calls)
+  const contacts = (contactsResponse?.data || []).filter((contact) => {
+    // If contact has a name, always show it
+    if (contact.firstName || contact.lastName) return true;
+    // If contact was auto-created from voice without a name, hide it
+    if (contact.source === 'voice') return false;
+    // Show all other contacts
+    return true;
+  });
+
+  // Create contact mutation
+  const createMutation = useMutation({
+    mutationFn: contactService.createContact,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setShowAddDialog(false);
+      setFormData(emptyFormData);
+      toast.success("Contact added successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to add contact");
+    },
+  });
+
+  // Update contact mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      contactService.updateContact(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setShowEditDialog(false);
+      setSelectedContact(null);
+      setFormData(emptyFormData);
+      toast.success("Contact updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update contact");
+    },
+  });
+
+  // Delete contact mutation
+  const deleteMutation = useMutation({
+    mutationFn: contactService.deleteContact,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setShowDeleteDialog(false);
+      setSelectedContact(null);
+      toast.success("Contact deleted");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete contact");
+    },
+  });
+
   const filteredContacts = contacts.filter((contact) => {
-    const matchesSearch =
-      !searchQuery ||
-      `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.phone.includes(searchQuery) ||
-      contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.company?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesChannel =
-      channelFilter === "all" || contact.preferredChannel === channelFilter;
-    return matchesSearch && matchesChannel;
+      channelFilter === "all" || contact.source === channelFilter;
+    return matchesChannel;
   });
 
   const totalContacts = contacts.length;
@@ -147,80 +206,57 @@ export default function Contacts() {
   }).length;
 
   const handleAddContact = () => {
-    if (!formData.firstName || !formData.phone) {
-      toast.error("First name and phone number are required");
+    if (!formData.phone) {
+      toast.error("Phone number is required");
       return;
     }
 
-    const newContact: Contact = {
-      id: `c${Date.now()}`,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email || null,
+    createMutation.mutate({
+      firstName: formData.firstName || undefined,
+      lastName: formData.lastName || undefined,
+      email: formData.email || undefined,
       phone: formData.phone,
-      company: formData.company || null,
-      tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
-      notes: formData.notes || null,
+      tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : undefined,
+      notes: formData.notes || undefined,
       source: "manual",
-      preferredChannel: (formData.preferredChannel as Contact["preferredChannel"]) || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastContactedAt: null,
-      totalConversations: 0,
-      totalCalls: 0,
-    };
-
-    setContacts([newContact, ...contacts]);
-    setShowAddDialog(false);
-    setFormData(emptyFormData);
-    toast.success("Contact added successfully");
+    });
   };
 
   const handleEditContact = () => {
-    if (!selectedContact || !formData.firstName || !formData.phone) {
-      toast.error("First name and phone number are required");
+    if (!selectedContact || !formData.phone) {
+      toast.error("Phone number is required");
       return;
     }
 
-    const updatedContact: Contact = {
-      ...selectedContact,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email || null,
-      phone: formData.phone,
-      company: formData.company || null,
-      tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
-      notes: formData.notes || null,
-      preferredChannel: (formData.preferredChannel as Contact["preferredChannel"]) || null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setContacts(contacts.map((c) => (c.id === selectedContact.id ? updatedContact : c)));
-    setShowEditDialog(false);
-    setSelectedContact(null);
-    setFormData(emptyFormData);
-    toast.success("Contact updated successfully");
+    updateMutation.mutate({
+      id: selectedContact.id,
+      data: {
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        email: formData.email || undefined,
+        phone: formData.phone,
+        tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : undefined,
+        notes: formData.notes || undefined,
+      },
+    });
   };
 
   const handleDeleteContact = () => {
     if (!selectedContact) return;
-    setContacts(contacts.filter((c) => c.id !== selectedContact.id));
-    setShowDeleteDialog(false);
-    setSelectedContact(null);
-    toast.success("Contact deleted");
+    deleteMutation.mutate(selectedContact.id);
   };
 
   const openEditDialog = (contact: Contact) => {
     setSelectedContact(contact);
     setFormData({
-      firstName: contact.firstName,
-      lastName: contact.lastName,
+      firstName: contact.firstName || "",
+      lastName: contact.lastName || "",
       email: contact.email || "",
       phone: contact.phone,
       company: contact.company || "",
       notes: contact.notes || "",
-      preferredChannel: contact.preferredChannel || "",
-      tags: contact.tags.join(", "),
+      preferredChannel: contact.source || "",
+      tags: (contact.tags || []).join(", "),
     });
     setShowEditDialog(true);
   };
@@ -350,7 +386,12 @@ export default function Contacts() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[500px]">
-              {filteredContacts.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Loader2 className="h-12 w-12 mx-auto mb-3 animate-spin opacity-30" />
+                  <p className="font-medium">Loading contacts...</p>
+                </div>
+              ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p className="font-medium">No contacts found</p>
@@ -369,18 +410,18 @@ export default function Contacts() {
                       <div className="relative shrink-0">
                         <Avatar className="h-12 w-12">
                           <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {contact.firstName[0]}
+                            {contact.firstName?.[0] || contact.phone[0]}
                             {contact.lastName?.[0] || ""}
                           </AvatarFallback>
                         </Avatar>
-                        {contact.preferredChannel && (
+                        {contact.source && (
                           <div
                             className={cn(
                               "absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full flex items-center justify-center text-white",
-                              channelColors[contact.preferredChannel]
+                              channelColors[contact.source] || "bg-gray-500"
                             )}
                           >
-                            {channelIcons[contact.preferredChannel]}
+                            {channelIcons[contact.source] || <User className="h-3 w-3" />}
                           </div>
                         )}
                       </div>
@@ -388,7 +429,9 @@ export default function Contacts() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">
-                            {contact.firstName} {contact.lastName}
+                            {contact.firstName || contact.lastName
+                              ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
+                              : contact.phone}
                           </span>
                           {contact.company && (
                             <span className="text-sm text-muted-foreground hidden sm:inline">
@@ -409,7 +452,7 @@ export default function Contacts() {
                           )}
                         </div>
                         <div className="flex items-center gap-1 mt-2 flex-wrap">
-                          {contact.tags.slice(0, 3).map((tag) => (
+                          {(contact.tags || []).slice(0, 3).map((tag) => (
                             <Badge
                               key={tag}
                               variant="secondary"
@@ -418,20 +461,20 @@ export default function Contacts() {
                               {tag}
                             </Badge>
                           ))}
-                          {contact.tags.length > 3 && (
+                          {(contact.tags || []).length > 3 && (
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                              +{contact.tags.length - 3}
+                              +{(contact.tags || []).length - 3}
                             </Badge>
                           )}
                         </div>
                       </div>
 
                       <div className="text-right hidden sm:block">
-                        <p className="text-sm text-muted-foreground">
-                          {contact.totalConversations} conversations
+                        <p className="text-xs text-muted-foreground">
+                          Source: {contact.source || "unknown"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {contact.totalCalls} calls
+                          {new Date(contact.createdAt).toLocaleDateString()}
                         </p>
                       </div>
 
@@ -446,11 +489,11 @@ export default function Contacts() {
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/portal/inbox?phone=${encodeURIComponent(contact.phone)}`)}>
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Send Message
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/portal/call-center?call=${encodeURIComponent(contact.phone)}`)}>
                             <Phone className="h-4 w-4 mr-2" />
                             Call
                           </DropdownMenuItem>
@@ -574,7 +617,16 @@ export default function Contacts() {
               <Button variant="outline" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddContact}>Add Contact</Button>
+              <Button onClick={handleAddContact} disabled={createMutation.isPending}>
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add Contact"
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -672,7 +724,16 @@ export default function Contacts() {
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleEditContact}>Save Changes</Button>
+              <Button onClick={handleEditContact} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -685,7 +746,7 @@ export default function Contacts() {
               <DialogDescription>
                 Are you sure you want to delete{" "}
                 <span className="font-semibold">
-                  {selectedContact?.firstName} {selectedContact?.lastName}
+                  {selectedContact?.firstName || selectedContact?.phone} {selectedContact?.lastName || ""}
                 </span>
                 ? This action cannot be undone.
               </DialogDescription>
@@ -694,8 +755,15 @@ export default function Contacts() {
               <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDeleteContact}>
-                Delete
+              <Button variant="destructive" onClick={handleDeleteContact} disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

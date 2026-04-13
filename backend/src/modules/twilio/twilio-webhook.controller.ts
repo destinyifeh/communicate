@@ -16,6 +16,7 @@ import {
   MessageSender,
   MessageStatus,
 } from '@prisma/client';
+import { normalizePhoneNumber } from '../../common/utils/phone.util';
 
 // Twilio webhook payload types
 interface TwilioSmsWebhook {
@@ -61,7 +62,11 @@ export class TwilioWebhookController {
       // Determine if it's WhatsApp
       const isWhatsApp = payload.From.startsWith('whatsapp:');
       const channel = isWhatsApp ? ConversationChannel.WHATSAPP : ConversationChannel.SMS;
-      const fromNumber = isWhatsApp ? payload.From.replace('whatsapp:', '') : payload.From;
+      const rawNumber = isWhatsApp ? payload.From.replace('whatsapp:', '') : payload.From;
+
+      // Normalize phone number to E.164 format
+      const fromNumber = normalizePhoneNumber(rawNumber);
+      this.logger.log(`Normalized phone: ${rawNumber} → ${fromNumber}`);
 
       // Find or create contact
       let contact = await this.prisma.contact.findFirst({

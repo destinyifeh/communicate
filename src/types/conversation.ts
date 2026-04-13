@@ -54,6 +54,7 @@ export interface SendMessageData {
 
 export interface ConversationFilters {
   channel?: ConversationChannel;
+  excludeChannel?: ConversationChannel;
   status?: ConversationStatus;
   starred?: boolean;
   assignedAgentId?: string;

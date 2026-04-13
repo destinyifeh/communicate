@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthGuard } from "@/components/AuthGuard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Login() {
+  return (
+    <AuthGuard redirectIfAuthenticated>
+      <LoginContent />
+    </AuthGuard>
+  );
+}
+
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

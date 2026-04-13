@@ -60,7 +60,9 @@ function getBaseDomain(host: string): string {
   return host;
 }
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
+  console.log('=== PROXY CALLED ===', request.nextUrl.pathname);
+
   const host = request.headers.get('host') || 'localhost:3000';
   const pathname = request.nextUrl.pathname;
   const subdomain = getSubdomain(host);
@@ -69,7 +71,7 @@ export function proxy(request: NextRequest) {
   // Check if user is authenticated (has access_token cookie)
   const accessToken = request.cookies.get('access_token')?.value;
   const isAuthenticated = !!accessToken;
-   console.log(accessToken, 'accccce')
+   console.log(accessToken, 'accccce', isAuthenticated, 'de4e')
   // Static assets and API routes - allow from anywhere
   if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
     const response = NextResponse.next();

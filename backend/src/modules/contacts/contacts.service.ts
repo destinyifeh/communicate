@@ -25,23 +25,48 @@ export class ContactsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(businessId: string, dto: CreateContactDto): Promise<Contact> {
-    // Check for existing contact with same phone
+    const normalizedPhone = normalizePhoneNumber(dto.phone);
+    // Get just the digits for flexible matching
+    const phoneDigits = dto.phone.replace(/\D/g, '');
+
+    // Check for existing contact with same phone (try multiple formats)
     const existing = await this.prisma.contact.findFirst({
       where: {
         businessId,
-        phone: normalizePhoneNumber(dto.phone),
+        OR: [
+          { phone: normalizedPhone },
+          { phone: dto.phone },
+          { phone: phoneDigits },
+          { phone: { contains: phoneDigits.slice(-10) } }, // Last 10 digits
+        ],
       },
     });
 
     if (existing) {
-      throw new ConflictException('Contact with this phone number already exists');
+      // Update the existing contact with new info (upsert behavior)
+      // This handles the case where a contact was auto-created from a call
+      const existingTags = getTagsArray(existing.tags);
+      const newTags = dto.tags && dto.tags.length > 0 ? dto.tags : existingTags;
+
+      return this.prisma.contact.update({
+        where: { id: existing.id },
+        data: {
+          firstName: dto.firstName || existing.firstName,
+          lastName: dto.lastName || existing.lastName,
+          email: dto.email || existing.email,
+          tags: newTags,
+          notes: dto.notes || existing.notes,
+          // Keep the original source - don't overwrite voice/sms with manual
+          // This preserves how the contact was first created
+        },
+      });
     }
 
     return this.prisma.contact.create({
       data: {
         firstName: dto.firstName,
         lastName: dto.lastName,
-        phone: normalizePhoneNumber(dto.phone),
+        phone: normalizedPhone,
         email: dto.email,
         tags: dto.tags || [],
         source: dto.source || 'manual',

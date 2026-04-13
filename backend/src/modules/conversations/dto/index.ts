@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, IsEnum, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsEnum, IsUUID, IsBoolean } from 'class-validator';
 import { ConversationChannel, ConversationStatus } from '@prisma/client';
+import { Transform } from 'class-transformer';
+import { PaginationDto } from '../../../common/dto';
 
 export class SendMessageDto {
   @ApiProperty()
@@ -12,6 +14,16 @@ export class SendMessageDto {
   @IsString({ each: true })
   @IsOptional()
   mediaUrls?: string[];
+
+  @ApiPropertyOptional({ description: 'Email subject (for email channel)' })
+  @IsString()
+  @IsOptional()
+  subject?: string;
+
+  @ApiPropertyOptional({ description: 'HTML content (for email channel)' })
+  @IsString()
+  @IsOptional()
+  html?: string;
 }
 
 export class StartConversationDto {
@@ -45,11 +57,16 @@ export class AssignAgentDto {
   agentId: string;
 }
 
-export class ConversationQueryDto {
+export class ConversationQueryDto extends PaginationDto {
   @ApiPropertyOptional({ enum: ConversationChannel })
   @IsEnum(ConversationChannel)
   @IsOptional()
   channel?: ConversationChannel;
+
+  @ApiPropertyOptional({ enum: ConversationChannel, description: 'Exclude this channel from results' })
+  @IsEnum(ConversationChannel)
+  @IsOptional()
+  excludeChannel?: ConversationChannel;
 
   @ApiPropertyOptional({ enum: ConversationStatus })
   @IsEnum(ConversationStatus)
@@ -57,6 +74,8 @@ export class ConversationQueryDto {
   status?: ConversationStatus;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
   @IsOptional()
   starred?: boolean;
 
@@ -64,9 +83,4 @@ export class ConversationQueryDto {
   @IsUUID()
   @IsOptional()
   assignedAgentId?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  search?: string;
 }

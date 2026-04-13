@@ -40,11 +40,13 @@ export class AuthController {
     const result = await this.authService.register(registerDto);
 
     // Set access token as HTTP-only cookie
+    // In development, we need sameSite: 'lax' for cross-port requests on localhost
     res.cookie('access_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
     });
 
     return result;

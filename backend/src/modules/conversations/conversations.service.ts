@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
 import {
   Conversation,
@@ -18,10 +18,18 @@ import {
   AssignAgentDto,
   ConversationQueryDto,
 } from './dto';
+import { TwilioService } from '../twilio/twilio.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class ConversationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ConversationsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly twilioService: TwilioService,
+    private readonly emailService: EmailService,
+  ) {}
 
   async findAll(
     businessId: string,
@@ -34,6 +42,9 @@ export class ConversationsService {
 
     if (filters?.channel) {
       where.channel = filters.channel;
+    }
+    if (filters?.excludeChannel) {
+      where.channel = { not: filters.excludeChannel };
     }
     if (filters?.status) {
       where.status = filters.status;
@@ -54,12 +65,16 @@ export class ConversationsService {
       ];
     }
 
-    // Determine sort - use safe defaults
-    let orderBy: Prisma.ConversationOrderByWithRelationInput = { lastMessageAt: 'desc' };
+    // Determine sort - use createdAt as default since lastMessageAt can be null
+    let orderBy: Prisma.ConversationOrderByWithRelationInput = { createdAt: 'desc' };
     if (pagination.sortBy === 'createdAt') {
       orderBy = { createdAt: pagination.sortOrder || 'desc' };
     } else if (pagination.sortBy === 'lastMessageAt') {
-      orderBy = { lastMessageAt: pagination.sortOrder || 'desc' };
+      // Sort by lastMessageAt with nulls last, then by createdAt
+      orderBy = [
+        { lastMessageAt: { sort: pagination.sortOrder || 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ] as any;
     } else if (pagination.sortBy === 'status') {
       orderBy = { status: pagination.sortOrder || 'desc' };
     }
@@ -90,7 +105,7 @@ export class ConversationsService {
       include: {
         contact: true,
         messages: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: 'asc' },
           take: 50,
         },
         assignedAgent: true,
@@ -121,7 +136,7 @@ export class ConversationsService {
         where,
         skip: pagination.skip,
         take: pagination.take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
       }),
       this.prisma.message.count({ where }),
     ]);
@@ -137,7 +152,17 @@ export class ConversationsService {
   ): Promise<Message> {
     const conversation = await this.findOne(businessId, conversationId);
 
-    const message = await this.prisma.message.create({
+    // Get contact for phone/email
+    const contact = await this.prisma.contact.findUnique({
+      where: { id: conversation.contactId },
+    });
+
+    if (!contact) {
+      throw new NotFoundException('Contact not found');
+    }
+
+    // Create message record first with PENDING status
+    let message = await this.prisma.message.create({
       data: {
         body: dto.body,
         direction: MessageDirection.OUTBOUND,
@@ -149,17 +174,73 @@ export class ConversationsService {
       },
     });
 
+    try {
+      // Send message based on channel
+      let externalId: string | undefined;
+
+      if (conversation.channel === ConversationChannel.SMS) {
+        if (!contact.phone) {
+          throw new BadRequestException('Contact has no phone number for SMS');
+        }
+        const result = await this.twilioService.sendSMS(businessId, contact.phone, dto.body);
+        externalId = result.sid;
+        this.logger.log(`SMS sent to ${contact.phone}, SID: ${result.sid}`);
+      } else if (conversation.channel === ConversationChannel.WHATSAPP) {
+        if (!contact.phone) {
+          throw new BadRequestException('Contact has no phone number for WhatsApp');
+        }
+        const result = await this.twilioService.sendWhatsApp(businessId, contact.phone, dto.body);
+        externalId = result.sid;
+        this.logger.log(`WhatsApp sent to ${contact.phone}, SID: ${result.sid}`);
+      } else if (conversation.channel === ConversationChannel.EMAIL) {
+        if (!contact.email) {
+          throw new BadRequestException('Contact has no email address');
+        }
+        const result = await this.emailService.sendEmail(businessId, {
+          to: contact.email,
+          subject: dto.subject || conversation.subject || 'Re: Your inquiry',
+          text: dto.body,
+          html: dto.html,
+          conversationId,
+          contactId: contact.id,
+        });
+        externalId = result.emailId;
+        this.logger.log(`Email sent to ${contact.email}, ID: ${result.emailId}`);
+      } else if (conversation.channel === ConversationChannel.VOICE) {
+        // Voice messages are handled differently (call recordings, transcripts)
+        this.logger.log('Voice channel - message recorded but not sent');
+      }
+
+      // Update message with sent status and external ID
+      message = await this.prisma.message.update({
+        where: { id: message.id },
+        data: {
+          status: MessageStatus.SENT,
+          twilioMessageSid: conversation.channel !== ConversationChannel.EMAIL ? externalId : undefined,
+          emailMessageId: conversation.channel === ConversationChannel.EMAIL ? externalId : undefined,
+        },
+      });
+    } catch (error) {
+      // Update message with failed status
+      this.logger.error(`Failed to send message: ${error.message}`);
+      message = await this.prisma.message.update({
+        where: { id: message.id },
+        data: {
+          status: MessageStatus.FAILED,
+        },
+      });
+      throw error;
+    }
+
     // Update conversation last message
     await this.prisma.conversation.update({
       where: { id: conversationId },
       data: {
         lastMessagePreview: dto.body.substring(0, 100),
         lastMessageAt: new Date(),
+        status: agentId ? ConversationStatus.AGENT_ACTIVE : conversation.status,
       },
     });
-
-    // TODO: Integrate with Twilio to actually send the message
-    // This will be handled by the messaging service
 
     return message;
   }

@@ -1,5 +1,6 @@
 // API client for communicating with the backend
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Use same-origin for API calls (proxied through Next.js)
+const API_URL = '';
 
 interface ApiResponse<T = any> {
   data?: T;

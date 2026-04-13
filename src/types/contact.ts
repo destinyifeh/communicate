@@ -21,7 +21,7 @@ export interface Contact {
   updatedAt: string;
 }
 
-export type ContactSource = 'sms' | 'whatsapp' | 'email' | 'booking' | 'campaign' | 'import' | 'manual';
+export type ContactSource = 'sms' | 'whatsapp' | 'email' | 'voice' | 'booking' | 'campaign' | 'import' | 'manual';
 
 export interface CreateContactData {
   firstName?: string;

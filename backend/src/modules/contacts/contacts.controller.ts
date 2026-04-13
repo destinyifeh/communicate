@@ -40,35 +40,35 @@ export class ContactsController {
   @ApiResponse({ status: 201, description: 'Contact created successfully' })
   @ApiResponse({ status: 409, description: 'Contact with this phone already exists' })
   create(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Body() dto: CreateContactDto,
   ) {
-    return this.contactsService.create(businessId, dto);
+    return this.contactsService.create(businessContext.id, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all contacts with pagination' })
   @ApiResponse({ status: 200, description: 'Contacts retrieved successfully' })
   findAll(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Query() pagination: PaginationDto,
     @Query() filters: ContactQueryDto,
   ) {
-    return this.contactsService.findAll(businessId, pagination, filters);
+    return this.contactsService.findAll(businessContext.id, pagination, filters);
   }
 
   @Get('tags')
   @ApiOperation({ summary: 'Get all unique tags' })
   @ApiResponse({ status: 200, description: 'Tags retrieved successfully' })
-  getTags(@CurrentBusiness() businessId: string) {
-    return this.contactsService.getTags(businessId);
+  getTags(@CurrentBusiness() businessContext: { id: string; business: any }) {
+    return this.contactsService.getTags(businessContext.id);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get contact statistics' })
   @ApiResponse({ status: 200, description: 'Stats retrieved successfully' })
-  getStats(@CurrentBusiness() businessId: string) {
-    return this.contactsService.getStats(businessId);
+  getStats(@CurrentBusiness() businessContext: { id: string; business: any }) {
+    return this.contactsService.getStats(businessContext.id);
   }
 
   @Get(':id')
@@ -77,10 +77,10 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Contact retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   findOne(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
   ) {
-    return this.contactsService.findOne(businessId, id);
+    return this.contactsService.findOne(businessContext.id, id);
   }
 
   @Patch(':id')
@@ -89,11 +89,11 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Contact updated successfully' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   update(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
     @Body() dto: UpdateContactDto,
   ) {
-    return this.contactsService.update(businessId, id, dto);
+    return this.contactsService.update(businessContext.id, id, dto);
   }
 
   @Delete(':id')
@@ -102,10 +102,10 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Contact deleted successfully' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   delete(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
   ) {
-    return this.contactsService.delete(businessId, id);
+    return this.contactsService.delete(businessContext.id, id);
   }
 
   @Post(':id/tags')
@@ -114,11 +114,11 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Tags added successfully' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   addTags(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
     @Body() dto: AddTagsDto,
   ) {
-    return this.contactsService.addTags(businessId, id, dto.tags);
+    return this.contactsService.addTags(businessContext.id, id, dto.tags);
   }
 
   @Delete(':id/tags')
@@ -127,11 +127,11 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Tags removed successfully' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   removeTags(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
     @Body() dto: AddTagsDto,
   ) {
-    return this.contactsService.removeTags(businessId, id, dto.tags);
+    return this.contactsService.removeTags(businessContext.id, id, dto.tags);
   }
 
   @Post(':id/opt-out/:channel')
@@ -141,11 +141,11 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Opt-out successful' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   optOut(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
     @Param('channel') channel: 'sms' | 'whatsapp' | 'email',
   ) {
-    return this.contactsService.optOut(businessId, id, channel);
+    return this.contactsService.optOut(businessContext.id, id, channel);
   }
 
   @Post(':id/opt-in/:channel')
@@ -155,20 +155,20 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: 'Opt-in successful' })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   optIn(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Param('id') id: string,
     @Param('channel') channel: 'sms' | 'whatsapp' | 'email',
   ) {
-    return this.contactsService.optIn(businessId, id, channel);
+    return this.contactsService.optIn(businessContext.id, id, channel);
   }
 
   @Post('import')
   @ApiOperation({ summary: 'Bulk import contacts' })
   @ApiResponse({ status: 200, description: 'Import completed' })
   importContacts(
-    @CurrentBusiness() businessId: string,
+    @CurrentBusiness() businessContext: { id: string; business: any },
     @Body() dto: ImportContactsDto,
   ) {
-    return this.contactsService.importContacts(businessId, dto);
+    return this.contactsService.importContacts(businessContext.id, dto);
   }
 }

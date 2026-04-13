@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthGuard } from "@/components/AuthGuard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,14 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function ResetPassword() {
+  return (
+    <AuthGuard redirectIfAuthenticated>
+      <ResetPasswordContent />
+    </AuthGuard>
+  );
+}
+
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

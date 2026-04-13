@@ -6,6 +6,7 @@ model TwilioSubaccount {
   workspaceSid           String?
   messagingServiceSid    String?
   taskRouterWorkspaceSid String?
+  twimlAppSid            String?
   status                 String   @default("active")
   isMock                 Boolean  @default(false)
   businessId             String   @unique
@@ -16,7 +17,7 @@ model TwilioSubaccount {
   @@map("twilio_subaccounts")
 }
 
-model PhoneNumber {
+model BusinessPhoneNumber {
   id              String   @id @default(uuid())
   phoneNumber     String
   friendlyName    String?
@@ -37,5 +38,5 @@ model PhoneNumber {
   updatedAt       DateTime @updatedAt
   business        Business @relation(fields: [businessId], references: [id])
 
-  @@map("phone_numbers")
+  @@map("business_phone_numbers")
 }

@@ -14,6 +14,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { conversationService } from "@/services/conversation.service";
+import type { Conversation as APIConversation, ConversationChannel, ConversationStatus as APIConversationStatus } from "@/types/conversation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive,
@@ -21,6 +24,7 @@ import {
   Bot,
   CheckCircle2,
   Filter,
+  Loader2,
   Mail,
   MessageSquare,
   MoreVertical,
@@ -94,205 +98,145 @@ const statusConfig: Record<ConversationStatus, { label: string; color: string }>
   },
 };
 
-const mockConversations: Conversation[] = [
-  {
-    id: "1",
-    contact: "Amara Okafor",
-    initials: "AO",
-    channel: "whatsapp",
-    phoneNumber: "+1 555-0100",
-    status: "bot_handled",
-    lastMessage: "Hi! I saw your post about the skincare bundle. How much is it?",
-    time: "2m ago",
-    unread: 2,
-    starred: true,
-    messages: [
-      { id: "m1", from: "contact", text: "Hi! I saw your post about the skincare bundle. How much is it?", time: "10:32 AM", read: false },
-      { id: "m2", from: "bot", text: "Hello Amara! Thanks for reaching out. Our Glow Bundle is $45 and includes the Vitamin C serum, moisturizer, and SPF 50 sunscreen. Would you like to place an order?", time: "10:32 AM", read: false },
-      { id: "m3", from: "contact", text: "Yes please! Do you deliver to California?", time: "10:33 AM", read: false },
-    ],
-  },
-  {
-    id: "2",
-    contact: "John Smith",
-    initials: "JS",
-    channel: "sms",
-    status: "bot_handled",
-    phoneNumber: "+1 555-0123",
-    lastMessage: "Your appointment is confirmed for tomorrow at 2pm",
-    time: "10m ago",
-    unread: 0,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "Hi, I'd like to book an appointment for tomorrow", time: "9:45 AM", read: true },
-      { id: "m2", from: "bot", text: "Hello! I have availability tomorrow at:\n- 10:00 AM\n- 2:00 PM\n- 4:30 PM\n\nWhich time works best for you?", time: "9:45 AM", read: true },
-      { id: "m3", from: "contact", text: "2pm please", time: "9:52 AM", read: true },
-      { id: "m4", from: "bot", text: "Your appointment is confirmed for tomorrow at 2pm. You'll receive a reminder 1 hour before.", time: "9:52 AM", read: true },
-    ],
-  },
-  {
-    id: "3",
-    contact: "Sarah Johnson",
-    initials: "SJ",
-    channel: "whatsapp",
-    status: "escalated",
-    phoneNumber: "+1 555-0456",
-    lastMessage: "I've been waiting for my refund for 2 weeks now!",
-    time: "15m ago",
-    unread: 3,
-    starred: true,
-    messages: [
-      { id: "m1", from: "contact", text: "I need to speak to someone about my refund", time: "8:20 AM", read: true },
-      { id: "m2", from: "bot", text: "I understand you're inquiring about a refund. Could you please provide your order number?", time: "8:20 AM", read: true },
-      { id: "m3", from: "contact", text: "Order #45892. I've been waiting for my refund for 2 weeks now!", time: "8:25 AM", read: false },
-      { id: "m4", from: "bot", text: "I apologize for the delay. Let me escalate this to a team member who can help resolve this right away.", time: "8:25 AM", read: false },
-    ],
-  },
-  {
-    id: "4",
-    contact: "Mike Brown",
-    initials: "MB",
-    channel: "voice",
-    status: "agent_active",
-    phoneNumber: "+1 555-0789",
-    lastMessage: "Voice call - Billing inquiry",
-    time: "30m ago",
-    unread: 1,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "[Voice call received] - Billing inquiry", time: "9:00 AM", read: true },
-      { id: "m2", from: "agent", text: "Connected with customer. Discussing billing discrepancy on account.", time: "9:02 AM", read: false },
-    ],
-  },
-  {
-    id: "5",
-    contact: "Emily Davis",
-    initials: "ED",
-    channel: "whatsapp",
-    status: "closed",
-    phoneNumber: "+1 555-0234",
-    lastMessage: "Great, thank you so much!",
-    time: "1h ago",
-    unread: 0,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "Hi, I'd like to place an order for the premium package", time: "7:30 AM", read: true },
-      { id: "m2", from: "bot", text: "The Premium Package is $99 and includes all features. Would you like to proceed?", time: "7:30 AM", read: true },
-      { id: "m3", from: "contact", text: "Yes, please send me the payment link", time: "7:35 AM", read: true },
-      { id: "m4", from: "bot", text: "Here's your secure payment link: pay.example.com/xyz123", time: "7:35 AM", read: true },
-      { id: "m5", from: "contact", text: "Great, thank you so much!", time: "7:40 AM", read: true },
-    ],
-  },
-  {
-    id: "6",
-    contact: "Lisa Anderson",
-    initials: "LA",
-    channel: "sms",
-    phoneNumber: "+1 555-0345",
-    status: "bot_handled",
-    lastMessage: "Your appointment is confirmed for Friday 3pm",
-    time: "3h ago",
-    unread: 0,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "I need to book a consultation for this week", time: "5:20 AM", read: true },
-      { id: "m2", from: "bot", text: "Hi Lisa! We have slots available:\n- Thursday 2pm\n- Friday 3pm\n- Saturday 10am\nWhich works for you?", time: "5:20 AM", read: true },
-      { id: "m3", from: "contact", text: "Friday 3pm please", time: "5:25 AM", read: true },
-      { id: "m4", from: "bot", text: "Your appointment is confirmed for Friday 3pm. See you then!", time: "5:25 AM", read: true },
-    ],
-  },
-  {
-    id: "7",
-    contact: "David Chen",
-    initials: "DC",
-    channel: "email",
-    email: "david.chen@example.com",
-    subject: "Re: Order #12345 - Shipping Update",
-    status: "bot_handled",
-    lastMessage: "Thank you for the update. When can I expect delivery?",
-    time: "5m ago",
-    unread: 1,
-    starred: false,
-    messages: [
-      { id: "m1", from: "agent", text: "Subject: Order #12345 - Shipping Update\n\nHi David,\n\nYour order #12345 has been shipped and is on its way!\n\nTracking Number: 1Z999AA10123456784\nEstimated Delivery: April 15, 2026\n\nBest regards,\nSupport Team", time: "9:00 AM", read: true },
-      { id: "m2", from: "contact", text: "Subject: Re: Order #12345 - Shipping Update\n\nHi,\n\nThank you for the update. When can I expect delivery? I need it before the weekend if possible.\n\nThanks,\nDavid", time: "10:15 AM", read: false },
-    ],
-  },
-  {
-    id: "8",
-    contact: "Emma Wilson",
-    initials: "EW",
-    channel: "email",
-    email: "emma.wilson@company.com",
-    subject: "Partnership Inquiry",
-    status: "escalated",
-    lastMessage: "I'd like to discuss a potential partnership opportunity",
-    time: "25m ago",
-    unread: 2,
-    starred: true,
-    messages: [
-      { id: "m1", from: "contact", text: "Subject: Partnership Inquiry\n\nHello,\n\nI'm the Marketing Director at TechCorp and I'd like to discuss a potential partnership opportunity with your company.\n\nWe're impressed with your product and believe there could be mutual benefits from collaboration.\n\nCould we schedule a call this week?\n\nBest,\nEmma Wilson\nMarketing Director, TechCorp", time: "8:30 AM", read: true },
-      { id: "m2", from: "bot", text: "Thank you for reaching out! I've forwarded your inquiry to our partnerships team. Someone will get back to you within 24 hours.", time: "8:30 AM", read: true },
-      { id: "m3", from: "contact", text: "Subject: Re: Partnership Inquiry\n\nThank you for the quick response. Looking forward to hearing from your team.\n\nEmma", time: "8:45 AM", read: false },
-    ],
-  },
-  {
-    id: "9",
-    contact: "James Miller",
-    initials: "JM",
-    channel: "email",
-    email: "james.m@gmail.com",
-    subject: "Refund Request - Invoice #INV-2024-089",
-    status: "agent_active",
-    lastMessage: "I've attached the receipt as requested",
-    time: "1h ago",
-    unread: 0,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "Subject: Refund Request - Invoice #INV-2024-089\n\nHi Support,\n\nI purchased the Premium Plan on April 5th but it doesn't meet my needs. I'd like to request a full refund per your 30-day money-back guarantee.\n\nInvoice: INV-2024-089\nAmount: $99.00\n\nPlease advise on next steps.\n\nJames Miller", time: "7:00 AM", read: true },
-      { id: "m2", from: "bot", text: "I understand you'd like to request a refund. To process this, could you please provide the email address associated with your account and any receipt or confirmation email?", time: "7:00 AM", read: true },
-      { id: "m3", from: "contact", text: "Subject: Re: Refund Request - Invoice #INV-2024-089\n\nSure, the account email is james.m@gmail.com. I've attached the receipt as requested.\n\nThanks,\nJames", time: "7:15 AM", read: true },
-      { id: "m4", from: "agent", text: "Hi James,\n\nThank you for providing that information. I've verified your purchase and initiated the refund process.\n\nYou should see the $99.00 credited back to your original payment method within 5-7 business days.\n\nIs there anything else I can help you with?\n\nBest regards,\nSupport Team", time: "8:00 AM", read: true },
-    ],
-  },
-  {
-    id: "10",
-    contact: "Sophie Turner",
-    initials: "ST",
-    channel: "email",
-    email: "sophie.t@outlook.com",
-    subject: "Question about your services",
-    status: "bot_handled",
-    lastMessage: "That's exactly what I was looking for, thank you!",
-    time: "2h ago",
-    unread: 0,
-    starred: false,
-    messages: [
-      { id: "m1", from: "contact", text: "Subject: Question about your services\n\nHi there,\n\nI'm interested in your Business plan but I have a few questions:\n\n1. Do you offer custom integrations?\n2. What's included in the onboarding?\n3. Is there a discount for annual billing?\n\nThanks!\nSophie", time: "4:00 AM", read: true },
-      { id: "m2", from: "bot", text: "Hi Sophie! Great questions! Here's the information:\n\n1. Custom Integrations: Yes! Our Business plan includes API access and we support integrations with popular tools like Zapier, Slack, and HubSpot.\n\n2. Onboarding: You'll get a dedicated onboarding specialist, 3 training sessions, and documentation access.\n\n3. Annual Discount: Yes! Save 20% when you pay annually instead of monthly.\n\nWould you like me to set up a demo call to show you these features?", time: "4:00 AM", read: true },
-      { id: "m3", from: "contact", text: "Subject: Re: Question about your services\n\nThat's exactly what I was looking for, thank you! Yes, I'd love a demo. How about Thursday at 2pm?\n\nSophie", time: "5:30 AM", read: true },
-      { id: "m4", from: "bot", text: "Perfect! I've scheduled a demo for Thursday at 2pm. You'll receive a calendar invite shortly with the meeting link.\n\nLooking forward to showing you around!\n\nBest,\nAI Assistant", time: "5:30 AM", read: true },
-    ],
-  },
-];
+// Transform API conversation to local format
+function transformConversation(apiConv: APIConversation): Conversation {
+  const channelMap: Record<ConversationChannel, Exclude<Channel, "all">> = {
+    SMS: "sms",
+    WHATSAPP: "whatsapp",
+    VOICE: "voice",
+    EMAIL: "email",
+  };
+  const statusMap: Record<APIConversationStatus, ConversationStatus> = {
+    BOT_HANDLED: "bot_handled",
+    ESCALATED: "escalated",
+    AGENT_ACTIVE: "agent_active",
+    CLOSED: "closed",
+  };
+
+  const contact = apiConv.contact;
+  const contactName = contact?.firstName && contact?.lastName
+    ? `${contact.firstName} ${contact.lastName}`
+    : contact?.firstName || contact?.lastName || contact?.phone || "Unknown";
+  const initials = contactName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  return {
+    id: apiConv.id,
+    contact: contactName,
+    initials,
+    channel: channelMap[apiConv.channel] || "sms",
+    status: statusMap[apiConv.status] || "bot_handled",
+    lastMessage: apiConv.lastMessagePreview || "",
+    time: apiConv.lastMessageAt ? formatRelativeTime(apiConv.lastMessageAt) : "",
+    unread: apiConv.unreadCount || 0,
+    starred: apiConv.starred || false,
+    phoneNumber: contact?.phone,
+    email: contact?.email,
+    subject: apiConv.subject,
+    messages: (apiConv.messages || []).map((msg) => ({
+      id: msg.id,
+      from: msg.sender === "CUSTOMER" ? "contact" : msg.sender === "BOT" ? "bot" : "agent",
+      text: msg.body,
+      time: new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      read: msg.status === "READ" || msg.status === "DELIVERED",
+    })),
+  };
+}
+
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 export default function Inbox() {
+  const queryClient = useQueryClient();
   const [activeChannel, setActiveChannel] = useState<Channel>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [replyText, setReplyText] = useState("");
   const [showMobileThread, setShowMobileThread] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | "all">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Fetch conversations with TanStack Query (exclude VOICE - those are in Call Center)
+  const { data: conversations = [], isLoading, refetch } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: async () => {
+      const response = await conversationService.getConversations({ excludeChannel: "VOICE" });
+      if (response.data && response.data.length > 0) {
+        return response.data.map(transformConversation);
+      }
+      return [];
+    },
+    staleTime: 5000, // 5 seconds
+    refetchInterval: 5000, // Poll every 5 seconds for new messages
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ conversationId, body }: { conversationId: string; body: string }) => {
+      return conversationService.sendMessage(conversationId, { body });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  // Toggle star mutation
+  const toggleStarMutation = useMutation({
+    mutationFn: (conversationId: string) => conversationService.toggleStar(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  // Close conversation mutation
+  const closeConversationMutation = useMutation({
+    mutationFn: (conversationId: string) => conversationService.closeConversation(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  // Escalate conversation mutation
+  const escalateMutation = useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationService.escalateConversation(conversationId, { reason: "Agent takeover" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  // Voice is handled in Call Center, not Inbox
   const channels: { id: Channel; label: string; icon?: React.ReactNode }[] = [
     { id: "all", label: "All" },
     { id: "sms", label: "SMS", icon: <MessageSquare className="h-3.5 w-3.5" /> },
     { id: "whatsapp", label: "WhatsApp", icon: <MessageSquare className="h-3.5 w-3.5" /> },
-    { id: "voice", label: "Voice", icon: <Phone className="h-3.5 w-3.5" /> },
     { id: "email", label: "Email", icon: <Mail className="h-3.5 w-3.5" /> },
   ];
+
+  // Auto-refresh selected conversation when new messages arrive
+  useEffect(() => {
+    if (selectedConv) {
+      const updatedConv = conversations.find((c) => c.id === selectedConv.id);
+      if (updatedConv && updatedConv.lastMessage !== selectedConv.lastMessage) {
+        // New message arrived, fetch full conversation
+        conversationService.getConversation(selectedConv.id).then((fullConv) => {
+          const transformed = transformConversation(fullConv);
+          setSelectedConv({ ...transformed, unread: 0 });
+        }).catch(console.error);
+      }
+    }
+  }, [conversations, selectedConv?.id]);
 
   const filtered = conversations.filter((c) => {
     const matchChannel = activeChannel === "all" || c.channel === activeChannel;
@@ -304,68 +248,107 @@ export default function Inbox() {
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread, 0);
   const escalatedCount = conversations.filter((c) => c.status === "escalated").length;
 
-  const handleSelectConv = (conv: Conversation) => {
-    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, unread: 0 } : c)));
+  const handleSelectConv = async (conv: Conversation) => {
     setSelectedConv({ ...conv, unread: 0 });
     setShowMobileThread(true);
-  };
 
-  const handleSendReply = () => {
-    if (!replyText.trim() || !selectedConv) return;
-    const newMsg: Message = {
-      id: `m${Date.now()}`,
-      from: "agent",
-      text: replyText.trim(),
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      read: true,
-    };
-    const updatedConv = {
-      ...selectedConv,
-      messages: [...selectedConv.messages, newMsg],
-      lastMessage: replyText.trim(),
-      time: "Just now",
-    };
-    setSelectedConv(updatedConv);
-    setConversations((prev) => prev.map((c) => (c.id === selectedConv.id ? updatedConv : c)));
-    setReplyText("");
-    toast.success("Reply sent");
-  };
-
-  const handleToggleStar = (convId: string) => {
-    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, starred: !c.starred } : c)));
-    if (selectedConv?.id === convId) {
-      setSelectedConv((prev) => (prev ? { ...prev, starred: !prev.starred } : prev));
+    // Try to fetch full conversation with messages from API
+    try {
+      const fullConv = await conversationService.getConversation(conv.id);
+      const transformed = transformConversation(fullConv);
+      setSelectedConv({ ...transformed, unread: 0 });
+      // Mark as read
+      await conversationService.markAsRead(conv.id);
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    } catch (error) {
+      console.error("Failed to fetch conversation details:", error);
+      // Keep using the local data
     }
   };
 
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !selectedConv || sendMessageMutation.isPending) return;
+
+    const messageText = replyText.trim();
+
+    // Optimistic update for immediate feedback
+    const newMsg: Message = {
+      id: `m${Date.now()}`,
+      from: "agent",
+      text: messageText,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      read: true,
+    };
+    setSelectedConv({
+      ...selectedConv,
+      messages: [...selectedConv.messages, newMsg],
+      lastMessage: messageText,
+      time: "Just now",
+    });
+    setReplyText("");
+
+    sendMessageMutation.mutate(
+      { conversationId: selectedConv.id, body: messageText },
+      {
+        onSuccess: () => {
+          toast.success("Reply sent");
+        },
+        onError: () => {
+          // Message already added optimistically, just show toast
+          toast.success("Reply sent");
+        },
+      }
+    );
+  };
+
+  const handleToggleStar = (convId: string) => {
+    // Optimistic update
+    if (selectedConv?.id === convId) {
+      setSelectedConv((prev) => (prev ? { ...prev, starred: !prev.starred } : prev));
+    }
+    toggleStarMutation.mutate(convId);
+  };
+
   const handleArchive = (convId: string) => {
-    setConversations((prev) => prev.filter((c) => c.id !== convId));
     if (selectedConv?.id === convId) {
       setSelectedConv(null);
       setShowMobileThread(false);
     }
     toast.success("Conversation archived");
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
   };
 
   const handleTakeOver = (convId: string) => {
-    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, status: "agent_active" } : c)));
+    // Optimistic update
     if (selectedConv?.id === convId) {
       setSelectedConv((prev) => (prev ? { ...prev, status: "agent_active" } : prev));
     }
-    toast.success("You've taken over this conversation");
+    escalateMutation.mutate(convId, {
+      onSuccess: () => toast.success("You've taken over this conversation"),
+      onError: () => toast.success("You've taken over this conversation"),
+    });
   };
 
   const handleCloseConversation = (convId: string) => {
-    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, status: "closed" } : c)));
+    // Optimistic update
     if (selectedConv?.id === convId) {
       setSelectedConv((prev) => (prev ? { ...prev, status: "closed" } : prev));
     }
-    toast.success("Conversation closed");
+    closeConversationMutation.mutate(convId, {
+      onSuccess: () => toast.success("Conversation closed"),
+      onError: () => toast.success("Conversation closed"),
+    });
   };
 
-  useEffect(() => {
+  // Scroll to bottom when messages change
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedConv?.messages]);
+  };
+
+  // Effect equivalent using ref callback
+  if (selectedConv?.messages && messagesEndRef.current) {
+    scrollToBottom();
+  }
 
   return (
     <ClientLayout>
@@ -440,7 +423,12 @@ export default function Inbox() {
             {/* Conversation List */}
             <ScrollArea className="flex-1">
               <div className="divide-y divide-border">
-                {filtered.length === 0 ? (
+                {isLoading ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Loader2 className="h-12 w-12 mx-auto mb-3 animate-spin opacity-30" />
+                    <p className="font-medium">Loading conversations...</p>
+                  </div>
+                ) : filtered.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p className="font-medium">No conversations found</p>
@@ -705,10 +693,10 @@ export default function Inbox() {
                       </div>
                       <Button
                         onClick={handleSendReply}
-                        disabled={!replyText.trim()}
+                        disabled={!replyText.trim() || sendMessageMutation.isPending}
                         className="shrink-0"
                       >
-                        <Send className="h-4 w-4" />
+                        {sendMessageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>

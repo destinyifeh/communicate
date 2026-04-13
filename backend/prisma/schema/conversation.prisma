@@ -9,6 +9,8 @@ model Conversation {
   starred            Boolean             @default(false)
   detectedIntent     String?
   intentMetadata     Json?
+  externalId         String?             // External ID (e.g., Twilio CallSid)
+  metadata           Json?               // Additional metadata
   assignedAgentId    String?
   assignedAt         DateTime?
   escalatedAt        DateTime?
@@ -30,7 +32,7 @@ model Message {
   id                    String           @id @default(uuid())
   body                  String
   direction             MessageDirection
-  sender                MessageSender
+  sender                MessageSender    @default(CUSTOMER)
   status                MessageStatus    @default(SENT)
   twilioMessageSid      String?
   twilioFrom            String?
@@ -44,6 +46,7 @@ model Message {
   emailReplyToMessageId String?
   emailHtml             String?
   mediaUrls             Json?
+  metadata              Json?            // Additional metadata (e.g., voicemail URL, transcription)
   agentId               String?
   conversationId        String
   createdAt             DateTime         @default(now())

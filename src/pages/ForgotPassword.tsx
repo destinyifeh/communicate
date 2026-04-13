@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthGuard } from "@/components/AuthGuard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,14 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function ForgotPassword() {
+  return (
+    <AuthGuard redirectIfAuthenticated>
+      <ForgotPasswordContent />
+    </AuthGuard>
+  );
+}
+
+function ForgotPasswordContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");

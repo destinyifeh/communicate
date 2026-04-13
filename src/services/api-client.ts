@@ -1,6 +1,8 @@
 import type { ApiError, PaginatedResponse } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Use same-origin for API calls (proxied through Next.js)
+// This ensures cookies are sent properly
+const API_URL = '';
 
 /**
  * Custom error class for API errors
