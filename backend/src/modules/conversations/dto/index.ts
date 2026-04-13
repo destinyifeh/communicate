@@ -15,7 +15,7 @@ export class SendMessageDto {
   @IsOptional()
   mediaUrls?: string[];
 
-  @ApiPropertyOptional({ description: 'Email subject (for email channel)' })
+  @ApiPropertyOptional({ description: 'The subject of the email' })
   @IsString()
   @IsOptional()
   subject?: string;
@@ -24,6 +24,18 @@ export class SendMessageDto {
   @IsString()
   @IsOptional()
   html?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'CC recipients' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  cc?: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'BCC recipients' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  bcc?: string[];
 }
 
 export class StartConversationDto {

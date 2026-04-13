@@ -172,7 +172,11 @@ export default function Inbox() {
   const [activeChannel, setActiveChannel] = useState<Channel>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
-  const [replyText, setReplyText] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailBcc, setEmailBcc] = useState("");
+  const [showEmailOptions, setShowEmailOptions] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | "all">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -193,8 +197,8 @@ export default function Inbox() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ conversationId, body }: { conversationId: string; body: string }) => {
-      return conversationService.sendMessage(conversationId, { body });
+    mutationFn: async ({ conversationId, body, subject, cc, bcc }: { conversationId: string; body: string; subject?: string; cc?: string[]; bcc?: string[] }) => {
+      return conversationService.sendMessage(conversationId, { body, subject, cc, bcc });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -235,6 +239,16 @@ export default function Inbox() {
   ];
 
   // Auto-refresh selected conversation when new messages arrive
+  useEffect(() => {
+    if (selectedConv) {
+      setMessageText("");
+      setEmailSubject(selectedConv.subject || "");
+      setEmailCc("");
+      setEmailBcc("");
+      setShowEmailOptions(false);
+    }
+  }, [selectedConv]);
+
   useEffect(() => {
     if (selectedConv) {
       const updatedConv = conversations.find((c) => c.id === selectedConv.id);
@@ -284,31 +298,40 @@ export default function Inbox() {
   };
 
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedConv || sendMessageMutation.isPending) return;
+    if (!messageText.trim() || !selectedConv || sendMessageMutation.isPending) return;
 
-    const messageText = replyText.trim();
+    const messageBody = messageText.trim();
 
     // Optimistic update for immediate feedback
     const newMsg: Message = {
       id: `m${Date.now()}`,
       from: "agent",
-      text: messageText,
+      text: messageBody,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       read: true,
     };
     setSelectedConv({
       ...selectedConv,
       messages: [...selectedConv.messages, newMsg],
-      lastMessage: messageText,
+      lastMessage: messageBody,
       time: "Just now",
     });
-    setReplyText("");
+    setMessageText("");
 
     sendMessageMutation.mutate(
-      { conversationId: selectedConv.id, body: messageText },
+      {
+        conversationId: selectedConv.id,
+        body: messageBody,
+        subject: selectedConv.channel === "email" ? emailSubject : undefined,
+        cc: selectedConv.channel === "email" && emailCc ? emailCc.split(",").map(s => s.trim()) : undefined,
+        bcc: selectedConv.channel === "email" && emailBcc ? emailBcc.split(",").map(s => s.trim()) : undefined,
+      },
       {
         onSuccess: () => {
           toast.success("Reply sent");
+          setMessageText("");
+          setEmailCc("");
+          setEmailBcc("");
         },
         onError: () => {
           // Message already added optimistically, just show toast
@@ -717,24 +740,80 @@ export default function Inbox() {
                 {/* Reply Input */}
                 {selectedConv.status !== "closed" && (
                   <div className="p-4 border-t border-border">
+                    {selectedConv.channel === "email" && (
+                      <div className="px-4 py-2 border-b space-y-2 bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold w-16">Subject:</span>
+                          <Input
+                            placeholder="Email subject"
+                            value={emailSubject}
+                            onChange={(e) => setEmailSubject(e.target.value)}
+                            className="bg-background h-8"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowEmailOptions(!showEmailOptions)}
+                            className="text-[10px] h-6"
+                          >
+                            {showEmailOptions ? "Hide Options" : "CC/BCC"}
+                          </Button>
+                        </div>
+                        {showEmailOptions && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            className="space-y-2 pb-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold w-16">CC:</span>
+                              <Input
+                                placeholder="comma-separated emails"
+                                value={emailCc}
+                                onChange={(e) => setEmailCc(e.target.value)}
+                                className="bg-background h-8"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold w-16">BCC:</span>
+                              <Input
+                                placeholder="comma-separated emails"
+                                value={emailBcc}
+                                onChange={(e) => setEmailBcc(e.target.value)}
+                                className="bg-background h-8"
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-end gap-3 max-w-3xl mx-auto">
                       <div className="flex-1 relative">
                         <Input
-                          placeholder="Type your message..."
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder={
+                            selectedConv.channel === "voice"
+                              ? "Voice channel is read-only"
+                              : "Type your reply..."
+                          }
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               handleSendReply();
                             }
                           }}
+                          disabled={selectedConv.channel === "voice" || sendMessageMutation.isPending}
                           className="pr-12 bg-secondary/50"
                         />
                       </div>
                       <Button
                         onClick={handleSendReply}
-                        disabled={!replyText.trim() || sendMessageMutation.isPending}
+                        disabled={
+                          !messageText.trim() ||
+                          selectedConv.channel === "voice" ||
+                          sendMessageMutation.isPending
+                        }
                         className="shrink-0"
                       >
                         {sendMessageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

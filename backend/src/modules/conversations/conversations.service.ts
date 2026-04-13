@@ -31,6 +31,9 @@ export class ConversationsService {
     private readonly emailService: EmailService,
   ) {}
 
+  /**
+   * Find all conversations for a business with pagination and filters
+   */
   async findAll(
     businessId: string,
     pagination: PaginationDto,
@@ -97,6 +100,9 @@ export class ConversationsService {
     return PaginatedResponseDto.create(data, total, pagination);
   }
 
+  /**
+   * Find a single conversation by ID
+   */
   async findOne(businessId: string, id: string): Promise<Conversation> {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id, businessId },
@@ -117,6 +123,9 @@ export class ConversationsService {
     return conversation;
   }
 
+  /**
+   * Get paginated messages for a conversation
+   */
   async getMessages(
     businessId: string,
     conversationId: string,
@@ -142,6 +151,9 @@ export class ConversationsService {
     return PaginatedResponseDto.create(data, total, pagination);
   }
 
+  /**
+   * Send a new message in an existing conversation (SMS, WhatsApp, or Email)
+   */
   async sendMessage(
     businessId: string,
     conversationId: string,
@@ -199,6 +211,8 @@ export class ConversationsService {
           subject: dto.subject || conversation.subject || 'Re: Your inquiry',
           text: dto.body,
           html: dto.html,
+          cc: dto.cc,
+          bcc: dto.bcc,
           conversationId,
           contactId: contact.id,
         });
@@ -243,6 +257,9 @@ export class ConversationsService {
     return message;
   }
 
+  /**
+   * Start a new conversation with a contact
+   */
   async startConversation(
     businessId: string,
     dto: StartConversationDto,
@@ -302,6 +319,9 @@ export class ConversationsService {
     return conversation;
   }
 
+  /**
+   * Close a conversation
+   */
   async close(businessId: string, id: string): Promise<Conversation> {
     await this.findOne(businessId, id);
 
@@ -313,6 +333,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Reopen a closed conversation
+   */
   async reopen(businessId: string, id: string): Promise<Conversation> {
     const conversation = await this.findOne(businessId, id);
 
@@ -330,6 +353,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Escalate a conversation to an agent
+   */
   async escalate(
     businessId: string,
     id: string,
@@ -349,6 +375,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Assign an agent to a conversation
+   */
   async assignAgent(
     businessId: string,
     id: string,
@@ -375,6 +404,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Unassign any agent from a conversation (return to bot handled)
+   */
   async unassignAgent(businessId: string, id: string): Promise<Conversation> {
     await this.findOne(businessId, id);
 
@@ -388,6 +420,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Toggle the starred status of a conversation
+   */
   async toggleStar(businessId: string, id: string): Promise<Conversation> {
     const conversation = await this.findOne(businessId, id);
 
@@ -397,6 +432,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Reset the unread count for a conversation
+   */
   async markAsRead(businessId: string, id: string): Promise<Conversation> {
     await this.findOne(businessId, id);
 
@@ -406,6 +444,9 @@ export class ConversationsService {
     });
   }
 
+  /**
+   * Get stats for conversations (counts by status)
+   */
   async getStats(businessId: string): Promise<{
     total: number;
     botHandled: number;

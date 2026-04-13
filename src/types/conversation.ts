@@ -41,6 +41,11 @@ export interface Message {
   twilioTo?: string;
   emailMessageId?: string;
   emailSubject?: string;
+  emailFrom?: string;
+  emailTo?: string;
+  emailCc?: string;
+  emailBcc?: string;
+  emailHtml?: string;
   mediaUrls?: string[];
   agentId?: string;
   conversationId: string;
@@ -50,6 +55,10 @@ export interface Message {
 export interface SendMessageData {
   body: string;
   mediaUrls?: string[];
+  subject?: string;
+  html?: string;
+  cc?: string[];
+  bcc?: string[];
 }
 
 export interface ConversationFilters {

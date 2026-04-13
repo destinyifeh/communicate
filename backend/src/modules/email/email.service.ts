@@ -27,6 +27,9 @@ export class EmailService {
     this.resend = new Resend(apiKey);
   }
 
+  /**
+   * Send an email via Resend and create a message record
+   */
   async sendEmail(businessId: string, dto: SendEmailDto) {
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
@@ -150,6 +153,9 @@ export class EmailService {
     };
   }
 
+  /**
+   * Process an inbound email webhook from Resend
+   */
   async handleInboundEmail(businessId: string, payload: InboundEmailDto) {
     const { data } = payload;
 
@@ -206,9 +212,10 @@ export class EmailService {
     }
 
     // Create message record
+    const bodyText = data.text || this.stripHtml(data.html || '') || 'No content';
     const message = await this.prisma.message.create({
       data: {
-        body: data.text || this.stripHtml(data.html || '') || '',
+        body: bodyText,
         direction: MessageDirection.INBOUND,
         sender: MessageSender.CUSTOMER,
         status: MessageStatus.DELIVERED,
@@ -217,6 +224,8 @@ export class EmailService {
         emailFrom: data.from,
         emailTo: data.to?.join(', '),
         emailHtml: data.html,
+        mediaUrls: data.attachments?.map(a => a.filename) || [],
+        metadata: data.attachments ? { attachments: data.attachments.map(a => ({ filename: a.filename, contentType: a.content_type })) } : {},
         conversationId: conversation.id,
       },
     });
@@ -225,7 +234,7 @@ export class EmailService {
     await this.prisma.conversation.update({
       where: { id: conversation.id },
       data: {
-        lastMessagePreview: data.subject,
+        lastMessagePreview: bodyText.substring(0, 100),
         lastMessageAt: new Date(),
         unreadCount: { increment: 1 },
       },
@@ -241,6 +250,9 @@ export class EmailService {
     };
   }
 
+  /**
+   * Process an email status webhook (delivered, opened, etc.) from Resend
+   */
   async handleEmailStatusWebhook(payload: { type: string; data: { email_id: string; [key: string]: unknown } }) {
     const { type, data } = payload;
     const emailId = data.email_id;
@@ -280,6 +292,9 @@ export class EmailService {
     return { success: true, messageId: message.id, status: newStatus };
   }
 
+  /**
+   * Find an existing conversation that matches this email thread
+   */
   private async findConversationByEmailThread(
     contactId: string,
     subject: string,
@@ -306,18 +321,27 @@ export class EmailService {
     });
   }
 
+  /**
+   * Extract email address from "Name <email@example.com>" format
+   */
   private extractEmail(fromString: string): string | null {
     // Handle formats like "Name <email@example.com>" or just "email@example.com"
     const match = fromString.match(/<([^>]+)>/) || fromString.match(/([^\s<>]+@[^\s<>]+)/);
     return match ? match[1] : null;
   }
 
+  /**
+   * Extract name from "Name <email@example.com>" format
+   */
   private extractName(fromString: string): string | null {
     // Extract name from "Name <email@example.com>" format
     const match = fromString.match(/^([^<]+)</);
     return match ? match[1].trim() : null;
   }
 
+  /**
+   * Remove HTML tags from a string
+   */
   private stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '').trim();
   }
