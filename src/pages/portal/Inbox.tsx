@@ -238,15 +238,22 @@ export default function Inbox() {
   useEffect(() => {
     if (selectedConv) {
       const updatedConv = conversations.find((c) => c.id === selectedConv.id);
-      if (updatedConv && updatedConv.lastMessage !== selectedConv.lastMessage) {
-        // New message arrived, fetch full conversation
+      if (updatedConv && (updatedConv.lastMessage !== selectedConv.lastMessage || updatedConv.unread > 0)) {
+        // New message arrived or there are unread messages while the conversation is open
         conversationService.getConversation(selectedConv.id).then((fullConv) => {
           const transformed = transformConversation(fullConv);
           setSelectedConv({ ...transformed, unread: 0 });
+          
+          // If there were unread messages reported by the list, mark as read on the backend
+          if (updatedConv.unread > 0) {
+            conversationService.markAsRead(selectedConv.id).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["conversations"] });
+            }).catch(console.error);
+          }
         }).catch(console.error);
       }
     }
-  }, [conversations, selectedConv?.id]);
+  }, [conversations, selectedConv?.id, queryClient]);
 
   const filtered = conversations.filter((c) => {
     const matchChannel = activeChannel === "all" || c.channel === activeChannel;
