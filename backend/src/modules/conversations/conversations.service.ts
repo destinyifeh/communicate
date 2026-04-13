@@ -215,7 +215,7 @@ export class ConversationsService {
           bcc: dto.bcc,
           conversationId,
           contactId: contact.id,
-        });
+        }, { persist: false });
         externalId = result.emailId;
         this.logger.log(`Email sent to ${contact.email}, ID: ${result.emailId}`);
       } else if (conversation.channel === ConversationChannel.VOICE) {

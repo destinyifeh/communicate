@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsArray, IsUUID, IsObject } from 'class-validator';
 
 export class SendEmailDto {
   @IsEmail()
@@ -42,6 +42,11 @@ export class InboundEmailDto {
   @IsString()
   type: string;
 
+  @IsString()
+  @IsOptional()
+  created_at?: string;
+
+  @IsObject()
   data: {
     id: string;
     from: string;
@@ -66,6 +71,7 @@ export class EmailWebhookEventDto {
   @IsOptional()
   created_at?: string;
 
+  @IsObject()
   data: {
     email_id: string;
     from: string;

@@ -30,7 +30,7 @@ export class EmailService {
   /**
    * Send an email via Resend and create a message record
    */
-  async sendEmail(businessId: string, dto: SendEmailDto) {
+  async sendEmail(businessId: string, dto: SendEmailDto, options: { persist?: boolean } = { persist: true }) {
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
     });
@@ -110,23 +110,28 @@ export class EmailService {
       throw new BadRequestException(`Failed to send email: ${error.message}`);
     }
 
-    // Create message record
-    const message = await this.prisma.message.create({
-      data: {
-        body: dto.text || dto.html || '',
-        direction: MessageDirection.OUTBOUND,
-        sender: MessageSender.AGENT,
-        status: MessageStatus.SENT,
-        emailMessageId: emailResult?.id,
-        emailSubject: dto.subject,
-        emailFrom: `${fromName} <${fromAddress}>`,
-        emailTo: dto.to,
-        emailCc: dto.cc?.join(', '),
-        emailBcc: dto.bcc?.join(', '),
-        emailHtml: dto.html,
-        conversationId: conversation.id,
-      },
-    });
+    // Create message record - only if persist option is true
+    let messageId: string | undefined;
+
+    if (options.persist) {
+      const message = await this.prisma.message.create({
+        data: {
+          body: dto.text || dto.html || '',
+          direction: MessageDirection.OUTBOUND,
+          sender: MessageSender.AGENT,
+          status: MessageStatus.SENT,
+          emailMessageId: emailResult?.id,
+          emailSubject: dto.subject,
+          emailFrom: `${fromName} <${fromAddress}>`,
+          emailTo: dto.to,
+          emailCc: dto.cc?.join(', '),
+          emailBcc: dto.bcc?.join(', '),
+          emailHtml: dto.html,
+          conversationId: conversation.id,
+        },
+      });
+      messageId = message.id;
+    }
 
     // Update conversation
     await this.prisma.conversation.update({
@@ -146,7 +151,7 @@ export class EmailService {
     this.logger.log(`Email sent successfully: ${emailResult?.id} to ${dto.to}`);
 
     return {
-      messageId: message.id,
+      messageId: messageId,
       emailId: emailResult?.id,
       conversationId: conversation.id,
       contactId: contact.id,
@@ -211,19 +216,38 @@ export class EmailService {
       this.logger.log(`Created new email conversation: ${conversation.id}`);
     }
 
+    const emailId = (data as any).email_id || data.id;
+
+    let text: string | undefined = data.text;
+    let html: string | undefined = data.html;
+
+    if (!text && !html && emailId) {
+      try {
+        const result = await (this.resend.emails as any).receiving.get(emailId);
+        if (result.data) {
+          text = result.data.text || undefined;
+          html = result.data.html || undefined;
+        } else if (result.error) {
+          this.logger.error(`Resend API error: ${JSON.stringify(result.error)}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to fetch full email from Resend for ${emailId}`, error);
+      }
+    }
+
     // Create message record
-    const bodyText = data.text || this.stripHtml(data.html || '') || 'No content';
+    const bodyText = text || this.stripHtml(html || '') || 'No content';
     const message = await this.prisma.message.create({
       data: {
         body: bodyText,
         direction: MessageDirection.INBOUND,
         sender: MessageSender.CUSTOMER,
         status: MessageStatus.DELIVERED,
-        emailMessageId: data.id,
+        emailMessageId: emailId,
         emailSubject: data.subject,
         emailFrom: data.from,
         emailTo: data.to?.join(', '),
-        emailHtml: data.html,
+        emailHtml: html || data.html,
         mediaUrls: data.attachments?.map(a => a.filename) || [],
         metadata: data.attachments ? { attachments: data.attachments.map(a => ({ filename: a.filename, contentType: a.content_type })) } : {},
         conversationId: conversation.id,
