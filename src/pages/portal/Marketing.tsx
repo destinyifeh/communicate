@@ -57,6 +57,7 @@ import {
   MoreHorizontal,
   Pause,
   PenLine,
+  Phone,
   Play,
   Plus,
   Send,
@@ -65,90 +66,18 @@ import {
   Upload,
   Users,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Mock campaign data
-const mockCampaigns: Campaign[] = [
-  {
-    id: "1",
-    name: "Summer Sale Blast",
-    type: "sms" as const,
-    status: "sent" as const,
-    recipients: 1250,
-    delivered: 1198,
-    opened: 456,
-    clicked: 123,
-    createdAt: "2026-04-08",
-    sentAt: "2026-04-09",
-    message: "Summer Sale! Get 30% off all items this weekend only. Shop now at example.com/summer",
-  },
-  {
-    id: "2",
-    name: "New Product Launch",
-    type: "whatsapp" as const,
-    status: "scheduled" as const,
-    recipients: 850,
-    delivered: 0,
-    opened: 0,
-    clicked: 0,
-    createdAt: "2026-04-10",
-    scheduledAt: "2026-04-15",
-    message: "Exciting news! Our new product line is here. Be the first to check it out!",
-  },
-  {
-    id: "3",
-    name: "Loyalty Rewards",
-    type: "sms" as const,
-    status: "draft" as const,
-    recipients: 0,
-    delivered: 0,
-    opened: 0,
-    clicked: 0,
-    createdAt: "2026-04-11",
-    message: "Thank you for being a loyal customer! Enjoy exclusive rewards...",
-  },
-  {
-    id: "4",
-    name: "Appointment Reminder",
-    type: "whatsapp" as const,
-    status: "sending" as const,
-    recipients: 320,
-    delivered: 156,
-    opened: 89,
-    clicked: 0,
-    createdAt: "2026-04-11",
-    message: "Reminder: You have an upcoming appointment tomorrow at {{time}}.",
-  },
-];
-
-// Mock contacts data
-const mockContacts = [
-  { id: "1", name: "John Smith", phone: "+1234567890", email: "john@example.com", tags: ["customer", "vip"] },
-  { id: "2", name: "Sarah Johnson", phone: "+1234567891", email: "sarah@example.com", tags: ["customer"] },
-  { id: "3", name: "Mike Brown", phone: "+1234567892", email: "mike@example.com", tags: ["lead"] },
-  { id: "4", name: "Emily Davis", phone: "+1234567893", email: "emily@example.com", tags: ["customer", "inactive"] },
-  { id: "5", name: "Chris Wilson", phone: "+1234567894", email: "chris@example.com", tags: ["lead", "hot"] },
-];
-
-type CampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "paused";
-type CampaignType = "sms" | "whatsapp";
-
-interface Campaign {
-  id: string;
-  name: string;
-  type: CampaignType;
-  status: CampaignStatus;
-  recipients: number;
-  delivered: number;
-  opened: number;
-  clicked: number;
-  createdAt: string;
-  sentAt?: string;
-  scheduledAt?: string;
-  message: string;
-}
-
+// Status color mapping
 const statusColors: Record<CampaignStatus, string> = {
   draft: "bg-slate-500/10 text-slate-500",
   scheduled: "bg-blue-500/10 text-blue-500",
@@ -165,12 +94,31 @@ const statusIcons: Record<CampaignStatus, React.ReactNode> = {
   paused: <Pause className="h-3 w-3" />,
 };
 
+// Type definitions
+type CampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "paused";
+type CampaignType = "sms" | "whatsapp" | "email";
+
+interface Campaign {
+  id: string;
+  name: string;
+  type: CampaignType;
+  status: CampaignStatus;
+  recipients: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  createdAt: string;
+  sentAt?: string;
+  scheduledAt?: string;
+  message: string;
+}
+
 // Transform API campaign to local format
 function transformCampaign(apiCampaign: APICampaign): Campaign {
   const typeMap: Record<APICampaignType, CampaignType> = {
     SMS: "sms",
     WHATSAPP: "whatsapp",
-    EMAIL: "sms", // Map EMAIL to sms since local doesn't have email type
+    EMAIL: "email",
   };
   const statusMap: Record<APICampaignStatus, CampaignStatus> = {
     DRAFT: "draft",
@@ -189,7 +137,7 @@ function transformCampaign(apiCampaign: APICampaign): Campaign {
     recipients: apiCampaign.totalRecipients,
     delivered: apiCampaign.messagesDelivered,
     opened: apiCampaign.messagesRead,
-    clicked: 0, // API doesn't track clicks
+    clicked: apiCampaign.messagesRead, // Using read as proxy for now or track separately if available
     createdAt: apiCampaign.createdAt.split("T")[0],
     sentAt: apiCampaign.completedAt?.split("T")[0],
     scheduledAt: apiCampaign.scheduledAt?.split("T")[0],
@@ -198,11 +146,11 @@ function transformCampaign(apiCampaign: APICampaign): Campaign {
 }
 
 // Transform API contact to local format
-function transformContact(apiContact: APIContact): typeof mockContacts[0] {
+function transformContact(apiContact: APIContact) {
   return {
     id: apiContact.id,
     name: [apiContact.firstName, apiContact.lastName].filter(Boolean).join(" ") || "Unknown",
-    phone: apiContact.phone,
+    phone: apiContact.phone || "",
     email: apiContact.email || "",
     tags: apiContact.tags || [],
   };
@@ -213,43 +161,63 @@ export default function Marketing() {
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [importContactsOpen, setImportContactsOpen] = useState(false);
 
-  // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
     name: "",
-    type: "sms" as CampaignType,
+    type: "SMS" as APICampaignType,
     message: "",
     scheduledAt: "",
+    targetTags: [] as string[],
   });
 
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
   // Fetch campaigns with TanStack Query
-  const { data: campaigns = mockCampaigns } = useQuery({
+  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
       const response = await campaignService.getCampaigns();
-      if (response.data && response.data.length > 0) {
-        return response.data.map(transformCampaign);
-      }
-      return mockCampaigns;
+      return response.data?.map(transformCampaign) || [];
     },
     staleTime: 30000,
   });
 
   // Fetch contacts with TanStack Query
-  const { data: contacts = mockContacts } = useQuery({
+  const { data: contacts = [], isLoading: isLoadingContacts } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
       const response = await contactService.getContacts();
-      if (response.data && response.data.length > 0) {
-        return response.data.map(transformContact);
-      }
-      return mockContacts;
+      return response.data?.map(transformContact) || [];
     },
     staleTime: 30000,
   });
 
+  // Fetch unique tags
+  const { data: availableTags = [] } = useQuery({
+    queryKey: ["available-tags"],
+    queryFn: async () => {
+      return contactService.getTags();
+    },
+  });
+
+  // Fetch estimated recipients
+  const { data: recipientCount = 0 } = useQuery({
+    queryKey: ["recipient-count", newCampaign.targetTags, newCampaign.type],
+    queryFn: async () => {
+      if (newCampaign.targetTags.length === 0) {
+        return contacts.length;
+      }
+      const response = await campaignService.getRecipientsCount({
+        targetTags: newCampaign.targetTags
+      });
+      return response.count;
+    },
+    enabled: true,
+  });
+
   // Create campaign mutation
   const createCampaignMutation = useMutation({
-    mutationFn: async (data: { name: string; type: APICampaignType; messageTemplate: string; scheduledAt?: string }) => {
+    mutationFn: async (data: any) => {
       return campaignService.createCampaign(data);
     },
     onSuccess: () => {
@@ -302,10 +270,27 @@ export default function Marketing() {
     },
   });
 
-  const totalContacts = contacts.length;
-  const totalSent = campaigns.filter(c => c.status === "sent").reduce((acc, c) => acc + c.delivered, 0);
-  const avgOpenRate = campaigns.filter(c => c.status === "sent" && c.delivered > 0)
-    .reduce((acc, c, _, arr) => acc + (c.opened / c.delivered * 100) / arr.length, 0);
+  // Delete contact mutation
+  const deleteContactMutation = useMutation({
+    mutationFn: (id: string) => contactService.deleteContact(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Contact deleted");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to delete contact: " + error.message);
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["campaign-stats"],
+    queryFn: () => campaignService.getStats(),
+  });
+
+  const totalContactsCount = contacts.length;
+  const totalSentCount = stats?.totalMessagesSent ?? 0;
+  const avgOpenRateVal = stats?.averageReadRate ?? 0;
+  const activeCampaignsCount = stats?.activeCampaigns ?? 0;
 
   const handleSendCampaign = (id: string) => {
     sendCampaignMutation.mutate(id);
@@ -322,25 +307,64 @@ export default function Marketing() {
   const handleCreateCampaign = () => {
     if (createCampaignMutation.isPending) return;
 
-    const typeMap: Record<CampaignType, APICampaignType> = {
-      sms: "SMS",
-      whatsapp: "WHATSAPP",
-    };
-
     createCampaignMutation.mutate(
       {
         name: newCampaign.name,
-        type: typeMap[newCampaign.type],
+        type: newCampaign.type,
         messageTemplate: newCampaign.message,
         scheduledAt: newCampaign.scheduledAt || undefined,
+        targetTags: newCampaign.targetTags,
       },
       {
         onSettled: () => {
-          setNewCampaign({ name: "", type: "sms", message: "", scheduledAt: "" });
+          setNewCampaign({ name: "", type: "SMS", message: "", scheduledAt: "", targetTags: [] });
           setNewCampaignOpen(false);
         },
       }
     );
+  };
+
+  const handleImportContacts = async () => {
+    if (!importFile) {
+      toast.error("Please select a CSV file first");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const text = await importFile.text();
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+      
+      const contacts = lines.slice(1).map(line => {
+        const values = line.split(",").map(v => v.trim());
+        const contact: any = {};
+        headers.forEach((header, index) => {
+          if (header === "name") {
+            const parts = values[index]?.split(" ") || [];
+            contact.firstName = parts[0] || "";
+            contact.lastName = parts.slice(1).join(" ") || "";
+          } else if (header === "phone") {
+            contact.phone = values[index] || "";
+          } else if (header === "email") {
+            contact.email = values[index] || "";
+          } else if (header === "tags") {
+            contact.tags = values[index]?.split(";").filter(Boolean) || [];
+          }
+        });
+        return contact;
+      }).filter(c => c.phone || c.email);
+
+      const result = await contactService.importContacts({ contacts });
+      toast.success(`Imported ${result.imported} contacts successfully`);
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setImportContactsOpen(false);
+      setImportFile(null);
+    } catch (error: any) {
+      toast.error("Failed to import contacts: " + error.message);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
@@ -368,14 +392,36 @@ export default function Marketing() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <div 
+                  className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => document.getElementById('csv-upload')?.click()}
+                >
+                  <input
+                    id="csv-upload"
+                    type="file"
+                    accept=".csv"
+                    className="hidden"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  />
                   <FileSpreadsheet className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Drag and drop your CSV file here, or click to browse
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Choose File
-                  </Button>
+                  {importFile ? (
+                    <div>
+                      <p className="text-sm font-medium">{importFile.name}</p>
+                      <p className="text-xs text-muted-foreground">{(importFile.size / 1024).toFixed(1)} KB</p>
+                      <Button variant="ghost" size="sm" className="mt-2" onClick={(e) => { e.stopPropagation(); setImportFile(null); }}>
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Drag and drop your CSV file here, or click to browse
+                      </p>
+                      <Button variant="outline" size="sm">
+                        Choose File
+                      </Button>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Download className="h-4 w-4" />
@@ -385,10 +431,19 @@ export default function Marketing() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setImportContactsOpen(false)}>
+                <Button variant="outline" onClick={() => setImportContactsOpen(false)} disabled={isImporting}>
                   Cancel
                 </Button>
-                <Button>Upload & Import</Button>
+                <Button onClick={handleImportContacts} disabled={!importFile || isImporting}>
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    "Upload & Import"
+                  )}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -421,26 +476,67 @@ export default function Marketing() {
                   <Label htmlFor="campaign-type">Channel</Label>
                   <Select
                     value={newCampaign.type}
-                    onValueChange={(value: CampaignType) => setNewCampaign({ ...newCampaign, type: value })}
+                    onValueChange={(value: APICampaignType) => setNewCampaign({ ...newCampaign, type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sms">
+                      <SelectItem value="SMS">
                         <div className="flex items-center gap-2">
                           <MessageSquare className="h-4 w-4" />
                           SMS
                         </div>
                       </SelectItem>
-                      <SelectItem value="whatsapp">
+                      <SelectItem value="WHATSAPP">
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
+                          <MessageSquare className="h-4 w-4 text-green-500" />
                           WhatsApp
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="EMAIL">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-500" />
+                          Email
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-tags">Target Audience (Tags)</Label>
+                  <Select
+                    onValueChange={(value) => {
+                      if (!newCampaign.targetTags.includes(value)) {
+                        setNewCampaign({ ...newCampaign, targetTags: [...newCampaign.targetTags, value] });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Add tags to target..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTags.map(tag => (
+                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {newCampaign.targetTags.map(tag => (
+                      <Badge key={tag} variant="secondary" className="gap-1 pr-1">
+                        {tag}
+                        <button 
+                          className="hover:text-destructive" 
+                          onClick={() => setNewCampaign({ 
+                            ...newCampaign, 
+                            targetTags: newCampaign.targetTags.filter(t => t !== tag) 
+                          })}
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="campaign-message">Message</Label>
@@ -454,6 +550,9 @@ export default function Marketing() {
                   <p className="text-xs text-muted-foreground">
                     {newCampaign.message.length}/160 characters
                     {newCampaign.message.length > 160 && " (will be sent as multiple messages)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Estimated Audience: <span className="font-bold text-foreground">{recipientCount} contacts</span>
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -501,7 +600,7 @@ export default function Marketing() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Contacts</p>
-                  <p className="text-3xl font-black">{totalContacts.toLocaleString()}</p>
+                  <p className="text-3xl font-black">{totalContactsCount.toLocaleString()}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Users className="h-6 w-6 text-primary" />
@@ -521,7 +620,7 @@ export default function Marketing() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Messages Sent</p>
-                  <p className="text-3xl font-black">{totalSent.toLocaleString()}</p>
+                  <p className="text-3xl font-black">{totalSentCount.toLocaleString()}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
                   <Send className="h-6 w-6 text-green-500" />
@@ -541,7 +640,7 @@ export default function Marketing() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Avg. Open Rate</p>
-                  <p className="text-3xl font-black">{avgOpenRate.toFixed(1)}%</p>
+                  <p className="text-3xl font-black">{avgOpenRateVal.toFixed(1)}%</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
                   <Eye className="h-6 w-6 text-blue-500" />
@@ -562,7 +661,7 @@ export default function Marketing() {
                 <div>
                   <p className="text-sm text-muted-foreground">Active Campaigns</p>
                   <p className="text-3xl font-black">
-                    {campaigns.filter(c => c.status === "sending" || c.status === "scheduled").length}
+                    {activeCampaignsCount}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center">
@@ -609,7 +708,20 @@ export default function Marketing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {campaigns.map((campaign) => (
+                  {isLoadingCampaigns ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Loading campaigns...</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : campaigns.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        <p className="text-sm text-muted-foreground">No campaigns found. Create your first one!</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : campaigns.map((campaign) => (
                     <TableRow key={campaign.id}>
                       <TableCell>
                         <div>
@@ -623,8 +735,10 @@ export default function Marketing() {
                         <Badge variant="outline" className="gap-1">
                           {campaign.type === "sms" ? (
                             <MessageSquare className="h-3 w-3" />
+                          ) : campaign.type === "whatsapp" ? (
+                            <MessageSquare className="h-3 w-3 text-green-500" />
                           ) : (
-                            <Mail className="h-3 w-3" />
+                            <Mail className="h-3 w-3 text-blue-500" />
                           )}
                           {campaign.type.toUpperCase()}
                         </Badge>
@@ -657,8 +771,9 @@ export default function Marketing() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           {campaign.status === "draft" && (
-                            <Button size="icon" variant="ghost" title="Send" onClick={() => handleSendCampaign(campaign.id)}>
-                              <Play className="h-4 w-4" />
+                            <Button size="sm" variant="default" className="gap-1 px-3" onClick={() => handleSendCampaign(campaign.id)}>
+                              <Send className="h-4 w-4" />
+                              Send Now
                             </Button>
                           )}
                           {campaign.status === "scheduled" && (
@@ -704,11 +819,28 @@ export default function Marketing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contacts.map((contact) => (
+                  {isLoadingContacts ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Loading contacts...</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : contacts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        <p className="text-sm text-muted-foreground">No contacts found. Import some to start!</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : contacts.map((contact) => (
                     <TableRow key={contact.id}>
                       <TableCell className="font-medium">{contact.name}</TableCell>
-                      <TableCell>{contact.phone}</TableCell>
-                      <TableCell>{contact.email}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {contact.phone || <Badge variant="outline" className="text-[10px] py-0 h-4 opacity-50 font-normal">No Phone</Badge>}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {contact.email || <Badge variant="outline" className="text-[10px] py-0 h-4 opacity-50 font-normal">No Email</Badge>}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
                           {contact.tags.map((tag) => (
@@ -719,9 +851,32 @@ export default function Marketing() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => window.location.href = `mailto:${contact.email}`}>
+                              <Mail className="mr-2 h-4 w-4" />
+                              Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.location.href = `tel:${contact.phone}`}>
+                              <Phone className="mr-2 h-4 w-4" />
+                              Call
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => deleteContactMutation.mutate(contact.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { MessagingService, SendMessageOptions } from './messaging.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ConversationChannel, ConversationStatus, User } from '@prisma/client';
+import { ConversationChannel, ConversationStatus, User } from '../../generated/prisma';
 
 interface SendMessageBody {
   message: string;

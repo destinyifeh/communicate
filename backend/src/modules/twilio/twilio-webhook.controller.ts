@@ -15,7 +15,7 @@ import {
   MessageDirection,
   MessageSender,
   MessageStatus,
-} from '@prisma/client';
+} from '../../generated/prisma';
 import { normalizePhoneNumber } from '../../common/utils/phone.util';
 
 // Twilio webhook payload types
@@ -235,6 +235,67 @@ export class TwilioWebhookController {
       await this.prisma.message.update({
         where: { id: message.id },
         data: { status: this.mapTwilioStatus(payload.MessageStatus) },
+      });
+    }
+
+    return 'OK';
+  }
+
+  /**
+   * Campaign-specific delivery status callback
+   * POST /api/twilio/webhook/campaign/status?recipientId=xxx&businessId=yyy
+   */
+  @Post('campaign/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiExcludeEndpoint()
+  async handleCampaignStatus(
+    @Body() payload: { MessageSid: string; MessageStatus: string; ErrorCode?: string },
+    @Query('recipientId') recipientId: string,
+    @Query('businessId') businessId: string,
+  ): Promise<string> {
+    this.logger.log(`Campaign status for recipient ${recipientId}: ${payload.MessageStatus}`);
+
+    const recipient = await this.prisma.campaignRecipient.findUnique({
+      where: { id: recipientId },
+    });
+
+    if (!recipient) {
+      this.logger.warn(`Campaign recipient not found: ${recipientId}`);
+      return 'OK';
+    }
+
+    const newStatus = this.mapTwilioStatus(payload.MessageStatus);
+    const oldStatus = recipient.status;
+
+    if (newStatus === oldStatus) {
+      return 'OK';
+    }
+
+    // Update recipient
+    await this.prisma.campaignRecipient.update({
+      where: { id: recipientId },
+      data: {
+        status: newStatus,
+        deliveredAt: newStatus === MessageStatus.DELIVERED ? new Date() : undefined,
+        error: payload.ErrorCode || undefined,
+      },
+    });
+
+    // Update campaign aggregates if needed
+    if (newStatus === MessageStatus.DELIVERED && oldStatus !== MessageStatus.DELIVERED) {
+      await this.prisma.campaign.update({
+        where: { id: recipient.campaignId },
+        data: { messagesDelivered: { increment: 1 } },
+      });
+    } else if (newStatus === MessageStatus.FAILED && oldStatus !== MessageStatus.FAILED) {
+      await this.prisma.campaign.update({
+        where: { id: recipient.campaignId },
+        data: { messagesFailed: { increment: 1 } },
+      });
+    } else if (newStatus === MessageStatus.READ && oldStatus !== MessageStatus.READ) {
+      await this.prisma.campaign.update({
+        where: { id: recipient.campaignId },
+        data: { messagesRead: { increment: 1 } },
       });
     }
 

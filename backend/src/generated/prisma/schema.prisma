@@ -1,0 +1,470 @@
+model Booking {
+  id                 String        @id @default(uuid())
+  title              String
+  description        String?
+  startTime          DateTime
+  endTime            DateTime
+  durationMinutes    Int           @default(30)
+  status             BookingStatus @default(PENDING)
+  customerName       String?
+  customerEmail      String?
+  customerPhone      String?
+  customerNotes      String?
+  serviceType        String?
+  price              Decimal?      @db.Decimal(10, 2)
+  location           String?
+  meetingUrl         String?
+  reminderSent24h    Boolean       @default(false)
+  reminderSent1h     Boolean       @default(false)
+  cancelledAt        DateTime?
+  cancellationReason String?
+  source             String        @default("sms")
+  metadata           Json?
+  contactId          String?
+  businessId         String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  business           Business      @relation(fields: [businessId], references: [id])
+  contact            Contact?      @relation(fields: [contactId], references: [id])
+
+  @@map("bookings")
+}
+
+model Business {
+  id                    String                @id @default(uuid())
+  name                  String
+  slug                  String?               @unique
+  description           String?
+  website               String?
+  logoUrl               String?
+  brandColor            String?
+  industry              String?
+  timezone              String?
+  email                 String?
+  phone                 String?
+  address               String?
+  city                  String?
+  state                 String?
+  country               String?
+  postalCode            String?
+  businessHours         Json?
+  faqResponses          Json?
+  emailFromAddress      String?
+  emailFromName         String?
+  isActive              Boolean               @default(true)
+  onboardingCompletedAt DateTime?
+  ownerId               String
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  bookings              Booking[]
+  features              BusinessFeature[]
+  owner                 User                  @relation("OwnedBusinesses", fields: [ownerId], references: [id])
+  campaigns             Campaign[]
+  contacts              Contact[]
+  conversations         Conversation[]
+  inquiries             Inquiry[]
+  phoneNumbers          BusinessPhoneNumber[]
+  subscription          Subscription?
+  twilioSubaccount      TwilioSubaccount?
+  usersWithCurrent      User[]                @relation("CurrentBusiness")
+
+  @@map("businesses")
+}
+
+model BusinessFeature {
+  id          String      @id @default(uuid())
+  featureType FeatureType
+  enabled     Boolean     @default(true)
+  config      Json?
+  businessId  String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  business    Business    @relation(fields: [businessId], references: [id])
+
+  @@map("business_features")
+}
+
+model Campaign {
+  id                String              @id @default(uuid())
+  name              String
+  description       String?
+  type              CampaignType        @default(SMS)
+  status            CampaignStatus      @default(DRAFT)
+  messageTemplate   String
+  mediaUrls         Json?
+  targetTags        Json?
+  excludeTags       Json?
+  recipientPhones   Json?
+  recipientEmails   Json?
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  totalRecipients   Int                 @default(0)
+  messagesSent      Int                 @default(0)
+  messagesDelivered Int                 @default(0)
+  messagesFailed    Int                 @default(0)
+  messagesRead      Int                 @default(0)
+  responses         Int                 @default(0)
+  optOuts           Int                 @default(0)
+  totalCost         Decimal             @default(0) @db.Decimal(10, 4)
+  createdById       String?
+  businessId        String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  business          Business            @relation(fields: [businessId], references: [id])
+  createdBy         User?               @relation("CreatedBy", fields: [createdById], references: [id])
+  recipients        CampaignRecipient[]
+
+  @@map("campaigns")
+}
+
+model CampaignRecipient {
+  id          String        @id @default(uuid())
+  campaignId  String
+  contactId   String?
+  phoneNumber String?
+  email       String?
+  status      MessageStatus @default(PENDING)
+  externalId  String? // Twilio SID or Resend ID
+  error       String?
+  retryCount  Int           @default(0)
+  metadata    Json?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact? @relation(fields: [contactId], references: [id])
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([externalId])
+  @@map("campaign_recipients")
+}
+
+model Contact {
+  id                 String              @id @default(uuid())
+  firstName          String?
+  lastName           String?
+  email              String?
+  phone              String?
+  whatsappNumber     String?
+  tags               Json?
+  customFields       Json?
+  source             String?
+  notes              String?
+  optedOutSms        Boolean             @default(false)
+  optedOutWhatsapp   Boolean             @default(false)
+  optedOutEmail      Boolean             @default(false)
+  lastContactedAt    DateTime?
+  businessId         String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  bookings           Booking[]
+  business           Business            @relation(fields: [businessId], references: [id])
+  conversations      Conversation[]
+  inquiries          Inquiry[]
+  campaignRecipients CampaignRecipient[]
+
+  @@map("contacts")
+}
+
+model Conversation {
+  id                 String              @id @default(uuid())
+  channel            ConversationChannel
+  status             ConversationStatus  @default(BOT_HANDLED)
+  subject            String?
+  lastMessagePreview String?
+  lastMessageAt      DateTime?
+  unreadCount        Int                 @default(0)
+  starred            Boolean             @default(false)
+  detectedIntent     String?
+  intentMetadata     Json?
+  externalId         String? // External ID (e.g., Twilio CallSid)
+  metadata           Json? // Additional metadata
+  assignedAgentId    String?
+  assignedAt         DateTime?
+  escalatedAt        DateTime?
+  escalationReason   String?
+  contactId          String
+  businessId         String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  assignedAgent      User?               @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  business           Business            @relation(fields: [businessId], references: [id])
+  contact            Contact             @relation(fields: [contactId], references: [id])
+  inquiries          Inquiry[]
+  messages           Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id                    String           @id @default(uuid())
+  body                  String
+  direction             MessageDirection
+  sender                MessageSender    @default(CUSTOMER)
+  status                MessageStatus    @default(SENT)
+  twilioMessageSid      String?
+  twilioFrom            String?
+  twilioTo              String?
+  emailMessageId        String?
+  emailSubject          String?
+  emailFrom             String?
+  emailTo               String?
+  emailCc               String?
+  emailBcc              String?
+  emailReplyToMessageId String?
+  emailHtml             String?
+  mediaUrls             Json?
+  metadata              Json? // Additional metadata (e.g., voicemail URL, transcription)
+  agentId               String?
+  conversationId        String
+  createdAt             DateTime         @default(now())
+  agent                 User?            @relation("AgentMessages", fields: [agentId], references: [id])
+  conversation          Conversation     @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+  AGENT
+}
+
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum FeatureType {
+  BOOKING
+  SUPPORT
+  INQUIRIES
+  MARKETING
+}
+
+enum ConversationChannel {
+  SMS
+  WHATSAPP
+  VOICE
+  EMAIL
+}
+
+enum ConversationStatus {
+  BOT_HANDLED
+  ESCALATED
+  AGENT_ACTIVE
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageSender {
+  CUSTOMER
+  BOT
+  AGENT
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum InquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum InquiryPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InquiryCategory {
+  GENERAL
+  PRICING
+  AVAILABILITY
+  SUPPORT
+  COMPLAINT
+  FEEDBACK
+  OTHER
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  COMPLETED
+  PAUSED
+  FAILED
+}
+
+enum CampaignType {
+  SMS
+  WHATSAPP
+  EMAIL
+}
+
+model Inquiry {
+  id                  String          @id @default(uuid())
+  subject             String
+  description         String?
+  status              InquiryStatus   @default(OPEN)
+  priority            InquiryPriority @default(MEDIUM)
+  category            InquiryCategory @default(GENERAL)
+  autoResponded       Boolean         @default(false)
+  autoResponseContent String?
+  escalated           Boolean         @default(false)
+  escalatedAt         DateTime?
+  escalationReason    String?
+  assignedAgentId     String?
+  resolvedAt          DateTime?
+  resolution          String?
+  conversationId      String?
+  contactId           String?
+  businessId          String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  assignedAgent       User?           @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  business            Business        @relation(fields: [businessId], references: [id])
+  contact             Contact?        @relation(fields: [contactId], references: [id])
+  conversation        Conversation?   @relation(fields: [conversationId], references: [id])
+
+  @@map("inquiries")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+  output          = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Subscription {
+  id                       String             @id @default(uuid())
+  plan                     SubscriptionPlan   @default(STARTER)
+  status                   SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId         String?
+  stripeSubscriptionId     String?
+  stripePriceId            String?
+  currentPeriodStart       DateTime?
+  currentPeriodEnd         DateTime?
+  canceledAt               DateTime?
+  trialEndsAt              DateTime?
+  maxPhoneNumbers          Int                @default(1)
+  maxMessagesPerMonth      Int                @default(100)
+  messagesUsedThisMonth    Int                @default(0)
+  callMinutesUsedThisMonth Int                @default(0)
+  monthlyPrice             Decimal            @default(29) @db.Decimal(10, 2)
+  currency                 String?
+  businessId               String             @unique
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  business                 Business           @relation(fields: [businessId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model TwilioSubaccount {
+  id                     String   @id @default(uuid())
+  accountSid             String   @unique
+  authToken              String
+  friendlyName           String?
+  workspaceSid           String?
+  messagingServiceSid    String?
+  taskRouterWorkspaceSid String?
+  twimlAppSid            String?
+  status                 String   @default("active")
+  isMock                 Boolean  @default(false)
+  businessId             String   @unique
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  business               Business @relation(fields: [businessId], references: [id])
+
+  @@map("twilio_subaccounts")
+}
+
+model BusinessPhoneNumber {
+  id              String   @id @default(uuid())
+  phoneNumber     String
+  friendlyName    String?
+  twilioSid       String?
+  country         String?
+  areaCode        String?
+  voiceEnabled    Boolean  @default(true)
+  smsEnabled      Boolean  @default(true)
+  whatsappEnabled Boolean  @default(false)
+  voiceWebhookUrl String?
+  smsWebhookUrl   String?
+  status          String   @default("active")
+  isPrimary       Boolean  @default(false)
+  isMock          Boolean  @default(false)
+  monthlyCost     Decimal  @default(0) @db.Decimal(10, 2)
+  businessId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  business        Business @relation(fields: [businessId], references: [id])
+
+  @@map("business_phone_numbers")
+}
+
+model User {
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  password               String
+  firstName              String
+  lastName               String
+  role                   UserRole       @default(OWNER)
+  avatarUrl              String?
+  phone                  String?
+  emailVerified          Boolean        @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  isActive               Boolean        @default(true)
+  lastLoginAt            DateTime?
+  currentBusinessId      String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  ownedBusinesses        Business[]     @relation("OwnedBusinesses")
+  createdCampaigns       Campaign[]     @relation("CreatedBy")
+  assignedConversations  Conversation[] @relation("AssignedAgent")
+  assignedInquiries      Inquiry[]      @relation("AssignedAgent")
+  sentMessages           Message[]      @relation("AgentMessages")
+  currentBusiness        Business?      @relation("CurrentBusiness", fields: [currentBusinessId], references: [id])
+
+  @@map("users")
+}

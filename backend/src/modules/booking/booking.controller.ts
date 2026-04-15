@@ -17,7 +17,7 @@ import {
 import { BookingService, CreateBookingDto } from './booking.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, BookingStatus } from '@prisma/client';
+import { User, BookingStatus } from '../../generated/prisma';
 
 @ApiTags('booking')
 @Controller('bookings')

@@ -8,7 +8,7 @@ import {
   IsArray,
   IsEnum,
 } from 'class-validator';
-import { FeatureType } from '@prisma/client';
+import { FeatureType } from '../../../generated/prisma';
 
 export class RegisterDto {
   @ApiProperty({ example: 'john@example.com' })

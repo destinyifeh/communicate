@@ -10,7 +10,7 @@ import {
   MessageStatus,
   Conversation,
   Message,
-} from '@prisma/client';
+} from '../../generated/prisma';
 
 export interface SendMessageOptions {
   // For email channel

@@ -1,0 +1,24 @@
+model CampaignRecipient {
+  id                String        @id @default(uuid())
+  campaignId        String
+  contactId         String?
+  phoneNumber       String?
+  email             String?
+  status            MessageStatus @default(PENDING)
+  externalId        String?       // Twilio SID or Resend ID
+  error             String?
+  retryCount        Int           @default(0)
+  metadata          Json?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  campaign          Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact           Contact?      @relation(fields: [contactId], references: [id])
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([externalId])
+  @@map("campaign_recipients")
+}

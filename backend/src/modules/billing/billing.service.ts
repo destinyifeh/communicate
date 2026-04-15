@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
-import { Subscription, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { Subscription, SubscriptionPlan, SubscriptionStatus } from '../../generated/prisma';
 
 const PLAN_DETAILS = {
   [SubscriptionPlan.STARTER]: {

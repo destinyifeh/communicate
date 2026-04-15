@@ -24,7 +24,7 @@ import {
   ConversationQueryDto,
 } from './dto';
 import { PaginationDto } from '../../common/dto';
-import { Conversation, Message } from '@prisma/client';
+import { Conversation, Message } from '../../generated/prisma';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentBusiness } from '../../common/decorators/current-business.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';

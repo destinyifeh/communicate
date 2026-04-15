@@ -48,7 +48,7 @@ export class TwilioService {
   }
 
   // Send SMS
-  async sendSMS(businessId: string, to: string, body: string, from?: string): Promise<{ sid: string; status: string }> {
+  async sendSMS(businessId: string, to: string, body: string, overrideStatusCallback?: string, from?: string): Promise<{ sid: string; status: string }> {
     // Get business phone number or use default
     let fromNumber = from;
     if (!fromNumber) {
@@ -73,9 +73,7 @@ export class TwilioService {
       from: fromNumber,
       to,
       // Status callback for delivery tracking
-      ...(this.webhookBaseUrl && {
-        statusCallback: `${this.webhookBaseUrl}/twilio/webhook/sms/status?businessId=${businessId}`,
-      }),
+      statusCallback: overrideStatusCallback || (this.webhookBaseUrl ? `${this.webhookBaseUrl}/twilio/webhook/sms/status?businessId=${businessId}` : undefined),
     });
 
     this.logger.log(`SMS sent successfully: ${message.sid}`);
@@ -86,7 +84,7 @@ export class TwilioService {
   }
 
   // Send WhatsApp message
-  async sendWhatsApp(businessId: string, to: string, body: string, from?: string): Promise<{ sid: string; status: string }> {
+  async sendWhatsApp(businessId: string, to: string, body: string, overrideStatusCallback?: string, from?: string): Promise<{ sid: string; status: string }> {
     // Get WhatsApp number
     let fromNumber = from;
     if (!fromNumber) {
@@ -115,9 +113,7 @@ export class TwilioService {
       from: whatsappFrom,
       to: whatsappTo,
       // Status callback for delivery tracking
-      ...(this.webhookBaseUrl && {
-        statusCallback: `${this.webhookBaseUrl}/twilio/webhook/sms/status?businessId=${businessId}`,
-      }),
+      statusCallback: overrideStatusCallback || (this.webhookBaseUrl ? `${this.webhookBaseUrl}/twilio/webhook/sms/status?businessId=${businessId}` : undefined),
     });
 
     this.logger.log(`WhatsApp sent successfully: ${message.sid}`);

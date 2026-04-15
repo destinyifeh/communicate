@@ -9,7 +9,7 @@ import {
   MessageDirection,
   MessageSender,
   MessageStatus,
-} from '@prisma/client';
+} from '../../generated/prisma';
 
 @Injectable()
 export class EmailService {

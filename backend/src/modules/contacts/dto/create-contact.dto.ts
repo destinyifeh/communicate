@@ -18,9 +18,10 @@ export class CreateContactDto {
   @IsOptional()
   lastName?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  phone: string;
+  @IsOptional()
+  phone?: string;
 
   @ApiPropertyOptional()
   @IsEmail()

@@ -8,7 +8,7 @@ import {
   InquiryStatus,
   InquiryPriority,
   InquiryCategory,
-} from '@prisma/client';
+} from '../../../generated/prisma';
 
 export interface RoutingResult {
   action: 'auto_respond' | 'escalate' | 'route_to_booking' | 'route_to_support';

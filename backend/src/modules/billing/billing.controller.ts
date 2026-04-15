@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, SubscriptionPlan } from '@prisma/client';
+import { User, SubscriptionPlan } from '../../generated/prisma';
 
 @ApiTags('billing')
 @Controller('billing')

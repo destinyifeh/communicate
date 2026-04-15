@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsArray, IsEnum, IsUUID, IsBoolean } from 'class-validator';
-import { ConversationChannel, ConversationStatus } from '@prisma/client';
+import { ConversationChannel, ConversationStatus } from '../../../generated/prisma';
 import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../common/dto';
 

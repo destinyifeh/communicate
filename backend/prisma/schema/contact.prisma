@@ -3,7 +3,7 @@ model Contact {
   firstName        String?
   lastName         String?
   email            String?
-  phone            String
+  phone            String?
   whatsappNumber   String?
   tags             Json?
   customFields     Json?
@@ -20,6 +20,7 @@ model Contact {
   business         Business       @relation(fields: [businessId], references: [id])
   conversations    Conversation[]
   inquiries        Inquiry[]
+  campaignRecipients CampaignRecipient[]
 
   @@map("contacts")
 }

@@ -9,7 +9,7 @@ import {
   MessageDirection,
   MessageStatus,
   Prisma,
-} from '@prisma/client';
+} from '../../generated/prisma';
 import { PaginationDto, PaginatedResponseDto } from '../../common/dto';
 import {
   SendMessageDto,

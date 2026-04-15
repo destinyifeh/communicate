@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma';
 import { MockTwilioService, MockPhoneNumber } from './mock-twilio.service';
 import { SubaccountService } from './subaccount.service';
-import { BusinessPhoneNumber } from '@prisma/client';
+import { BusinessPhoneNumber } from '../../../generated/prisma';
 
 export interface AvailableNumber {
   phoneNumber: string;

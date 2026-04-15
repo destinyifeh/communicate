@@ -23,7 +23,7 @@ import { VoiceService } from './services/voice.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { User } from '@prisma/client';
+import { User } from '../../generated/prisma';
 import { PrismaService } from '../../prisma';
 import { ConfigService } from '@nestjs/config';
 

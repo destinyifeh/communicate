@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma';
 import { TwilioService } from '../twilio/twilio.service';
 import { EmailService } from '../email/email.service';
-import { Campaign, CampaignStatus, CampaignType } from '@prisma/client';
+import { Campaign, CampaignStatus, CampaignType, MessageStatus } from '../../generated/prisma';
+import { CAMPAIGN_QUEUE, CAMPAIGN_JOB_RECIPIENT } from './campaigns.constants';
+import { PaginatedResponseDto, PaginationDto } from '../../common/dto';
 
 export interface CreateCampaignDto {
   name: string;
@@ -19,10 +23,13 @@ export interface CreateCampaignDto {
 
 @Injectable()
 export class CampaignsService {
+  private readonly logger = new Logger(CampaignsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly twilioService: TwilioService,
     private readonly emailService: EmailService,
+    @InjectQueue(CAMPAIGN_QUEUE) private readonly campaignQueue: Queue,
   ) {}
 
   async create(businessId: string, dto: CreateCampaignDto, userId: string): Promise<Campaign> {
@@ -48,14 +55,27 @@ export class CampaignsService {
     });
   }
 
-  async findAll(businessId: string, status?: CampaignStatus): Promise<Campaign[]> {
-    return this.prisma.campaign.findMany({
-      where: {
-        businessId,
-        ...(status && { status }),
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(
+    businessId: string, 
+    pagination: PaginationDto,
+    status?: CampaignStatus
+  ): Promise<PaginatedResponseDto<Campaign>> {
+    const where = {
+      businessId,
+      ...(status && { status }),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.campaign.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.take,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.campaign.count({ where }),
+    ]);
+
+    return PaginatedResponseDto.create(data, total, pagination);
   }
 
   async findOne(businessId: string, id: string): Promise<Campaign> {
@@ -72,55 +92,150 @@ export class CampaignsService {
   }
 
   async send(businessId: string, id: string): Promise<Campaign> {
-    const campaign = await this.findOne(businessId, id);
+    const campaign = await this.prisma.campaign.findFirst({
+      where: { id, businessId },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
 
     if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.SCHEDULED) {
       throw new BadRequestException('Campaign cannot be sent');
     }
 
+    // 1. Get Recipients
+    const recipientData = await this.getRecipientDetailedData(businessId, campaign);
+    
+    if (recipientData.length === 0) {
+      throw new BadRequestException('No recipients found for this campaign');
+    }
+
+    // 2. Update Campaign status to SENDING
     await this.prisma.campaign.update({
       where: { id },
       data: {
         status: CampaignStatus.SENDING,
         startedAt: new Date(),
+        totalRecipients: recipientData.length,
+        messagesSent: 0,
+        messagesFailed: 0,
       },
     });
 
-    // Get recipients
-    const recipients = await this.getRecipients(businessId, campaign);
+    // 3. Create CampaignRecipient records in bulk
+    // We use createMany for performance
+    await this.prisma.campaignRecipient.createMany({
+      data: recipientData.map(r => ({
+        campaignId: id,
+        contactId: r.contactId,
+        phoneNumber: r.phoneNumber,
+        email: r.email,
+        status: MessageStatus.PENDING,
+      })),
+    });
 
-    // Send messages (in a real app, this would be queued)
-    let sent = 0;
-    let failed = 0;
+    // 4. Fetch the created recipients to get their IDs
+    const recipients = await this.prisma.campaignRecipient.findMany({
+      where: { campaignId: id },
+      select: { id: true },
+    });
 
-    for (const recipient of recipients) {
-      try {
-        if (campaign.type === CampaignType.EMAIL) {
-          await this.emailService.sendEmail(businessId, {
-            to: recipient,
-            subject: campaign.name,
-            text: campaign.messageTemplate,
-          });
-        } else if (campaign.type === CampaignType.WHATSAPP) {
-          await this.twilioService.sendWhatsApp(businessId, recipient, campaign.messageTemplate);
-        } else {
-          await this.twilioService.sendSMS(businessId, recipient, campaign.messageTemplate);
-        }
-        sent++;
-      } catch (error) {
-        failed++;
+    // 5. Queue individual jobs
+    await this.campaignQueue.addBulk(
+      recipients.map((recipient) => ({
+        name: CAMPAIGN_JOB_RECIPIENT,
+        data: {
+          recipientId: recipient.id,
+          campaignId: id,
+          businessId,
+        },
+      }))
+    );
+
+    this.logger.log(`Queued campaign ${id} for ${recipients.length} recipients`);
+
+    return this.prisma.campaign.findUnique({
+      where: { id },
+    }) as Promise<Campaign>;
+  }
+
+  private async getRecipientDetailedData(
+    businessId: string, 
+    campaign: Campaign
+  ): Promise<Array<{ contactId?: string, phoneNumber?: string, email?: string }>> {
+    const targetTags = campaign.targetTags as string[] | null;
+    const excludeTags = campaign.excludeTags as string[] | null;
+
+    if (campaign.type === CampaignType.EMAIL) {
+      const emails = campaign.recipientEmails as string[] | null;
+      if (emails?.length) {
+        return emails.map(email => ({ email }));
       }
+
+      const contacts = await this.prisma.contact.findMany({
+        where: {
+          businessId,
+          optedOutEmail: false,
+          AND: [
+            { email: { not: null } },
+            { email: { not: "" } },
+            ...(targetTags?.length ? [{
+              tags: {
+                path: [],
+                array_contains: targetTags,
+              }
+            }] : []),
+            ...(excludeTags?.length ? excludeTags.map(tag => ({
+              NOT: {
+                tags: {
+                  path: [],
+                  array_contains: [tag],
+                }
+              }
+            })) : []),
+          ]
+        },
+        select: { id: true, email: true },
+      });
+
+      return contacts.map((c: any) => ({ contactId: c.id, email: c.email! }));
     }
 
-    return this.prisma.campaign.update({
-      where: { id },
-      data: {
-        messagesSent: sent,
-        messagesFailed: failed,
-        status: CampaignStatus.COMPLETED,
-        completedAt: new Date(),
+    const phones = campaign.recipientPhones as string[] | null;
+    if (phones?.length) {
+      return phones.map(phone => ({ phoneNumber: phone }));
+    }
+
+    const optOutField = campaign.type === CampaignType.SMS ? 'optedOutSms' : 'optedOutWhatsapp';
+
+    const contacts = await this.prisma.contact.findMany({
+      where: {
+        businessId,
+        [optOutField]: false,
+        phone: { not: null },
+        AND: [
+          { phone: { not: "" } },
+          ...(targetTags?.length ? [{
+            tags: {
+              path: [],
+              array_contains: targetTags,
+            }
+          }] : []),
+          ...(excludeTags?.length ? excludeTags.map(tag => ({
+            NOT: {
+              tags: {
+                path: [],
+                array_contains: [tag],
+              }
+            }
+          })) : []),
+        ]
       },
+      select: { id: true, phone: true },
     });
+
+    return contacts.map((c: any) => ({ contactId: c.id, phoneNumber: c.phone }));
   }
 
   async pause(businessId: string, id: string): Promise<Campaign> {
@@ -165,6 +280,26 @@ export class CampaignsService {
       where: {
         businessId,
         [optOutField]: false,
+        ...(dto.type === CampaignType.EMAIL 
+          ? { AND: [{ email: { not: null } }, { email: { not: "" } }] }
+          : { AND: [{ phone: { not: null } }, { phone: { not: "" } }] }
+        ),
+        AND: [
+          ...(dto.targetTags?.length ? [{
+            tags: {
+              path: [],
+              array_contains: dto.targetTags,
+            }
+          }] : []),
+          ...(dto.excludeTags?.length ? dto.excludeTags.map(tag => ({
+            NOT: {
+              tags: {
+                path: [],
+                array_contains: [tag],
+              }
+            }
+          })) : []),
+        ]
       },
     });
   }
@@ -199,30 +334,49 @@ export class CampaignsService {
       where: {
         businessId,
         [optOutField]: false,
+        phone: { not: null },
+        AND: [{ phone: { not: "" } }],
       },
       select: { phone: true },
     });
 
-    return contacts.map((c) => c.phone);
+    return contacts.map((c) => c.phone!).filter(Boolean);
   }
 
   async getStats(businessId: string): Promise<{
-    total: number;
-    draft: number;
-    scheduled: number;
-    completed: number;
-    totalSent: number;
+    totalCampaigns: number;
+    activeCampaigns: number;
+    totalMessagesSent: number;
     totalDelivered: number;
+    totalFailed: number;
+    averageDeliveryRate: number;
+    averageReadRate: number;
   }> {
-    const campaigns = await this.findAll(businessId);
+    const campaigns = await this.prisma.campaign.findMany({
+      where: { businessId },
+    });
+
+    const activeCampaigns = campaigns.filter(
+      (c) => c.status === CampaignStatus.SENDING || c.status === CampaignStatus.SCHEDULED,
+    ).length;
+
+    const totalMessagesSent = campaigns.reduce((sum, c) => sum + c.messagesSent, 0);
+    const totalDelivered = campaigns.reduce((sum, c) => sum + c.messagesDelivered, 0);
+    const totalFailed = campaigns.reduce((sum, c) => sum + c.messagesFailed, 0);
+    const totalRead = campaigns.reduce((sum, c) => sum + c.messagesRead, 0);
+
+    const averageDeliveryRate =
+      totalMessagesSent > 0 ? (totalDelivered / totalMessagesSent) * 100 : 0;
+    const averageReadRate = totalDelivered > 0 ? (totalRead / totalDelivered) * 100 : 0;
 
     return {
-      total: campaigns.length,
-      draft: campaigns.filter((c) => c.status === CampaignStatus.DRAFT).length,
-      scheduled: campaigns.filter((c) => c.status === CampaignStatus.SCHEDULED).length,
-      completed: campaigns.filter((c) => c.status === CampaignStatus.COMPLETED).length,
-      totalSent: campaigns.reduce((sum, c) => sum + c.messagesSent, 0),
-      totalDelivered: campaigns.reduce((sum, c) => sum + c.messagesDelivered, 0),
+      totalCampaigns: campaigns.length,
+      activeCampaigns,
+      totalMessagesSent,
+      totalDelivered,
+      totalFailed,
+      averageDeliveryRate,
+      averageReadRate,
     };
   }
 }

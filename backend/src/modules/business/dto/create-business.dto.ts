@@ -8,7 +8,7 @@ import {
   IsEnum,
   MaxLength,
 } from 'class-validator';
-import { FeatureType } from '@prisma/client';
+import { FeatureType } from '../../../generated/prisma';
 
 export class CreateBusinessDto {
   @ApiProperty({ example: 'Acme Corporation' })

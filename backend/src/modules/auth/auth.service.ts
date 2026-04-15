@@ -17,7 +17,7 @@ import {
   SubscriptionPlan,
   SubscriptionStatus,
   User,
-} from '@prisma/client';
+} from '../../generated/prisma';
 
 @Injectable()
 export class AuthService {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
-import { Contact, Prisma } from '@prisma/client';
+import { Contact, Prisma } from '../../generated/prisma';
 import {
   PaginationDto,
   PaginatedResponseDto,
@@ -25,22 +25,32 @@ export class ContactsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(businessId: string, dto: CreateContactDto): Promise<Contact> {
-    const normalizedPhone = normalizePhoneNumber(dto.phone);
-    // Get just the digits for flexible matching
-    const phoneDigits = dto.phone.replace(/\D/g, '');
+    const normalizedPhone = dto.phone ? normalizePhoneNumber(dto.phone) : null;
+    let existing = null;
 
-    // Check for existing contact with same phone (try multiple formats)
-    const existing = await this.prisma.contact.findFirst({
-      where: {
-        businessId,
-        OR: [
-          { phone: normalizedPhone },
-          { phone: dto.phone },
-          { phone: phoneDigits },
-          { phone: { contains: phoneDigits.slice(-10) } }, // Last 10 digits
-        ],
-      },
-    });
+    if (normalizedPhone) {
+      // Get just the digits for flexible matching
+      const phoneDigits = dto.phone!.replace(/\D/g, '');
+
+      // Check for existing contact with same phone (try multiple formats)
+      existing = await this.prisma.contact.findFirst({
+        where: {
+          businessId,
+          OR: [
+            { phone: normalizedPhone },
+            { phone: dto.phone },
+            { phone: phoneDigits },
+            { phone: { contains: phoneDigits.slice(-10) } }, // Last 10 digits
+          ],
+        },
+      });
+    }
+
+    if (!existing && dto.email) {
+      existing = await this.prisma.contact.findFirst({
+        where: { businessId, email: dto.email },
+      });
+    }
 
     if (existing) {
       // Update the existing contact with new info (upsert behavior)
@@ -264,12 +274,21 @@ export class ContactsService {
 
     for (const contactData of dto.contacts) {
       try {
-        const phone = normalizePhoneNumber(contactData.phone);
+        const phone = contactData.phone ? normalizePhoneNumber(contactData.phone) : null;
 
-        // Check if contact exists
-        const existing = await this.prisma.contact.findFirst({
-          where: { businessId, phone },
-        });
+        // Check if contact exists by phone or email
+        let existing = null;
+        if (phone) {
+          existing = await this.prisma.contact.findFirst({
+            where: { businessId, phone },
+          });
+        }
+        
+        if (!existing && contactData.email) {
+          existing = await this.prisma.contact.findFirst({
+            where: { businessId, email: contactData.email },
+          });
+        }
 
         if (existing) {
           // Update existing contact

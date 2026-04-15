@@ -18,7 +18,7 @@ import { BusinessService } from './business.service';
 import { CreateBusinessDto, UpdateBusinessDto } from './dto/create-business.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, FeatureType } from '@prisma/client';
+import { User, FeatureType } from '../../generated/prisma';
 
 @ApiTags('business')
 @Controller('business')

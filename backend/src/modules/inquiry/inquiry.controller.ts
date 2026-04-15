@@ -16,7 +16,7 @@ import {
 import { InquiryService } from './inquiry.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, InquiryStatus, InquiryPriority } from '@prisma/client';
+import { User, InquiryStatus, InquiryPriority } from '../../generated/prisma';
 
 @ApiTags('inquiry')
 @Controller('inquiries')

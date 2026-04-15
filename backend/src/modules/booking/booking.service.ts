@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
-import { Booking, BookingStatus } from '@prisma/client';
+import { Booking, BookingStatus } from '../../generated/prisma';
 
 export interface CreateBookingDto {
   title: string;

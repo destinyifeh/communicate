@@ -27,6 +27,7 @@ model Campaign {
   updatedAt         DateTime       @updatedAt
   business          Business       @relation(fields: [businessId], references: [id])
   createdBy         User?          @relation("CreatedBy", fields: [createdById], references: [id])
+  recipients        CampaignRecipient[]
 
   @@map("campaigns")
 }

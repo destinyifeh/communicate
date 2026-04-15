@@ -3,7 +3,8 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CampaignsService, CreateCampaignDto } from './campaigns.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, CampaignStatus } from '@prisma/client';
+import { User, CampaignStatus } from '../../generated/prisma';
+import { PaginationDto } from '../../common/dto';
 
 @ApiTags('campaigns')
 @Controller('campaigns')
@@ -19,9 +20,14 @@ export class CampaignsController {
   }
 
   @Get()
-  async findAll(@CurrentUser() user: User, @Query('status') status?: CampaignStatus) {
+  async findAll(
+    @CurrentUser() user: User, 
+    @Query() pagination: PaginationDto
+  ) {
     if (!user.currentBusinessId) throw new Error('No business selected');
-    return this.campaignsService.findAll(user.currentBusinessId, status);
+    // Using any to access status if it's passed in the same query object
+    const status = (pagination as any).status as CampaignStatus;
+    return this.campaignsService.findAll(user.currentBusinessId, pagination, status);
   }
 
   @Get('stats')

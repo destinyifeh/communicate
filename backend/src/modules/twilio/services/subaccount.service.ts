@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma';
 import { MockTwilioService } from './mock-twilio.service';
-import { TwilioSubaccount } from '@prisma/client';
+import { TwilioSubaccount } from '../../../generated/prisma';
 
 @Injectable()
 export class SubaccountService {

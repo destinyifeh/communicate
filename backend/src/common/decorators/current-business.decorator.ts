@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { User } from '../../generated/prisma';
 
 export const CurrentBusiness = createParamDecorator(
   (data: 'id' | 'full' | unknown, ctx: ExecutionContext) => {
