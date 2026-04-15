@@ -37,8 +37,7 @@ Update the values in `.env`:
 
 ```env
 DATABASE_URL=postgresql://communicate:communicate_dev_password@localhost:5432/communicate
-RESEND_API_KEY=re_your_api_key  # Get from https://resend.com
-EMAIL_FROM_DEFAULT=noreply@yourdomain.com
+
 ```
 
 ### 3. Start the database
@@ -77,13 +76,13 @@ Swagger documentation is available at `http://localhost:3001/api` when the serve
 
 ## Database Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run db:generate` | Generate Prisma client |
-| `npm run db:migrate` | Run migrations (development) |
-| `npm run db:migrate:prod` | Run migrations (production) |
-| `npm run db:push` | Push schema changes without migration |
-| `npm run db:studio` | Open Prisma Studio GUI |
+| Command                   | Description                           |
+| ------------------------- | ------------------------------------- |
+| `npm run db:generate`     | Generate Prisma client                |
+| `npm run db:migrate`      | Run migrations (development)          |
+| `npm run db:migrate:prod` | Run migrations (production)           |
+| `npm run db:push`         | Push schema changes without migration |
+| `npm run db:studio`       | Open Prisma Studio GUI                |
 
 ## Project Structure
 
